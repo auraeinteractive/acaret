@@ -18,6 +18,9 @@ mlObject *mlViewCreate(mlObject *parent);
 void mlViewSetSize(void *instance, void *data);
 void mlViewShow(void *instance, void *data);
 
+// Setting HTML content
+void mlViewSetHTML(void *instance, void *data);
+
 // Event handling methods
 void mlViewOnWindowClosed(void *instance, void *data);
 

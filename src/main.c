@@ -17,8 +17,12 @@ int main(int argc, char *argv[]) {
     int size[2] = {1280, 800};
     mlDoMethod(view, "setSize", size);  // Call the setSize method
 
+    // Set HTML file
+    mlDoMethod(view, "setHTML", "main.html" );
+    
     // Show the view
     mlDoMethod(view, "show", NULL);  // Call the show method
+
 
     // Register doQuit function to be called when the view is closed
     mlAddEvent(view, "closed", (mlEventCallback)doQuit);
