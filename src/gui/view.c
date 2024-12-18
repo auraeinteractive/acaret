@@ -127,8 +127,22 @@ void mlViewSetHTML(void *instance, void *data) {
         char *src_start = strstr(start, "src=\"data://");
         char *href_start = strstr(start, "href=\"data://");
         if (src_start == NULL && href_start == NULL) break;
-
-        char *current = (src_start < href_start || href_start == NULL) ? src_start : href_start;
+        
+        char *current = NULL;
+        if (src_start && href_start) {
+            // Both pointers are valid, take the one that appears first
+            current = (src_start < href_start) ? src_start : href_start;
+        } else if (src_start) {
+            // Only src_start is valid
+            current = src_start;
+        } else if (href_start) {
+            // Only href_start is valid
+            current = href_start;
+        } else {
+            // Neither pointer is valid
+            break;
+        }
+        
         char *end = strchr(current, '"');
         if (end) {
             *end = '\0';
