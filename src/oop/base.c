@@ -16,6 +16,34 @@ mlObject *mlObjectCreate(void *parent) {
     return obj;
 }
 
+// Generic inheritance function
+void *mlObjectCreateWithSize(size_t base_size, size_t derived_size, void *parent) {
+    // Allocate memory for the derived object
+    if (derived_size < base_size) {
+        fprintf(stderr, "Derived size cannot be smaller than base size\n");
+        return NULL;
+    }
+
+    void *object = malloc(derived_size);
+    if (!object) {
+        fprintf(stderr, "Failed to allocate memory for object\n");
+        return NULL;
+    }
+
+    // Initialize the base portion
+    memset(object, 0, base_size); // Zero out the base part
+    mlObject *base = (mlObject *)object;
+    base->parent = parent;
+    base->method_table = NULL;
+    base->method_count = 0;
+    base->attributes = NULL;
+    base->attribute_count = 0;
+    base->events = NULL;
+    base->event_count = 0;
+
+    return object;
+}
+
 // Destroy an object and free resources
 void mlObjectDestroy(mlObject *obj) {
     if (!obj) return;

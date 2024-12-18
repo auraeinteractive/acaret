@@ -2,6 +2,7 @@
 #define OOP_BASE_H
 
 #include <stdbool.h>
+#include <stddef.h>
 
 // Event callback typedef
 typedef void (*mlEventCallback)(void *instance, void *data);
@@ -40,6 +41,7 @@ typedef struct mlObject {
 
 // Function prototypes
 mlObject *mlObjectCreate(void *parent);      // Create a view object (inherits from parent)
+void *mlObjectCreateWithSize(size_t base_size, size_t derived_size, void *parent); // Do it with size
 void mlObjectDestroy(mlObject *obj);             // Destroy the object and free resources
 void mlAddEvent(mlObject *obj, char *event_name, mlEventCallback callback); // Add an event to object
 void mlDoMethod(mlObject *obj, char *method, void *data);  // Call a method on an object
