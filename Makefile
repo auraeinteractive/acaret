@@ -14,8 +14,14 @@ OBJ_FILES := $(SRC_FILES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 # Output executable
 OUTPUT = aide
 
+# Assets directory (excluding libs)
+ASSETS_DIR = assets
+ACE_DIR = $(ASSETS_DIR)/libs/ace
+ACE_REPO = https://github.com/ajaxorg/ace-builds.git
+ACE_BRANCH = master
+
 # Default target
-all: $(OUTPUT)
+all: $(OUTPUT) ace
 
 # Link object files to create the executable
 $(OUTPUT): $(OBJ_FILES)
@@ -26,10 +32,28 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(dir $@)  # Ensure the obj directory exists
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Clean up object files and executable
+# Clone Ace editor repository and checkout the src-min-noconflict folder
+ace:
+	@if [ ! -d "$(ACE_DIR)" ]; then \
+		echo "Cloning Ace editor repository..."; \
+		git clone --depth 1 --branch $(ACE_BRANCH) $(ACE_REPO) $(ACE_DIR); \
+		echo "Cloning completed."; \
+		echo "Copying src-min-noconflict to $(ACE_DIR)"; \
+		cp -r $(ACE_DIR)/src-min-noconflict/* $(ACE_DIR)/; \
+		rm -rf $(ACE_DIR)/src-min-noconflict; \
+		echo "Ace editor installed into $(ACE_DIR)."; \
+	else \
+		echo "Ace editor is already cloned."; \
+	fi
+
+# Clean up object files, executable, and Ace editor
 clean:
 	@rm -rf $(OBJ_DIR) $(OUTPUT)
+	@test -d $(ACE_DIR) && rm -rf $(ACE_DIR) || echo "No Ace directory to clean."
 
 # Optionally, add a distclean rule to remove all files except the source
 distclean: clean
 	@rm -f Makefile
+
+.PHONY: all clean distclean ace
+
