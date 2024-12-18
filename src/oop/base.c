@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 // In base.c
-mlObject *mlCreateObject(void *parent) {
+mlObject *mlObjectCreate(void *parent) {
     mlObject *obj = (mlObject *)malloc(sizeof(mlObject));
     obj->parent = parent;
     obj->method_table = NULL;
@@ -17,7 +17,7 @@ mlObject *mlCreateObject(void *parent) {
 }
 
 // Destroy an object and free resources
-void mlDestroyObject(mlObject *obj) {
+void mlObjectDestroy(mlObject *obj) {
     if (!obj) return;
 
     // Free methods (if dynamically allocated)

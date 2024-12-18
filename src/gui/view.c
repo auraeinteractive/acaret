@@ -100,40 +100,73 @@ void mlViewSetHTML(void *instance, void *data) {
     printf( "[HTML] Parsing file: %s\n", path );
 
     char *content = malloc(size + 1); // +1 for null terminator
-    if (content) {
+    if (!content) {
+        fprintf(stderr, "Failed to allocate memory for file content\n");
+        fclose(file);
+        free(path);
+        return;
+    }
     
-        printf( " > Now parsing markup.\n" );
-        fread(content, 1, size, file);
-        content[size] = '\0'; // Null-terminate the string
+    printf( " > Now parsing markup.\n" );
+    fread(content, 1, size, file);
+    content[size] = '\0'; // Null-terminate the string
 
-        // Handle local assets via data URI
-        char *modified_content = strdup(content);
-        char *start = modified_content;
-        while (1) {
-            // Look for both src="data://" and href="data://"
-            char *src_start = strstr(start, "src=\"data://");
-            char *href_start = strstr(start, "href=\"data://");
-            if (src_start == NULL && href_start == NULL) break;
+    // Handle local assets via data URI
+    char *modified_content = strdup(content);
+    if (!modified_content) {
+        fprintf(stderr, "Failed to allocate memory for modified content\n");
+        free(content);
+        fclose(file);
+        free(path);
+        return;
+    }
 
-            char *current = (src_start < href_start || href_start == NULL) ? src_start : href_start;
-            char *end = strchr(current, '"');
-            if (end) {
-                *end = '\0';
-                char *relative_path = current + (current == src_start ? 12 : 13); // Skip "src=\"data://" or "href=\"data://"
-                printf( " > Found something %s\n", relative_path );
-                
-                char *full_path = malloc(PATH_MAX + strlen(relative_path) + 1);
-                if (!full_path) {
-                    fprintf(stderr, "Failed to allocate memory for full_path.\n");
-                    free(modified_content);
-                    free(content);
-                    fclose(file);
-                    free(path);
-                    return;
-                }
+    char *start = modified_content;
+    while (start && *start) {  // Check if start is valid and not at end
+        // Look for both src="data://" and href="data://"
+        char *src_start = strstr(start, "src=\"data://");
+        char *href_start = strstr(start, "href=\"data://");
+        if (src_start == NULL && href_start == NULL) break;
 
-                if (snprintf(full_path, PATH_MAX + strlen(relative_path) + 1, "%s/assets/%s", cwd, relative_path) < 0) {
-                    fprintf(stderr, "snprintf failed\n");
+        char *current = (src_start < href_start || href_start == NULL) ? src_start : href_start;
+        char *end = strchr(current, '"');
+        if (end) {
+            *end = '\0';
+            char *relative_path = current + (current == src_start ? 12 : 13); // Skip "src=\"data://" or "href=\"data://"
+            printf( " > Found something %s\n", relative_path );
+            
+            char *full_path = malloc(PATH_MAX + strlen(relative_path) + 1);
+            if (!full_path) {
+                fprintf(stderr, "Failed to allocate memory for full_path.\n");
+                free(modified_content);
+                free(content);
+                fclose(file);
+                free(path);
+                return;
+            }
+
+            if (snprintf(full_path, PATH_MAX + strlen(relative_path) + 1, "%s/assets/%s", cwd, relative_path) < 0) {
+                fprintf(stderr, "snprintf failed\n");
+                free(full_path);
+                free(modified_content);
+                free(content);
+                fclose(file);
+                free(path);
+                return;
+            }
+
+            char *data_uri = createDataURI(full_path);
+            if (data_uri) {
+                printf( " > Now parsing asset: %s.\n", data_uri );
+            
+                // Replace the data:// with the actual data URI
+                size_t length_to_replace = strlen(current == src_start ? "src=\"data://" : "href=\"data://") + strlen(relative_path);
+                memmove(current, current + length_to_replace, strlen(current + length_to_replace) + 1);
+                size_t insert_point = current - modified_content;
+                char *new_content = malloc(strlen(modified_content) + strlen(data_uri) + 1);
+                if (!new_content) {
+                    fprintf(stderr, "Failed to allocate memory for new_content.\n");
+                    free(data_uri);
                     free(full_path);
                     free(modified_content);
                     free(content);
@@ -141,50 +174,26 @@ void mlViewSetHTML(void *instance, void *data) {
                     free(path);
                     return;
                 }
-
-                char *data_uri = createDataURI(full_path);
-                if (data_uri) {
-                    printf( " > Now parsing asset: %s.\n", data_uri );
-                
-                    // Replace the data:// with the actual data URI
-                    size_t length_to_replace = strlen(current == src_start ? "src=\"data://" : "href=\"data://") + strlen(relative_path);
-                    memmove(current, current + length_to_replace, strlen(current + length_to_replace) + 1);
-                    size_t insert_point = current - modified_content;
-                    char *new_content = malloc(strlen(modified_content) + strlen(data_uri) + 1);
-                    if (!new_content) {
-                        fprintf(stderr, "Failed to allocate memory for new_content.\n");
-                        free(data_uri);
-                        free(full_path);
-                        free(modified_content);
-                        free(content);
-                        fclose(file);
-                        free(path);
-                        return;
-                    }
-                    strncpy(new_content, modified_content, insert_point);
-                    new_content[insert_point] = '\0';
-                    strcat(new_content, data_uri);
-                    strcat(new_content, modified_content + insert_point);
-                    free(modified_content);
-                    modified_content = new_content;
-                    free(data_uri);
-                }
-                free(full_path);
-                start = end + 1; // Move past the replaced part
-            } else {
-                printf( " > Could not find anything.\n" );
-                break;
+                strncpy(new_content, modified_content, insert_point);
+                new_content[insert_point] = '\0';
+                strcat(new_content, data_uri);
+                strcat(new_content, modified_content + insert_point);
+                free(modified_content);
+                modified_content = new_content;
+                free(data_uri);
             }
+            free(full_path);
+            start = end + 1; // Move past the replaced part
+        } else {
+            printf( " > Could not find anything.\n" );
+            break;
         }
-        
-        printf( " > Done parsing markup.\n" );
-
-        webkit_web_view_load_html(view->webview, modified_content, NULL);
-        free(modified_content);
-    } else {
-        fprintf(stderr, "Failed to allocate memory for file content\n");
     }
+    
+    printf( " > Done parsing markup.\n" );
 
+    webkit_web_view_load_html(view->webview, modified_content, NULL);
+    free(modified_content);
     free(content);
     fclose(file);
     free(path);
@@ -215,15 +224,27 @@ void mlViewOnWindowClosed(void *instance, void *data) {
 
 // Create a new view (this function should be called from the main program)
 mlObject *mlViewCreate(mlObject *parent) {
-    mlView *view = (mlView *)mlCreateObject(parent);
+    mlView *view = (mlView *)mlObjectCreate(parent);
+    if (!view) {
+        fprintf(stderr, "Failed to create mlView object\n");
+        return NULL;
+    }
 
     // Initialize GTK and create the window
     view->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    if (!view->window) {
+        fprintf(stderr, "Failed to create GTK window\n");
+        return NULL;
+    }
     gtk_window_set_title(GTK_WINDOW(view->window), "WebKitGTK View");
     gtk_window_set_default_size(GTK_WINDOW(view->window), 1280, 800);
     
     // Create the WebView
     view->webview = WEBKIT_WEB_VIEW(webkit_web_view_new());
+    if (!view->webview) {
+        fprintf(stderr, "Failed to create WebKit WebView\n");
+        return NULL;
+    }
     webkit_web_view_load_html(view->webview, "<html><body><h1>Hello, World!</h1></body></html>", NULL);
     gtk_container_add(GTK_CONTAINER(view->window), GTK_WIDGET(view->webview));
 
@@ -234,16 +255,16 @@ mlObject *mlViewCreate(mlObject *parent) {
     g_signal_connect(G_OBJECT(view->window), "destroy", G_CALLBACK(mlViewOnWindowClosed), (gpointer)view);
 
     // Set the method table for the view
-    mlMethodEntry *method_table = malloc(sizeof(mlMethodEntry) * 2);
+    mlMethodEntry *method_table = malloc(sizeof(mlMethodEntry) * 3);  // Corrected size
     if (method_table) {
         method_table[0] = (mlMethodEntry){"setSize", mlViewSetSize};
         method_table[1] = (mlMethodEntry){"show", mlViewShow};
-        method_table[2] = (mlMethodEntry){"setHTML", mlViewSetHTML}; // New method
+        method_table[2] = (mlMethodEntry){"setHTML", mlViewSetHTML}; 
         view->base.method_table = method_table;
         view->base.method_count = 3;
     } else {
         fprintf(stderr, "Failed to allocate memory for method table\n");
-        // Handle error appropriately
+        // Handle error appropriately, perhaps return NULL or use a default method table
     }
 
     return (mlObject *)view;

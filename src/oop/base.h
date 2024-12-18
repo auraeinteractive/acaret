@@ -39,8 +39,8 @@ typedef struct mlObject {
 } mlObject;
 
 // Function prototypes
-mlObject *mlCreateObject(void *parent);      // Create a view object (inherits from parent)
-void mlDestroyObject(mlObject *obj);             // Destroy the object and free resources
+mlObject *mlObjectCreate(void *parent);      // Create a view object (inherits from parent)
+void mlObjectDestroy(mlObject *obj);             // Destroy the object and free resources
 void mlAddEvent(mlObject *obj, char *event_name, mlEventCallback callback); // Add an event to object
 void mlDoMethod(mlObject *obj, char *method, void *data);  // Call a method on an object
 void mlDoSuperMethod(mlObject *obj, char *method, void *data);  // Call a method on the parent object
