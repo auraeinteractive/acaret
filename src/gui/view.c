@@ -137,11 +137,6 @@ void mlViewSetHTML(void *instance, void *data) {
 
     if (modified_content != NULL) {
         printf("Markup was: %s\n", modified_content);
-
-        // Enable local file access for WebKitGTK+
-        //WebKitSettings *settings = webkit_web_view_get_settings(view->webview);
-        //webkit_settings_set_allow_file_access_from_file_urls(settings, TRUE);
-
         webkit_web_view_load_html(view->webview, modified_content, NULL);
 
         // Check if there's any error loading the content
