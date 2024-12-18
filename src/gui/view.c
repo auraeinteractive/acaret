@@ -269,3 +269,27 @@ mlObject *mlViewCreate(mlObject *parent) {
 
     return (mlObject *)view;
 }
+
+// Destroy a view object and free resources
+void mlViewDestroy(mlObject *obj) {
+    if (!obj) return;
+
+    mlView *view = (mlView *)obj;
+
+    // Destroy the GTK window if it exists
+    if (view->window) {
+        gtk_widget_destroy(view->window);
+        view->window = NULL;
+    }
+
+    // WebView cleanup (if needed)
+    if (view->webview) {
+        // No explicit destroy function is needed for WebKitGTK web views, as
+        // GTK widget destruction will handle it. Nullify the pointer for safety.
+        view->webview = NULL;
+    }
+
+    // Call the base destroy function to clean up common resources
+    mlObjectDestroy(obj);
+}
+

@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
     mlMain();
 
     // Clean up by destroying the view object
-    mlObjectDestroy(view);
+    mlViewDestroy(view);
 
     return 0;
 }

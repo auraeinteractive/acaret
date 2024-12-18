@@ -24,5 +24,7 @@ void mlViewSetHTML(void *instance, void *data);
 // Event handling methods
 void mlViewOnWindowClosed(void *instance, void *data);
 
+void mlViewDestroy(mlObject *instance);
+
 #endif // GUI_VIEW_H
 
