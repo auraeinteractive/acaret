@@ -3,14 +3,16 @@
     <head>
         <title>AIDE</title>
         <link rel="stylesheet" href="data://main.css"/>
+        <script type="text/javascript" src="data://ai/conversation.js"></script>
     </head>
-    <body>
-        <h1>
-            Hello world there!
-        </h1>
-        <p>
-            More cool stuff soon!
-        </p>
+    <body onload="window.convos = new Conversation( { messageContainer: document.querySelector( '.messages' ) } )">
+        <div id="chat">
+            <div class="messages">
+            </div>
+            <div class="chat">
+                <input type="text" value="" onkeydown="if( event.which == 13 ){ window.convos.sendMessage(this.value); this.value = ''; }"/>
+            </div>
+        </div>
         
         <pre id="editor">function foo(items) {
             var i;
