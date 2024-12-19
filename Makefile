@@ -20,6 +20,10 @@ ACE_DIR = $(ASSETS_DIR)/libs/ace
 ACE_REPO = https://github.com/ajaxorg/ace-builds.git
 ACE_BRANCH = master
 
+# Temporary directory for tracking
+TMP_DIR = tmp
+ACE_CHECKSUM_FILE = $(TMP_DIR)/ace_checksum
+
 # Default target
 all: $(OUTPUT) ace
 
@@ -32,8 +36,11 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(dir $@)  # Ensure the obj directory exists
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Clone Ace editor repository and checkout the src-min-noconflict folder
-ace:
+# Clone Ace editor repository only if needed
+ace: $(ACE_CHECKSUM_FILE)
+
+$(ACE_CHECKSUM_FILE):
+	@mkdir -p $(TMP_DIR)
 	@if [ ! -d "$(ACE_DIR)" ]; then \
 		echo "Cloning Ace editor repository..."; \
 		git clone --depth 1 --branch $(ACE_BRANCH) $(ACE_REPO) $(ACE_DIR); \
@@ -41,15 +48,34 @@ ace:
 		echo "Copying src-min-noconflict to $(ACE_DIR)"; \
 		cp -r $(ACE_DIR)/src-min-noconflict/* $(ACE_DIR)/; \
 		rm -rf $(ACE_DIR)/src-min-noconflict; \
+		du -sb $(ACE_DIR) | cut -f1 > $(ACE_CHECKSUM_FILE); \
 		echo "Ace editor installed into $(ACE_DIR)."; \
 	else \
-		echo "Ace editor is already cloned."; \
+		CURRENT_SIZE=$$(du -sb $(ACE_DIR) | cut -f1); \
+		SAVED_SIZE=$$(cat $(ACE_CHECKSUM_FILE) 2>/dev/null || echo 0); \
+		if [ "$$CURRENT_SIZE" != "$$SAVED_SIZE" ]; then \
+			echo "Ace directory exists but size mismatch. Reinstalling..."; \
+			rm -rf $(ACE_DIR); \
+			$(MAKE) ace; \
+		else \
+			echo "Ace editor is already up-to-date."; \
+		fi \
 	fi
 
 # Clean up object files, executable, and Ace editor
+# Clean up object files, executable, and Ace editor
 clean:
 	@rm -rf $(OBJ_DIR) $(OUTPUT)
-	@test -d $(ACE_DIR) && rm -rf $(ACE_DIR) || echo "No Ace directory to clean."
+	@if [ -d "$(ACE_DIR)" ]; then \
+		rm -rf $(ACE_DIR); \
+	else \
+		echo "No Ace directory to clean."; \
+	fi
+	@if [ -f "$(ACE_CHECKSUM_FILE)" ]; then \
+		rm -f $(ACE_CHECKSUM_FILE); \
+	else \
+		echo "No checksum file to clean."; \
+	fi
 
 # Optionally, add a distclean rule to remove all files except the source
 distclean: clean

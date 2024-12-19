@@ -133,10 +133,10 @@ void mlViewSetHTML(void *instance, void *data) {
         free(full_path);
     }
 
-    printf(" > Done parsing markup.\n");
+    //printf(" > Done parsing markup.\n");
 
     if (modified_content != NULL) {
-        printf("Markup was: %s\n", modified_content);
+        //printf("Markup was: %s\n", modified_content);
         webkit_web_view_load_html(view->webview, modified_content, NULL);
 
         // Check if there's any error loading the content
@@ -192,7 +192,7 @@ mlObject *mlViewCreate(mlObject *parent) {
         free(view); // Clean up memory
         return NULL;
     }
-    gtk_window_set_title(GTK_WINDOW(view->window), "WebKitGTK View");
+    gtk_window_set_title(GTK_WINDOW(view->window), "Aide");
     gtk_window_set_default_size(GTK_WINDOW(view->window), 1280, 800);
 
     // Create the WebView
