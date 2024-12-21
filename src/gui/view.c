@@ -177,8 +177,17 @@ void mlViewOnWindowClosed(void *instance, void *data) {
     }
 }
 
-// Redirect the request from one protocol to another
+int globalMessage = 1;
+
 static void on_uri_scheme_request(WebKitURISchemeRequest *request, gpointer user_data) {
+    // Get the WebKitWebView passed as user_data
+    WebKitWebView *web_view = WEBKIT_WEB_VIEW(request);
+
+    if (!web_view) {
+        g_warning("WebKitWebView is NULL");
+        return;
+    }
+
     const gchar *uri = webkit_uri_scheme_request_get_uri(request);
     printf("Got a request: %s\n", uri);
 
@@ -189,7 +198,7 @@ static void on_uri_scheme_request(WebKitURISchemeRequest *request, gpointer user
         gchar *http_url = g_strndup(uri + strlen("ihttp://"), strlen(uri) - strlen("ihttp://"));
         gchar *host_port = http_url;
         gchar *path = strchr(http_url, '/');
-
+        
         if (path) {
             *path = '\0';  // Separate host:port and path
             path++;        // Move past the '/'
@@ -207,51 +216,26 @@ static void on_uri_scheme_request(WebKitURISchemeRequest *request, gpointer user
         printf("Host and port: %s\n", host_port);
         printf("Path: %s\n", path);
 
-        // Get the raw HTTP request data (this includes the body)
+        // Get the raw HTTP request body
         GInputStream *body_input_stream = webkit_uri_scheme_request_get_http_body(request);
-        if (!body_input_stream) {
-            printf("No body data found.\n");
+        GByteArray *body_data = g_byte_array_new();
+        gchar buffer[1024];
+        gssize bytes_read;
+
+        // Read the body in chunks
+        while ((bytes_read = g_input_stream_read(body_input_stream, buffer, sizeof(buffer), NULL, &error)) > 0) {
+            g_byte_array_append(body_data, (const guint8 *)buffer, bytes_read);
+        }
+
+        if (error) {
+            fprintf(stderr, "Error reading POST body: %s\n", error->message);
+            g_error_free(error);
+            g_byte_array_free(body_data, TRUE);
+            g_free(http_url);
             return;
         }
 
-        // Read the body data in chunks
-        GError *read_error = NULL;
-        gsize chunk_size = 1024;  // Define a reasonable chunk size (e.g., 1KB)
-        gchar *body_data = g_malloc(chunk_size);  // Start with a small buffer
-        gsize total_size = 0;
-
-        while (TRUE) {
-            // Read the data in chunks
-            gsize bytes_read = g_input_stream_read(body_input_stream, body_data + total_size, chunk_size, &read_error, NULL);
-
-            if (bytes_read == 0) {
-                // No more data available
-                break;
-            }
-
-            if (read_error) {
-                fprintf(stderr, "Error reading POST body: %s\n", read_error->message);
-                g_error_free(read_error);
-                g_free(body_data);
-                return;
-            }
-
-            total_size += bytes_read;
-
-            // If the buffer is full, reallocate a larger buffer to hold more data
-            if (total_size >= chunk_size) {
-                chunk_size *= 2;  // Double the buffer size
-                body_data = g_realloc(body_data, chunk_size);
-            }
-        }
-
-        // Null-terminate body_data for safety
-        if (total_size > 0) {
-            body_data[total_size] = '\0';  // Null-terminate the buffer
-            printf("Looking at body: %s\n", body_data);
-        }
-
-        // Establish the TCP connection to the server
+        // Establish the TCP connection to the upstream server
         GSocketClient *client = g_socket_client_new();
         GSocketConnection *connection = g_socket_client_connect_to_host(client, host_port, port, NULL, &error);
 
@@ -259,65 +243,76 @@ static void on_uri_scheme_request(WebKitURISchemeRequest *request, gpointer user
             GOutputStream *output_stream = g_io_stream_get_output_stream(G_IO_STREAM(connection));
             GInputStream *input_stream = g_io_stream_get_input_stream(G_IO_STREAM(connection));
 
-            // Create the full HTTP request header (without any extra headers you don't need)
-            gchar *http_request = g_strdup_printf("POST /%s HTTP/1.1\r\nHost: %s\r\nContent-Type: application/json\r\nContent-Length: %zu\r\nConnection: close\r\n\r\n", path, host_port, total_size);
-            
-            printf("Sending data: %s\n", http_request);
+            // Create the HTTP request headers
+            gchar *http_request = g_strdup_printf(
+                "POST /%s HTTP/1.1\r\n"
+                "Host: %s\r\n"
+                "Content-Type: application/json\r\n"
+                "Content-Length: %u\r\n"
+                "Connection: close\r\n\r\n",
+                path, host_port, body_data->len
+            );
 
-            // Send the HTTP request headers (skip header processing)
-            gsize bytes_written = g_output_stream_write(output_stream, http_request, strlen(http_request), NULL, &error);
-            if (bytes_written < strlen(http_request)) {
+            printf("Sending request: %s\n", http_request);
+
+            // Send the HTTP request headers
+            if (g_output_stream_write(output_stream, http_request, strlen(http_request), NULL, &error) < strlen(http_request)) {
                 fprintf(stderr, "Error sending HTTP headers: %s\n", error->message);
                 g_error_free(error);
                 g_free(http_request);
-                g_free(body_data);
+                g_byte_array_free(body_data, TRUE);
                 return;
             }
             g_free(http_request);
 
-            // Send the POST body data
-            gsize bytes_written_body = g_output_stream_write(output_stream, body_data, total_size, NULL, &error);
-            if (bytes_written_body < total_size) {
-                fprintf(stderr, "Error sending POST body: %s\n", error->message);
+            // Send the POST body
+            if (body_data->len > 0) {
+                if (g_output_stream_write(output_stream, body_data->data, body_data->len, NULL, &error) < body_data->len) {
+                    fprintf(stderr, "Error sending POST body: %s\n", error->message);
+                    g_error_free(error);
+                    g_byte_array_free(body_data, TRUE);
+                    return;
+                }
+            }
+            g_byte_array_free(body_data, TRUE);
+
+            // Stream the response back to WebKit in chunks
+            ++globalMessage;
+            while ((bytes_read = g_input_stream_read(input_stream, buffer, sizeof(buffer), NULL, &error)) > 0) {
+                // Create a JavaScript command to send this chunk
+                gchar *js_command = g_strdup_printf(
+                    "handleStreamData('%d', '%s');",
+                    globalMessage,
+                    g_base64_encode(buffer, bytes_read)  // Base64 encode the chunk for safe JavaScript transfer
+                );
+
+                // Evaluate JavaScript in the WebView to handle the chunk
+                webkit_web_view_evaluate_javascript((WebKitWebView *)user_data, 
+                                                    js_command, 
+                                                    -1,  // -1 means the length is determined automatically
+                                                    NULL, // world_name (NULL for default)
+                                                    NULL, // source_uri (NULL for no source)
+                                                    NULL, // cancellable (no cancelation)
+                                                    NULL, // callback (no callback needed)
+                                                    NULL  // user_data (no user data)
+                );
+                g_free(js_command);
+            }
+
+            if (error) {
+                fprintf(stderr, "Error reading response: %s\n", error->message);
+                webkit_uri_scheme_request_finish_error(request, error);
                 g_error_free(error);
-                g_free(body_data);
-                return;
             }
-
-            // Now read and stream the server's response to WebKit as SSE
-            gchar *response_data = g_malloc(8192);  // Buffer for response
-            gsize bytes_read = 0;
-
-            // We can handle the response manually using the appropriate headers
-            // Use the "application/json" for simplicity, but for SSE it should be text/event-stream
-            gchar *headers = g_strdup("Content-Type: text/event-stream\nCache-Control: no-cache\nConnection: keep-alive\n");
-
-            // Stream data as SSE events (data: <response> format)
-            while ((bytes_read = g_input_stream_read(input_stream, response_data, 8192, NULL, &error)) > 0) {
-                // Format the response data for SSE
-                gchar *formatted_data = g_strdup_printf("data: %s\n\n", response_data);
-
-                // Send the formatted data back as SSE (here we are creating a new GMemoryInputStream)
-                webkit_uri_scheme_request_finish(request, g_memory_input_stream_new_from_data(formatted_data, strlen(formatted_data), NULL), strlen(formatted_data), "text/event-stream");
-
-                g_free(formatted_data);
-
-                // Optionally, add a small delay to simulate real-time streaming
-                g_usleep(100000);  // Sleep for 100ms to simulate chunked streaming
-            }
-
-            // After streaming is done, send a final 'DONE' message
-            webkit_uri_scheme_request_finish(request, g_memory_input_stream_new_from_data("data: [DONE]\n\n", 13, NULL), 13, "text/event-stream");
-
-            g_free(response_data);
         } else {
-            fprintf(stderr, "Error connecting to HTTP server: %s\n", error->message);
+            fprintf(stderr, "Error connecting to server: %s\n", error->message);
             webkit_uri_scheme_request_finish_error(request, error);
+            g_error_free(error);
         }
 
         g_object_unref(client);
         g_free(http_url);
-        g_free(body_data);
+
     } else {
         webkit_uri_scheme_request_finish_error(request, g_error_new_literal(G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, "Unsupported URI"));
     }
@@ -361,7 +356,7 @@ mlObject *mlViewCreate(mlObject *parent) {
     webkit_settings_set_disable_web_security(settings, TRUE);
 
     WebKitWebContext *context = webkit_web_context_get_default();
-    webkit_web_context_register_uri_scheme(context, "ihttp", on_uri_scheme_request, NULL, NULL);
+    webkit_web_context_register_uri_scheme(context, "ihttp", on_uri_scheme_request, view->webview, NULL);
 
     webkit_web_view_load_html(view->webview, "<html><body><h1>Hello, World!</h1></body></html>", NULL);
     gtk_container_add(GTK_CONTAINER(view->window), GTK_WIDGET(view->webview));

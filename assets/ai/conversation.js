@@ -1,3 +1,58 @@
+function base64DecodeUtf8(base64) {
+    // Decode base64 string into a binary string
+    const decodedData = atob(base64);
+
+    // Convert the binary string into a Uint8Array (UTF-8 encoded bytes)
+    const bytes = new Uint8Array(decodedData.length);
+    for (let i = 0; i < decodedData.length; i++) {
+        bytes[i] = decodedData.charCodeAt(i);
+    }
+
+    // Convert the Uint8Array back to a string using TextDecoder (which automatically handles UTF-8)
+    const textDecoder = new TextDecoder('utf-8');
+    return textDecoder.decode(bytes);
+}
+
+// Handle the chunked data sent from C (via WebKit callback)
+let dataStr = '';
+let streamIdCurrent = null;
+let currentMsg = null;
+function handleStreamData(streamId, chunk) {
+    console.log("Received chunk for stream ID " + streamId);
+    const outputContainer = document.querySelector(".messages");
+    chunk = base64DecodeUtf8( chunk );
+    
+    if( streamIdCurrent != streamId )
+    {
+        currentMsg = document.createElement( 'div' );
+        outputContainer.appendChild(currentMsg);
+        currentMsg.className = 'message Assistant';
+        streamIdCurrent = streamId;
+    }
+    
+    let dataPos = chunk.indexOf( 'data: ' );
+    if( dataPos >= 0 )
+        chunk = chunk.substr( chunk.indexOf( 'data: ' ) + 6, chunk.length - ( dataPos + 6 ) );
+    
+    try
+    {
+        let js = JSON.parse( chunk );
+        
+        const textNode = document.createTextNode( js.choices[0].delta.content );
+        currentMsg.appendChild( textNode );
+    }
+    catch( e )
+    {
+        /*if( chunk.indexOf( 'data: [DONE]' ) != 0 )
+        {
+            console.log( 'Not json', chunk );
+            const outputContainer = document.getElementById("debug");
+            const textNode = document.createTextNode( chunk );
+            outputContainer.appendChild(textNode);
+        }*/
+    }
+}
+
 class Conversation
 {
     // Set up conversation object
@@ -59,60 +114,6 @@ class Conversation
                 console.error( 'Error with API request:', response.status, response.statusText );
                 return;
             }
-
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder( 'utf-8' );
-            let content = '';
-            let chunkContent = '';
-
-            while( true )
-            {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                // Decode the chunk to a string
-                const chunk = decoder.decode(value, { stream: true });
-                this.chunkBuffer += chunk; // Add chunk to buffer
-
-                // Try to process any full JSON blocks in the buffer
-                let startIndex = 0;
-                while( true )
-                {
-                    const dataStart = this.chunkBuffer.indexOf('data: ', startIndex);
-                    if (dataStart === -1) break; // No more "data:" chunks
-
-                    const dataEnd = this.chunkBuffer.indexOf('\n', dataStart);
-                    if (dataEnd === -1) break; // Incomplete chunk, wait for more data
-
-                    const jsonData = this.chunkBuffer.substring(dataStart + 6, dataEnd).trim(); // Extract JSON string
-
-                    try
-                    {
-                        const parsedData = JSON.parse( jsonData );
-                        if( parsedData.choices && parsedData.choices.length > 0 )
-                        {
-                            const choice = parsedData.choices[0].delta.content;
-                            if( choice )
-                            {
-                                chunkContent += choice;
-                                this.currentMessageElement.textContent = chunkContent; // Update the message element in real-time
-                            }
-                        }
-                    } 
-                    catch( e )
-                    {
-                        console.error('Error parsing JSON data:', e);
-                    }
-
-                    // Remove the processed data from the buffer
-                    startIndex = dataEnd + 1;
-                }
-
-                // Keep the unprocessed part of the buffer (in case it's a partial JSON object)
-                this.chunkBuffer = this.chunkBuffer.substring(startIndex);
-            }
-
-            console.log( 'Streaming complete:', content );
         }
         catch( error )
         {

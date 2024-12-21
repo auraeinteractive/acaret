@@ -4,6 +4,21 @@ body {
     overflow: hidden;
 }
 
+#debug
+{
+    margin: 0;
+    position: absolute;
+    top: 0;
+    left: calc(100% - 600px);
+    width: 300px;
+    height: 100%;
+    background: #440000;
+    color: white;
+    box-sizing: border-box;
+    z-index: 2;
+    display: none;
+}
+
 #editor {
     margin: 0;
     position: absolute;
@@ -34,6 +49,15 @@ body {
     right: 0px;
     bottom: 50px;
     padding: 10px;
+    box-sizing: border-box;
+}
+
+.messages .message
+{
+    border-radius: 5px;
+    background: white;
+    padding: 10px;
+    margin: 0 0 10px 0;
     box-sizing: border-box;
 }
 
