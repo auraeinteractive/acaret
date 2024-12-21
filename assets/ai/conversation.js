@@ -1,21 +1,24 @@
-class Conversation {
+class Conversation
+{
     // Set up conversation object
-    constructor(options = false) {
+    constructor( options = false )
+    {
         this.conversationId = null;
         this.eventSourceUrl = null;
-        this.messageContainer = document.getElementById('message-container');
-        if (options.messageContainer)
+        this.messageContainer = document.getElementById( 'message-container' );
+        if( options.messageContainer )
             this.messageContainer = options.messageContainer;
         this.currentMessageElement = null;
         this.chunkBuffer = ''; // To store incomplete chunks
     }
 
     // Send a message
-    async sendMessage(messageStr, options = false) {
-        const messageElement = document.createElement('div');
+    async sendMessage( messageStr, options = false )
+    {
+        const messageElement = document.createElement( 'div' );
         messageElement.className = 'message user';
         messageElement.textContent = messageStr;
-        this.messageContainer.appendChild(messageElement);
+        this.messageContainer.appendChild( messageElement );
         this.currentMessageElement = messageElement;
 
         // Define the API endpoint (use "ihttp" as per your system)
@@ -36,33 +39,34 @@ class Conversation {
                 },
                 body: JSON.stringify({
                     model: 'qwen2.5-coder', // Specify the model
-                    messages: [{
+                    messages: [ {
                         role: 'system',
                         content: 'You are excellent in answering.'
                     }, {
                         role: 'user',
                         content: messageStr
-                    }],
+                    } ],
                     system_prompt: systemPrompt,
                     repeat_penalty: 1.2,
                     repeat_last_n: 1024,
                     temperature: 0.1,
                     cache_prompt: true,
                     stream: true // Enable streaming
-                })
-            });
+                } )
+            } );
 
-            if (!response.ok) {
-                console.error('Error with API request:', response.status, response.statusText);
+            if( !response.ok ){
+                console.error( 'Error with API request:', response.status, response.statusText );
                 return;
             }
 
             const reader = response.body.getReader();
-            const decoder = new TextDecoder('utf-8');
+            const decoder = new TextDecoder( 'utf-8' );
             let content = '';
             let chunkContent = '';
 
-            while (true) {
+            while( true )
+            {
                 const { done, value } = await reader.read();
                 if (done) break;
 
@@ -72,7 +76,8 @@ class Conversation {
 
                 // Try to process any full JSON blocks in the buffer
                 let startIndex = 0;
-                while (true) {
+                while( true )
+                {
                     const dataStart = this.chunkBuffer.indexOf('data: ', startIndex);
                     if (dataStart === -1) break; // No more "data:" chunks
 
@@ -81,16 +86,21 @@ class Conversation {
 
                     const jsonData = this.chunkBuffer.substring(dataStart + 6, dataEnd).trim(); // Extract JSON string
 
-                    try {
-                        const parsedData = JSON.parse(jsonData);
-                        if (parsedData.choices && parsedData.choices.length > 0) {
+                    try
+                    {
+                        const parsedData = JSON.parse( jsonData );
+                        if( parsedData.choices && parsedData.choices.length > 0 )
+                        {
                             const choice = parsedData.choices[0].delta.content;
-                            if (choice) {
+                            if( choice )
+                            {
                                 chunkContent += choice;
                                 this.currentMessageElement.textContent = chunkContent; // Update the message element in real-time
                             }
                         }
-                    } catch (e) {
+                    } 
+                    catch( e )
+                    {
                         console.error('Error parsing JSON data:', e);
                     }
 
@@ -102,9 +112,11 @@ class Conversation {
                 this.chunkBuffer = this.chunkBuffer.substring(startIndex);
             }
 
-            console.log('Streaming complete:', content);
-        } catch (error) {
-            console.error('Error during fetch:', error);
+            console.log( 'Streaming complete:', content );
+        }
+        catch( error )
+        {
+            console.error( 'Error during fetch:', error );
         }
     }
 }
