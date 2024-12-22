@@ -1,6 +1,13 @@
+// Main GUI logic
+
 function initializeGUI()
 {
-    let tabButtons = document.querySelector( '#leftbar' ).getElementsByTagName( 'button' );
+    initTabs( 'leftbar' );
+}
+
+function initTabs( element )
+{
+    let tabButtons = document.querySelector( '#' + element ).getElementsByTagName( 'button' );
     for( let a = 0; a < tabButtons.length; a++ )
     {
         tabButtons[a].onclick = () => {
@@ -15,3 +22,4 @@ function initializeGUI()
         }
     }
 }
+

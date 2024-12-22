@@ -60,13 +60,6 @@ function handleStreamData(streamId, chunk = false) {
     }
     catch( e )
     {
-        /*if( chunk.indexOf( 'data: [DONE]' ) != 0 )
-        {
-            console.log( 'Not json', chunk );
-            const outputContainer = document.getElementById("debug");
-            const textNode = document.createTextNode( chunk );
-            outputContainer.appendChild(textNode);
-        }*/
     }
 }
 
