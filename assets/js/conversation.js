@@ -42,7 +42,6 @@ function scrollDownMessages()
 let dataStr = '';
 let streamIdCurrent = null;
 let currentMsg = null;
-let streamTimeout = 0;
 function handleStreamData(streamId, chunk = false) {
     const outputContainer = document.querySelector(".messages");
     chunk = base64DecodeUtf8( chunk );
