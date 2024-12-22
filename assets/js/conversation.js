@@ -38,28 +38,38 @@ function handleStreamData(streamId, chunk = false) {
         streamIdCurrent = streamId;
     }
     
-    // Complete
-    if( chunk === false )
-    {
-        let ctx = messageContext[ currentContext ];
-        ctx.push( { role: 'assistant', content: currentMsg.innerText } );
-        return;
-    }
-    
     let dataPos = chunk.indexOf( 'data: ' );
     if( dataPos >= 0 )
         chunk = chunk.substr( chunk.indexOf( 'data: ' ) + 6, chunk.length - ( dataPos + 6 ) );
     
-    try
+    let chunks = chunk.split( "\n\n" );
+    for( let b = 0; b < chunks.length; chunks++ )
     {
-        let js = JSON.parse( chunk );
-        
-        const textNode = document.createTextNode( js.choices[0].delta.content );
-        currentMsg.appendChild( textNode );
-        scrollDownMessages();
-    }
-    catch( e )
-    {
+        let ch = chunks[ b ];
+        try
+        {
+            let js = JSON.parse( ch );
+            
+            if( js.choices[0].delta.content && js.choices[0].delta.content.length )
+            {
+                const textNode = document.createTextNode( js.choices[0].delta.content );
+                currentMsg.appendChild( textNode );
+                scrollDownMessages();
+            }
+            
+            //document.getElementById( 'page_debug' ).innerHTML += JSON.stringify( js.choices[0] );
+            
+            // We're done
+            if( js.choices[0].finish_reason == 'stop' )
+            {
+                let ctx = messageContext[ currentContext ];
+                ctx.push( { role: 'assistant', content: currentMsg.innerText } );
+            }
+        }
+        catch( e )
+        {
+            //document.getElementById( 'page_debug' ).innerHTML += 'ERROR' + "\n" + ch;
+        }
     }
 }
 
@@ -107,6 +117,13 @@ class Conversation
 
         try {
         
+            let messages = [ {
+                role: 'system',
+                content: 'You are excellent in answering in a relevant way. Do not offer any information that is not asked for.'
+            } ].concat( ctx );
+            
+            document.getElementById( 'page_debug' ).innerHTML = JSON.stringify( messages );
+        
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: {
@@ -114,10 +131,7 @@ class Conversation
                 },
                 body: JSON.stringify({
                     model: 'qwen2.5-coder', // Specify the model
-                    messages: [ {
-                        role: 'system',
-                        content: 'You are excellent in answering.'
-                    } ].concat( ctx ),
+                    messages: messages,
                     system_prompt: systemPrompt,
                     repeat_penalty: 1.2,
                     repeat_last_n: 1024,

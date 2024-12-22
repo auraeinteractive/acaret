@@ -111,24 +111,70 @@ body {
     left: 50px;
     right: 0px;
     background: var(--panel-background);
+    text-align: right;
+    box-sizing: border-box;
+}
+
+#bottombar .button
+{
+    display: inline-block;
+    height: 34px;
+    border: 0;
+    background: transparent;
+    color: white;
+    line-height: 34px;
+    padding: 0 10px 0 42px;
+    box-sizing: border-box;
+    position: relative;
+    opacity: 0.8;
+    border-left: 1px solid #00000055;
+}
+
+#bottombar .button:hover
+{
+    opacity: 1;
+    background-color: #44444488;
+}
+
+#bottombar .btn-debug:before
+{
+    content: " ";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 22px;
+    height: 34px;
+    display: inline-block;
+    margin: 0 10px 0 10px;
+    background-image: url('feather/alert-triangle.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    filter: invert(1);
+    opacity: 0.5;
 }
 
 #debug
 {
+    z-index: 2;
+}
+
+#debug #page_debug.page.active
+{
     margin: 0;
     position: absolute;
-    top: 35px;
-    left: calc(100% - 600px);
-    width: 300px;
-    bottom: 35px;
-    background: #440000;
+    top: 0;
+    left: 50%;
+    width: 50%;
+    bottom: 0;
+    background: #440000aa;
     color: white;
     box-sizing: border-box;
     z-index: 2;
-    display: none;
+    padding: 20px;
 }
 
-#pages 
+#pages, #debug
 {
     margin: 0;
     position: absolute;
@@ -139,7 +185,7 @@ body {
     overflow: hidden;
 }
 
-#pages .page
+#pages .page, #debug .page
 {
     position: absolute;
     top: 0;
@@ -159,7 +205,7 @@ body {
     height: 100%;
 }
 
-#pages .page.active
+#pages .page.active, #debug .page.active
 {
     opacity: 1;
     pointer-events: all;
