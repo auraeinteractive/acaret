@@ -3,7 +3,7 @@
 function initializeGUI()
 {
     initTabs( 'leftbar' );
-    initTabs( 'debug' );
+    initTabs( 'bottombar' );
 }
 
 function initTabs( element )
@@ -15,9 +15,15 @@ function initTabs( element )
             if( tabButtons.length == 1 )
             {
                 if( tabButtons[a].classList.contains( 'active' ) )
+                {
                     tabButtons[a].classList.remove( 'active' );
+                    document.getElementById( tabButtons[a].id.split( 'tab_' ).join( 'page_' ) ).classList.remove( 'active' );
+                }
                 else
+                {
                     tabButtons[a].classList.add( 'active' );
+                    document.getElementById( tabButtons[a].id.split( 'tab_' ).join( 'page_' ) ).classList.add( 'active' );
+                }
                 return;
             }
             tabButtons[a].classList.add( 'active' );

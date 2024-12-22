@@ -299,13 +299,6 @@ static void on_uri_scheme_request(WebKitURISchemeRequest *request, gpointer user
                 g_free(js_command);
             }
             
-            // Set as complete
-            gchar *js_command = g_strdup_printf(
-                "handleStreamData('%d', %s);",
-                globalMessage,
-                "false"  // false = complete
-            );
-
             if (error) {
                 fprintf(stderr, "Error reading response: %s\n", error->message);
                 webkit_uri_scheme_request_finish_error(request, error);
