@@ -1,8 +1,116 @@
+:root
+{
+    --panel-background: #202020;
+}
+
+
 body {
-    background-color: #404040;
+    background-color: #303030;
     color: white;
     overflow: hidden;
     font-size: 15px;
+}
+
+#topbar
+{
+    position: absolute;
+    top: 0;
+    left: 50px;
+    right: 0px;
+    height: 34px;
+    background: var(--panel-background);
+}
+
+#leftbar
+{
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 50px;
+    height: 100%;
+    background: var(--panel-background);
+    
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#leftbar .button 
+{
+    display: flex;
+    flex-direction: column; 
+    align-items: center;
+    justify-content: center;
+    width: 50px; 
+    height: auto; 
+    border: none;
+    margin: 0;
+    cursor: pointer;
+    transform-origin: center;
+    background: transparent;
+    color: white;
+    opacity: 0.8;
+    border-bottom: 1px solid #00000055;
+    padding: 0 0 10px 0;
+}
+
+#leftbar .button > span 
+{
+    writing-mode: vertical-rl;
+    text-align: center;
+    transform: rotate(180deg);
+}
+
+#leftbar .button.active
+{
+    font-weight: bold;
+    opacity: 1;
+}
+
+#leftbar .button:hover
+{
+    opacity: 1;
+    background-color: #44444488;
+}
+
+#leftbar .button:before
+{
+    content: " ";
+    display: block;
+    width: 22px;
+    height: 22px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    filter: invert(1);
+    opacity: 0.5;
+    margin: 10px 0 10px 0;
+}
+
+#leftbar .button.btn-editor:before { background-image: url(feather/code.svg); }
+#leftbar .button.btn-contexts:before { background-image: url(feather/list.svg); }
+#leftbar .button.btn-flow-nodes:before { background-image: url(feather/hexagon.svg); }
+#leftbar .button.btn-ai-tools:before { background-image: url(feather/user.svg); }
+#leftbar .button.btn-version-control:before { background-image: url(feather/git-branch.svg); }
+#leftbar .button.btn-settings:before { background-image: url(feather/settings.svg); }
+
+#rightbar
+{
+    position: absolute; /* todo enable */
+    right: 0;
+    top: 0;
+    width: 0;
+    height: 100%;
+}
+
+#bottombar
+{
+    position: absolute;
+    bottom: 0;
+    height: 50px;
+    left: 50px;
+    right: 0px;
+    background: var(--panel-background);
 }
 
 #debug
@@ -20,24 +128,53 @@ body {
     display: none;
 }
 
-#editor {
+#pages 
+{
     margin: 0;
     position: absolute;
+    top: 35px;
+    bottom: 51px;
+    left: 51px;
+    width: calc(100% - 351px);
+    overflow: hidden;
+}
+
+#pages .page
+{
+    position: absolute;
     top: 0;
-    bottom: 0;
     left: 0;
-    width: calc(100% - 300px);
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    opacity: 0;
+}
+
+#pages .page #editor
+{
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+#pages .page.active
+{
+    opacity: 1;
+    pointer-events: all;
 }
 
 #chat
 {
     margin: 0;
     position: absolute;
-    top: 0;
+    top: 35px;
     left: calc(100% - 300px);
     width: 300px;
-    height: 100%;
-    background: #c0c0c0;
+    bottom: 51px;
+    background: var(--panel-background);
+    color: white;
     color: black;
     box-sizing: border-box;
 }
@@ -56,15 +193,17 @@ body {
 
 #chat .prompt
 {
-    width: 100%;
+    width: calc(100% - 10px);
+    height: calc(100% - 10px);
     top: 10px;
     left: 10px;
+    resize: hidden;
 }
 
 .messages .message
 {
     border-radius: 5px;
-    background: white;
+    background: rgba(255,255,255,0.8);
     padding: 10px;
     margin: 0 0 26px 0;
     box-sizing: border-box;
@@ -83,6 +222,7 @@ body {
     background-image: url('shapes/msg-me.svg');
     background-size: contain;
     background-repeat: no-repeat;
+    opacity: 0.8;
 }
 
 .messages .message.assistant:after
@@ -97,6 +237,7 @@ body {
     background-image: url('shapes/msg-you.svg');
     background-size: contain;
     background-repeat: no-repeat;
+    opacity: 0.8;
 }
 
 #chat .chat

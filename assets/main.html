@@ -4,8 +4,21 @@
         <title>AIDE</title>
         <link rel="stylesheet" href="data://main.css"/>
         <script type="text/javascript" src="data://ai/conversation.js"></script>
+        <script type="text/javascript" src="data://ai/gui-logic.js"></script>
     </head>
     <body onload="window.convos = new Conversation( { messageContainer: document.querySelector( '.messages' ) } )">
+        <div id="leftbar">
+            <button class="button btn-editor active"><span>Editor</span></button>
+            <button class="button btn-contexts"><span>Contexts</span></button>
+            <button class="button btn-flow-nodes"><span>Flow nodes</span></button>
+            <button class="button btn-ai-tools"><span>AI tools</span></button>
+            <button class="button btn-version-control"><span>Version control</span></button>
+            <button class="button btn-settings"><span>Settings</span></button>
+        </div>
+        <div id="topbar">
+        </div>
+        <div id="bottombar"></div>
+        <div id="rightbar"></div>
         <div id="chat">
             <div class="messages">
             </div>
@@ -16,13 +29,37 @@
         
         <div id="debug"></div>
         
-        <pre id="editor"></pre>
+        <div id="pages">
+            <div class="page active" id="page_editor">
+                <pre id="editor"></pre>
+            </div>
+            <div class="page" id="page_contexts">
+                Hello world contexts
+            </div>
+            <div class="page" id="page_flow-nodes">
+                nodes
+            </div>
+            <div class="page" id="page_ai-tools">
+                ai tools
+            </div>
+            <div class="page" id="page_version-control">
+                version control
+            </div>
+            <div class="page" id="page_settings">
+                settings
+            </div>
+            
+        </div>
 
         <script src="data://libs/ace/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
         <script>
             var editor = ace.edit("editor");
             editor.setTheme("ace/theme/twilight");
             editor.session.setMode("ace/mode/javascript");
+            editor.setOptions({
+                fontFamily: "tahoma",
+                fontSize: "15px"
+            });
         </script>
     </body>
 </html>
