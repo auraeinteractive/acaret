@@ -6,14 +6,14 @@
         <script type="text/javascript" src="data://ai/conversation.js"></script>
         <script type="text/javascript" src="data://ai/gui-logic.js"></script>
     </head>
-    <body onload="window.convos = new Conversation( { messageContainer: document.querySelector( '.messages' ) } )">
+    <body onload="window.convos = new Conversation( { messageContainer: document.querySelector( '.messages' ) } ); initializeGUI()">
         <div id="leftbar">
-            <button class="button btn-editor active"><span>Editor</span></button>
-            <button class="button btn-contexts"><span>Contexts</span></button>
-            <button class="button btn-flow-nodes"><span>Flow nodes</span></button>
-            <button class="button btn-ai-tools"><span>AI tools</span></button>
-            <button class="button btn-version-control"><span>Version control</span></button>
-            <button class="button btn-settings"><span>Settings</span></button>
+            <button class="button btn-editor active" id="tab_editor"><span>Editor</span></button>
+            <button class="button btn-contexts" id="tab_contexts"><span>Contexts</span></button>
+            <button class="button btn-flow-nodes" id="tab_flow-nodes"><span>Flow nodes</span></button>
+            <button class="button btn-ai-tools" id="tab_ai-tools"><span>AI tools</span></button>
+            <button class="button btn-version-control" id="tab_version-control"><span>Version control</span></button>
+            <button class="button btn-settings" id="tab_settings"><span>Settings</span></button>
         </div>
         <div id="topbar">
         </div>
