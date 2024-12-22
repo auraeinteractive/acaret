@@ -10,7 +10,7 @@
             <div class="messages">
             </div>
             <div class="chat">
-                <input type="text" value="" onkeydown="if( event.which == 13 ){ window.convos.sendMessage(this.value); this.value = ''; }"/>
+                <textarea class="prompt" onkeydown="if( event.which == 13 ){ let t = this.value; this.value = ''; window.convos.sendMessage(t); event.stopPropagation(); event.preventDefault(); }"></textarea>
             </div>
         </div>
         

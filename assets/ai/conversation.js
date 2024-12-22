@@ -1,3 +1,6 @@
+let currentContext = 'global';
+let messageContext = { global: [] };
+
 function base64DecodeUtf8(base64) {
     // Decode base64 string into a binary string
     const decodedData = atob(base64);
@@ -13,12 +16,16 @@ function base64DecodeUtf8(base64) {
     return textDecoder.decode(bytes);
 }
 
+function scrollDownMessages()
+{
+    document.querySelector( '.messages' ).scrollTop = document.querySelector( '.messages' ).scrollHeight; // Fix this later to enable scroll up
+}
+
 // Handle the chunked data sent from C (via WebKit callback)
 let dataStr = '';
 let streamIdCurrent = null;
 let currentMsg = null;
-function handleStreamData(streamId, chunk) {
-    console.log("Received chunk for stream ID " + streamId);
+function handleStreamData(streamId, chunk = false) {
     const outputContainer = document.querySelector(".messages");
     chunk = base64DecodeUtf8( chunk );
     
@@ -26,8 +33,17 @@ function handleStreamData(streamId, chunk) {
     {
         currentMsg = document.createElement( 'div' );
         outputContainer.appendChild(currentMsg);
-        currentMsg.className = 'message Assistant';
+        scrollDownMessages();
+        currentMsg.className = 'message assistant';
         streamIdCurrent = streamId;
+    }
+    
+    // Complete
+    if( chunk === false )
+    {
+        let ctx = messageContext[ currentContext ];
+        ctx.push( { role: 'assistant', content: currentMsg.innerText } );
+        return;
     }
     
     let dataPos = chunk.indexOf( 'data: ' );
@@ -40,6 +56,7 @@ function handleStreamData(streamId, chunk) {
         
         const textNode = document.createTextNode( js.choices[0].delta.content );
         currentMsg.appendChild( textNode );
+        scrollDownMessages();
     }
     catch( e )
     {
@@ -63,18 +80,27 @@ class Conversation
         this.messageContainer = document.getElementById( 'message-container' );
         if( options.messageContainer )
             this.messageContainer = options.messageContainer;
-        this.currentMessageElement = null;
         this.chunkBuffer = ''; // To store incomplete chunks
     }
 
-    // Send a message
-    async sendMessage( messageStr, options = false )
+    sendMessage( messageStr, options = false )
     {
         const messageElement = document.createElement( 'div' );
         messageElement.className = 'message user';
         messageElement.textContent = messageStr;
         this.messageContainer.appendChild( messageElement );
-        this.currentMessageElement = messageElement;
+        scrollDownMessages();
+        
+        setTimeout( () => {
+            this.sendMessageNow( messageStr, options );
+        }, 25 );
+    }
+
+    // Send a message
+    async sendMessageNow( messageStr, options = false )
+    {
+        let ctx = messageContext[ currentContext ];
+        ctx.push( { role: 'user', content: messageStr } );
 
         // Define the API endpoint (use "ihttp" as per your system)
         const API_URL = 'ihttp://localhost:11434/v1/chat/completions';
@@ -87,6 +113,7 @@ class Conversation
         };
 
         try {
+        
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: {
@@ -97,10 +124,7 @@ class Conversation
                     messages: [ {
                         role: 'system',
                         content: 'You are excellent in answering.'
-                    }, {
-                        role: 'user',
-                        content: messageStr
-                    } ],
+                    } ].concat( ctx ),
                     system_prompt: systemPrompt,
                     repeat_penalty: 1.2,
                     repeat_last_n: 1024,
