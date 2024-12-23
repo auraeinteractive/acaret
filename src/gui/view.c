@@ -339,7 +339,9 @@ mlObject *mlViewCreate(mlObject *parent) {
     gtk_window_set_default_size(GTK_WINDOW(view->window), 1280, 800);
 
     // Create the WebView
-    view->webview = WEBKIT_WEB_VIEW(webkit_web_view_new());
+    WebKitWebsiteDataManager *data_manager = webkit_website_data_manager_new(NULL);
+    webkit_website_data_manager_set_tls_errors_policy(data_manager, WEBKIT_TLS_ERRORS_POLICY_IGNORE);
+    view->webview = webkit_web_view_new_with_context(webkit_web_context_new_with_website_data_manager(data_manager));
     if (!view->webview) {
         fprintf(stderr, "Failed to create WebKit WebView\n");
         gtk_widget_destroy(view->window); // Destroy the GTK window
@@ -354,6 +356,9 @@ mlObject *mlViewCreate(mlObject *parent) {
     webkit_settings_set_enable_javascript(settings, TRUE); // In case your CSS depends on JavaScript for some reason
     webkit_settings_set_enable_developer_extras(settings, TRUE);
     webkit_settings_set_disable_web_security(settings, TRUE);
+    
+    WebKitWebContext *web_context = webkit_web_context_get_default();
+    g_object_set(web_context, "ssl-strict", FALSE, NULL);
 
     WebKitWebContext *context = webkit_web_context_get_default();
     webkit_web_context_register_uri_scheme(context, "ihttp", on_uri_scheme_request, view->webview, NULL);

@@ -218,13 +218,13 @@ class Conversation
     }
 
     // Send a message
-    async sendMessageNow( messageStr, options = false )
+    sendMessageNow( messageStr, options = false )
     {
         let ctx = messageContext[ currentContext ];
         ctx.push( { role: 'user', content: messageStr } );
 
-        // Define the API endpoint (use "ihttp" as per your system)
-        const API_URL = 'ihttp://localhost:11434/v1/chat/completions';
+        // Define the API endpoint
+        const API_URL = 'https://localhost:8089/v1/chat/completions';
 
         // Define the system prompt configuration (if needed)
         const systemPrompt = {
@@ -233,41 +233,46 @@ class Conversation
             assistant_name: 'Assistant:'
         };
 
-        try {
-        
-            let messages = [ {
-                role: 'system',
-                content: 'You are excellent in answering in a relevant way. Do not offer any information that is not asked for.'
-            } ].concat( ctx );
-            
-            //document.getElementById( 'page_debug' ).innerHTML = JSON.stringify( messages );
-        
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: 'qwen2.5-coder', // Specify the model
-                    messages: messages,
-                    system_prompt: systemPrompt,
-                    repeat_penalty: 1.2,
-                    repeat_last_n: 1024,
-                    temperature: 0.1,
-                    cache_prompt: true,
-                    stream: true // Enable streaming
-                } )
-            } );
+        let xhr = new XMLHttpRequest();
+        // Prepare the request body
+        const body = JSON.stringify({
+            model: 'qwen2.5-coder',       // The model you want to use
+            messages: [
+                { role: "user", content: "Translate this text to French: Hello, how are you?" }
+            ],
+            system_prompt: "You are a helpful assistant translating text.", // System context
+            repeat_penalty: 1.2,          // Penalty for repeated tokens
+            repeat_last_n: 1024,          // Scope of token repetition to penalize
+            temperature: 0.1,             // Sampling temperature
+            cache_prompt: true,           // Whether to cache the prompt
+            stream: true                  // Enable streaming
+        });
 
-            if( !response.ok ){
-                console.error( 'Error with API request:', response.status, response.statusText );
-                return;
+        // Configure the request
+        xhr.open('POST', API_URL, true); // True for asynchronous
+
+        // Set headers
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        //xhr.setRequestHeader('Accept', '*/*');
+
+        // Handle the response
+        xhr.onload = function () {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                // Parse and handle the response
+                console.log("Response received:");
+                console.log(xhr.responseText);
+            } else {
+                console.error("Error:", xhr.statusText);
             }
-        }
-        catch( error )
-        {
-            console.error( 'Error during fetch:', error );
-        }
+        };
+
+        // Handle errors
+        xhr.onerror = function () {
+            console.error("Network error occurred.");
+        };
+
+        // Send the request
+        xhr.send(body);
     }
 }
 
