@@ -390,48 +390,81 @@ void* handleClientConnection(void* arg) {
         SSL_free(ssl);
         close(client_fd);
         return NULL;
+    } else {
+        printf("Sent %d bytes to backend server\n", bytes);
     }
 
-    // Set up a timeout for receiving data from the backend
-    struct timeval tv;
-    tv.tv_sec = RESPONSE_TIMEOUT; // 5 seconds timeout
-    tv.tv_usec = 0;
-    setsockopt(http_fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));
+    // Set up socket to non-blocking mode for polling
+    int flags = fcntl(http_fd, F_GETFL, 0);
+    fcntl(http_fd, F_SETFL, flags | O_NONBLOCK);
 
-    // Use select() to wait for data on the backend socket
-    fd_set readfds;
-    FD_ZERO(&readfds);
-    FD_SET(http_fd, &readfds);
+    // Start a loop to continuously forward event stream from the backend to the client
+    printf("Starting event stream forwarding loop...\n");
 
-    ret = select(http_fd + 1, &readfds, NULL, NULL, &tv);
-    if (ret <= 0) {
-        if (ret == 0) {
-            printf("Timeout waiting for response from backend\n");
-        } else {
+    while (1) {
+        fd_set readfds;
+        FD_ZERO(&readfds);
+        FD_SET(http_fd, &readfds);
+
+        // Adjust select timeout - a reasonable value for polling might be 1 second
+        struct timeval timeout;
+        timeout.tv_sec = 1;  // 1-second timeout
+        timeout.tv_usec = 0;
+
+        // Use select() to wait for data on the backend socket
+        printf("Waiting for data from backend server (select)...\n");
+        int ret = select(http_fd + 1, &readfds, NULL, NULL, &timeout);
+
+        if (ret < 0) {
             perror("Error with select()");
+            break;
+        } else if (ret == 0) {
+            // Timeout expired, no data received
+            printf("Timeout expired, no data received (polling continues)...\n");
+            continue; // Continue to wait for data without exiting
         }
-        close(http_fd);
-        SSL_free(ssl);
-        close(client_fd);
-        return NULL;
-    }
 
-    // Read the backend response and forward it to the client
-    if (FD_ISSET(http_fd, &readfds)) {
-        bytes = recv(http_fd, buffer, sizeof(buffer), 0);
-        if (bytes < 0) {
-            perror("Error reading from backend server");
-        } else if (bytes == 0) {
-            printf("Backend server closed the connection\n");
-        } else {
-            if (SSL_write(ssl, buffer, bytes) <= 0) {
-                ERR_print_errors_fp(stderr);
+        // Check if the backend socket is ready for reading
+        if (FD_ISSET(http_fd, &readfds)) {
+            printf("Backend server socket is ready to read...\n");
+            ssize_t bytes_received = recv(http_fd, buffer, sizeof(buffer), 0);
+
+            if (bytes_received < 0) {
+                if (errno == EINTR) {
+                    printf("Interrupt occurred during recv(), retrying...\n");
+                    continue;
+                }
+                perror("Error reading from backend server");
+                break;
+            } else if (bytes_received == 0) {
+                // Backend server closed the connection
+                printf("Backend server closed the connection (bytes == 0)\n");
+                break;
+            } else {
+                // Successfully received data from backend server
+                printf("Received %ld bytes from backend server\n", bytes_received);
+                
+                // Forward the received data to the client over SSL
+                int ssl_ret = SSL_write(ssl, buffer, bytes_received);
+                if (ssl_ret <= 0) {
+                    ERR_print_errors_fp(stderr);
+                    printf("SSL_write failed while sending data to client\n");
+                    break;
+                } else {
+                    printf("Successfully sent %d bytes to client via SSL\n", ssl_ret);
+                }
             }
+        } else {
+            printf("Backend server socket is not ready for reading.\n");
         }
+
+        // Add a small delay to simulate polling instead of just waiting
+        usleep(500000);  // Sleep for 500ms (half a second) before the next poll
     }
 
-    // Cleanup backend HTTP connection
-    close(http_fd);
+    
+    printf("Backend HTTP connection closed\n");
+
 
     // Cleanup client SSL connection
     SSL_free(ssl);
