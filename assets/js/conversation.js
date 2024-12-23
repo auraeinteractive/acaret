@@ -240,7 +240,7 @@ class Conversation
             messages: [
                 { role: "user", content: "Translate this text to French: Hello, how are you?" }
             ],
-            system_prompt: "You are a helpful assistant translating text.", // System context
+            system_prompt: systemPrompt, // System context
             repeat_penalty: 1.2,          // Penalty for repeated tokens
             repeat_last_n: 1024,          // Scope of token repetition to penalize
             temperature: 0.1,             // Sampling temperature
@@ -253,7 +253,7 @@ class Conversation
 
         // Set headers
         xhr.setRequestHeader('Content-Type', 'application/json');
-        //xhr.setRequestHeader('Accept', '*/*');
+        xhr.setRequestHeader('Accept', 'application/json'); // Add this header for better response handling
 
         // Handle the response
         xhr.onload = function () {
