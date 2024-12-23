@@ -1,7 +1,6 @@
 #include "gui/view.h"
 #include "gui/init.h"  // Include the new abstracted init functions
 #include "proxy/proxy.h"
-#include <pthread.h>
 
 // Function to quit the application
 void doQuit() {
@@ -9,21 +8,12 @@ void doQuit() {
     mlQuit(); // Assuming mlQuit is defined in init.c
 }
 
-void* proxyServerThread(void* arg) {
-    // Start the proxy server in a separate thread
-    if (startProxyServer() != 0) {
-        printf("Failed starting proxy. Aborting.\n");
-        return NULL;
-    }
-    return NULL;
-}
-
 int main(int argc, char *argv[]) {
-    // Start the proxy server in a new thread
-    printf("Starting proxy.\n");
-    pthread_t proxy_thread;
-    if (pthread_create(&proxy_thread, NULL, proxyServerThread, NULL) != 0) {
-        printf("Failed to create proxy server thread. Aborting.\n");
+    // Start the proxy server
+    printf( "Starting proxy.\n" );
+    if( startProxyServer() != 0 )
+    {
+        printf( "Failed starting proxy. Aborting.\n" );
         return -1;
     }
     
