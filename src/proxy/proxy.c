@@ -189,6 +189,11 @@ void* proxyThreadFunction(void* arg) {
     return NULL;
 }
 
+// Function to print HTTP request with colorized output
+void print_green(const char *msg) {
+    printf("\033[0;32m%s\033[0m", msg);  // Green color for console output
+}
+
 void* handleClientConnection(void* arg) {
     // Cast the argument back to the thread_args_t struct
     thread_args_t* thread_args = (thread_args_t*)arg;
@@ -214,9 +219,8 @@ void* handleClientConnection(void* arg) {
     int ssl_err;
     while ((ssl_err = SSL_accept(ssl)) <= 0) {
         int error_code = SSL_get_error(ssl, ssl_err);
-
         if (error_code == SSL_ERROR_WANT_READ || error_code == SSL_ERROR_WANT_WRITE) {
-            break;
+            continue;
         }
 
         printf("SSL_accept failed with error code: %d\n", error_code);
@@ -228,80 +232,6 @@ void* handleClientConnection(void* arg) {
 
     printf("SSL handshake successful\n");
 
-    // Read data from the client in a loop until successful or an error occurs
-    printf("Attempting to read data from client...\n");
-    char buffer[4096] = {0};
-    int bytes = 0;
-    int total_bytes_received = 0;
-    int content_length = 0;
-    bool content_length_found = false;
-
-    // Loop to read the full request headers and body
-    while (1) {
-        bytes = SSL_read(ssl, buffer, sizeof(buffer));
-
-        if (bytes > 0) {
-            total_bytes_received += bytes;
-            printf("Successfully read %d bytes from client\n", bytes);
-            printf("Data: %.*s\n", bytes, buffer);
-
-            // Look for the Content-Length header (if it's a POST request)
-            if (!content_length_found) {
-                char* content_length_header = strstr(buffer, "Content-Length: ");
-                if (content_length_header) {
-                    sscanf(content_length_header, "Content-Length: %d", &content_length);
-                    content_length_found = true;
-                    printf("Found Content-Length: %d\n", content_length);
-                }
-            }
-
-            // If all the data has been received, break the loop
-            if (content_length_found && total_bytes_received >= content_length) {
-                break;
-            }
-        } else if (bytes < 0) {
-            int ssl_error = SSL_get_error(ssl, bytes);
-
-            switch (ssl_error) {
-                case SSL_ERROR_WANT_READ:
-                case SSL_ERROR_WANT_WRITE:
-                    continue;
-                case SSL_ERROR_ZERO_RETURN:
-                    printf("SSL error: Connection closed gracefully by client\n");
-                    SSL_free(ssl);
-                    close(client_fd);
-                    return NULL;
-                case SSL_ERROR_SYSCALL:
-                    printf("SSL error: System call failure\n");
-                    if (errno != 0) {
-                        printf("System error code: %d\n", errno);
-                    }
-                    SSL_free(ssl);
-                    close(client_fd);
-                    return NULL;
-                case SSL_ERROR_SSL:
-                    printf("SSL error: Generic SSL failure\n");
-                    ERR_print_errors_fp(stderr);
-                    SSL_free(ssl);
-                    close(client_fd);
-                    return NULL;
-                default:
-                    printf("SSL error: Unknown error code: %d\n", ssl_error);
-                    ERR_print_errors_fp(stderr);
-                    SSL_free(ssl);
-                    close(client_fd);
-                    return NULL;
-            }
-        } else {
-            printf("Client closed connection without sending data\n");
-            SSL_free(ssl);
-            close(client_fd);
-            return NULL;
-        }
-    }
-
-    printf("Received HTTPS request from client\n");
-
     // Create socket for backend HTTP server (non-SSL)
     int http_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (http_fd < 0) {
@@ -311,31 +241,16 @@ void* handleClientConnection(void* arg) {
         return NULL;
     }
 
-    // Set backend connection socket to non-blocking
-    int flags = fcntl(http_fd, F_GETFL, 0);
-    if (flags == -1) {
-        perror("fcntl(F_GETFL) failed");
-        close(http_fd);
-        SSL_free(ssl);
-        close(client_fd);
-        return NULL;
-    }
-
-    if (fcntl(http_fd, F_SETFL, flags | O_NONBLOCK) == -1) {
-        perror("fcntl(F_SETFL) failed");
-    }
-
     struct sockaddr_in backend_addr;
     memset(&backend_addr, 0, sizeof(backend_addr));
     backend_addr.sin_family = AF_INET;
-    backend_addr.sin_port = htons(PORT);  // Backend HTTP port (not HTTPS)
-    backend_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    backend_addr.sin_port = htons(PORT);  // Backend HTTP port set to 11434 as defined by PORT
+    backend_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);  // localhost address
 
-    printf("Trying to connect to HTTP backend...\n");
+    printf("Trying to connect to HTTP backend at localhost:11434...\n");
 
-    // Attempt to connect to the backend (non-blocking mode)
-    int ret = connect(http_fd, (struct sockaddr*)&backend_addr, sizeof(backend_addr));
-    if (ret < 0 && errno != EINPROGRESS) {
+    // Attempt to connect to the backend (blocking mode)
+    if (connect(http_fd, (struct sockaddr*)&backend_addr, sizeof(backend_addr)) < 0) {
         perror("Failed to connect to backend server");
         close(http_fd);
         SSL_free(ssl);
@@ -345,127 +260,109 @@ void* handleClientConnection(void* arg) {
 
     printf("Connected to backend server, forwarding request\n");
 
-    // Forward the full HTTP request (headers + body) to the backend server
-    printf("Sending request to backend server...\n");
+    // Buffer for data read from client
+    #define BUFLENGTH 18192
+    char buffer[BUFLENGTH];
+    int bytes = 0;
+    #define READ_RETRIES 300
 
-    // Send the headers first
-    char* request_headers = "POST / HTTP/1.1\r\n";
-    char* host_header = "Host: localhost\r\n";  // Adjust the host header as needed
-    char post_header[256];
-    snprintf(post_header, sizeof(post_header), "Content-Length: %d\r\n", content_length);
-    
-    if (send(http_fd, request_headers, strlen(request_headers), 0) < 0) {
-        perror("Failed to send headers to backend server");
-        close(http_fd);
-        SSL_free(ssl);
-        close(client_fd);
-        return NULL;
-    }
-    
-    if (send(http_fd, host_header, strlen(host_header), 0) < 0) {
-        perror("Failed to send Host header to backend server");
-        close(http_fd);
-        SSL_free(ssl);
-        close(client_fd);
+    // Start forwarding data as it's received
+    char *send_buffer = calloc(BUFLENGTH, 1); // Allocate space for the send buffer (adjust the size if needed)
+    if (!send_buffer) {
+        perror("Failed to allocate memory for send buffer");
         return NULL;
     }
 
-    if (send(http_fd, post_header, strlen(post_header), 0) < 0) {
-        perror("Failed to send Content-Length header to backend server");
-        close(http_fd);
-        SSL_free(ssl);
-        close(client_fd);
-        return NULL;
-    }
-
-    if (send(http_fd, "\r\n", 2, 0) < 0) {
-        perror("Failed to send blank line after headers to backend server");
-        close(http_fd);
-        SSL_free(ssl);
-        close(client_fd);
-        return NULL;
-    }
-
-    // Send the body content
-    printf("Forwarding body to backend server\n");
-    if (send(http_fd, buffer, total_bytes_received, 0) < 0) {
-        perror("Failed to send body to backend server");
-        close(http_fd);
-        SSL_free(ssl);
-        close(client_fd);
-        return NULL;
-    }
-
-    // Implement a retry mechanism for recv() with a 10-second timeout
-    printf("Starting event stream forwarding loop...\n");
-
-    struct timeval timeout;
-    timeout.tv_sec = TIMEOUT_SECONDS;
-    timeout.tv_usec = 0;
+    size_t send_buffer_len = 0; // This will track the length of the data in send_buffer
+    int retries = READ_RETRIES;
 
     while (1) {
-        fd_set read_fds;
-        FD_ZERO(&read_fds);
-        FD_SET(http_fd, &read_fds);
+        memset( buffer, 0, BUFLENGTH );
+        bytes = SSL_read(ssl, buffer, BUFLENGTH);
+        if (bytes > 0) {
+            retries = READ_RETRIES;
+            //printf("Forwarding %d bytes from client to backend\n", bytes);
 
-        printf("Attempting to select with timeout: %ld seconds\n", TIMEOUT_SECONDS);
-
-        int select_ret = select(http_fd + 1, &read_fds, NULL, NULL, &timeout);
-
-        printf("Select returned: %d\n", select_ret);
-
-        if (select_ret < 0) {
-            perror("select failed");
-            break;
-        } else if (select_ret == 0) {
-            printf("Timeout occurred while waiting for data from backend server\n");
-            break;
-        } else if (FD_ISSET(http_fd, &read_fds)) {
-            printf("Data available on backend server socket\n");
-
-            ssize_t bytes_received = recv(http_fd, buffer, sizeof(buffer), 0);
-
-            printf("Received %ld bytes from backend server\n", bytes_received);
-
-            if (bytes_received < 0) {
-                if (errno == EINTR) {
-                    printf("Interrupt occurred during recv(), retrying...\n");
-                    continue;
-                }
-                perror("Error reading from backend server");
-                break;
-            } else if (bytes_received == 0) {
-                printf("Backend server closed the connection (bytes == 0)\n");
-                break;
-            } else {
-                // Debug output of the received data
-                printf("Data from backend server: %.*s\n", (int)bytes_received, buffer);
-
-                int ssl_ret = SSL_write(ssl, buffer, bytes_received);
-                if (ssl_ret <= 0) {
-                    ERR_print_errors_fp(stderr);
-                    printf("SSL_write failed while sending data to client\n");
+            // Aggregate the received data into send_buffer
+            //print_green( "MORE DATA:\n");
+            printf( "%s\n", buffer );
+            if (send_buffer_len + bytes > BUFLENGTH) { // Check if we have enough space in the buffer
+                size_t new_len = send_buffer_len + bytes;
+                send_buffer = realloc(send_buffer, new_len);
+                if (!send_buffer) {
+                    perror("Failed to realloc memory for send buffer");
                     break;
-                } else {
-                    printf("Successfully sent %d bytes to client via SSL\n", ssl_ret);
                 }
             }
+
+            memcpy(send_buffer + send_buffer_len, buffer, bytes); // Append received data to send_buffer
+            send_buffer_len += bytes;
+
+        } else if (bytes == 0) {
+            // End of data from client, close the connection
+            printf("Client closed connection\n");
+            break;
         } else {
-            printf("No data ready on backend server socket\n");
+            int ssl_error = SSL_get_error(ssl, bytes);
+            if (ssl_error == SSL_ERROR_WANT_READ || ssl_error == SSL_ERROR_WANT_WRITE) {
+                if (retries-- == 0) {
+                    printf("--\nRead retries exhausted\n");
+                    break;
+                }
+                continue;
+            } else {
+                perror("Error reading from client");
+                break;
+            }
         }
     }
 
-    printf("Cleaning up backend HTTP connection...\n");
-    close(http_fd);
+    // Send aggregated data to the backend server immediately after reading everything
+    if( send_buffer )
+    {
+        printf( "Sending buffer: %s\n", send_buffer );
+        if (send(http_fd, send_buffer, send_buffer_len, 0) < 0) {
+            perror("Failed to send data to backend server");
+        }
 
-    printf("Cleaning up client SSL connection...\n");
+        // Free the allocated memory for send_buffer
+        free(send_buffer);
+    }
+
+    // Forward the response from the backend to the client
+    while (1) {
+        bytes = recv(http_fd, buffer, sizeof(buffer), 0);
+        if (bytes > 0) {
+            printf("Forwarding %d bytes from backend to client\n", bytes);
+
+            // Print the data from backend in green before sending
+            print_green("Sending the following data to client:\n");
+            printf("%.*s\n", bytes, buffer);
+
+            if (SSL_write(ssl, buffer, bytes) <= 0) {
+                ERR_print_errors_fp(stderr);
+                printf("SSL_write failed while sending data to client\n");
+                break;
+            }
+        } else if (bytes == 0) {
+            // End of data from backend, close the connection
+            printf("Backend server closed connection\n");
+            break;
+        } else {
+            perror("Error reading from backend server");
+            break;
+        }
+    }
+
+    // Cleanup
+    printf("Cleaning up connections...\n");
+    close(http_fd);
     SSL_free(ssl);
     close(client_fd);
     printf("Connection closed for client\n");
 
     return NULL;
 }
-
 
 unsigned int startProxyServer() {
     running = 1;

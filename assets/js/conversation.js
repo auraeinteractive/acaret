@@ -237,9 +237,7 @@ class Conversation
         // Prepare the request body
         const body = JSON.stringify({
             model: 'qwen2.5-coder',       // The model you want to use
-            messages: [
-                { role: "user", content: "Translate this text to French: Hello, how are you?" }
-            ],
+            messages: ctx,
             system_prompt: systemPrompt, // System context
             repeat_penalty: 1.2,          // Penalty for repeated tokens
             repeat_last_n: 1024,          // Scope of token repetition to penalize
