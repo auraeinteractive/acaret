@@ -40,11 +40,12 @@ function scrollDownMessages()
 
 // Handle the chunked data sent from C (via WebKit callback)
 let dataStr = '';
+let streamIdSeed = 1;
 let streamIdCurrent = null;
 let currentMsg = null;
+let streamBuffer = {};
 function handleStreamData(streamId, chunk = false) {
     const outputContainer = document.querySelector(".messages");
-    chunk = base64DecodeUtf8( chunk );
     
     if( streamIdCurrent != streamId )
     {
@@ -55,28 +56,36 @@ function handleStreamData(streamId, chunk = false) {
         currentMsg.rawData = '';
         streamIdCurrent = streamId;
     }
-    
-    let dataPos = chunk.indexOf( 'data: ' );
-    if( dataPos >= 0 )
-        chunk = chunk.substr( chunk.indexOf( 'data: ' ) + 6, chunk.length - ( dataPos + 6 ) );
+    if( !streamBuffer[ streamIdCurrent ] )
+         streamBuffer[ streamIdCurrent ] = '';
     
     let chunks = chunk.split( "\n\n" );
-    for( let b = 0; b < chunks.length; chunks++ )
+    for( let b = 0; b < chunks.length; b++ )
     {
         let ch = chunks[ b ];
+        
+        let dataPos = ch.indexOf( 'data: ' );
+        if( dataPos == 0 )
+        {
+            streamBuffer[ streamIdCurrent ] = ch.substr( chunk.indexOf( 'data: ' ) + 6, ch.length - ( dataPos + 6 ) );
+        }
+        else 
+        {
+            streamBuffer[ streamIdCurrent ] += ch;
+        }
         try
         {
-            let js = JSON.parse( ch );
+            let js = JSON.parse( streamBuffer[ streamIdCurrent ] );
             
             if( js.choices[0].delta.content && js.choices[0].delta.content.length )
             {
                 const textNode = document.createTextNode( js.choices[0].delta.content );
+                console.log( js.choices[0].delta.content );
                 currentMsg.appendChild( textNode );
                 currentMsg.rawData += js.choices[0].delta.content;
                 scrollDownMessages();
+                streamBuffer[ streamIdCurrent ] = null;
             }
-            
-            //document.getElementById( 'page_debug' ).innerHTML += JSON.stringify( js.choices[0] );
             
             // We're done
             if( js.choices[0].finish_reason == 'stop' )
@@ -91,6 +100,7 @@ function handleStreamData(streamId, chunk = false) {
         catch( e )
         {
             //document.getElementById( 'page_debug' ).innerHTML += 'ERROR' + "\n" + ch;
+            console.log( 'WIP: ' + streamBuffer[ streamIdCurrent ] );
         }
     }
 }
@@ -218,10 +228,9 @@ class Conversation
     }
 
     // Send a message
-    sendMessageNow( messageStr, options = false )
-    {
-        let ctx = messageContext[ currentContext ];
-        ctx.push( { role: 'user', content: messageStr } );
+    async sendMessageNow(messageStr, options = false) {
+        let ctx = messageContext[currentContext];
+        ctx.push({ role: 'user', content: messageStr });
 
         // Define the API endpoint
         const API_URL = 'https://localhost:8089/v1/chat/completions';
@@ -233,12 +242,11 @@ class Conversation
             assistant_name: 'Assistant:'
         };
 
-        let xhr = new XMLHttpRequest();
         // Prepare the request body
         const body = JSON.stringify({
             model: 'qwen2.5-coder',       // The model you want to use
             messages: ctx,
-            system_prompt: systemPrompt, // System context
+            system_prompt: systemPrompt,  // System context
             repeat_penalty: 1.2,          // Penalty for repeated tokens
             repeat_last_n: 1024,          // Scope of token repetition to penalize
             temperature: 0.1,             // Sampling temperature
@@ -246,31 +254,40 @@ class Conversation
             stream: true                  // Enable streaming
         });
 
-        // Configure the request
-        xhr.open('POST', API_URL, true); // True for asynchronous
+        try {
+            // Send the request using fetch
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer no-key',
+                    'Accept': '*/*'
+                },
+                body: body
+            });
 
-        // Set headers
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.setRequestHeader('Accept', 'application/json'); // Add this header for better response handling
-
-        // Handle the response
-        xhr.onload = function () {
-            if (xhr.status >= 200 && xhr.status < 300) {
-                // Parse and handle the response
-                console.log("Response received:");
-                console.log(xhr.responseText);
-            } else {
-                console.error("Error:", xhr.statusText);
+            if (!response.ok) {
+                throw new Error(`Error: ${response.statusText}`);
             }
-        };
 
-        // Handle errors
-        xhr.onerror = function () {
-            console.error("Network error occurred.");
-        };
+            // Process the streamed response
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let done = false;
+            let streamId = streamIdSeed++;
 
-        // Send the request
-        xhr.send(body);
+            // Handle the streamed data
+            while (!done) {
+                const { value, done: chunkDone } = await reader.read();
+                done = chunkDone;
+                const chunkText = decoder.decode(value, { stream: true });
+                handleStreamData(streamId, chunkText);
+            }
+        } catch (error) {
+            console.error("Error occurred:", error);
+        }
     }
+
+
 }
 
