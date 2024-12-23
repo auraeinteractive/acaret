@@ -394,9 +394,9 @@ void* handleClientConnection(void* arg) {
         printf("Sent %d bytes to backend server\n", bytes);
     }
 
-    // Set up socket to non-blocking mode for polling
+    // Set the socket to blocking mode (remove non-blocking if previously set)
     int flags = fcntl(http_fd, F_GETFL, 0);
-    fcntl(http_fd, F_SETFL, flags | O_NONBLOCK);
+    fcntl(http_fd, F_SETFL, flags & ~O_NONBLOCK);
 
     // Start a loop to continuously forward event stream from the backend to the client
     printf("Starting event stream forwarding loop...\n");
@@ -406,22 +406,22 @@ void* handleClientConnection(void* arg) {
         FD_ZERO(&readfds);
         FD_SET(http_fd, &readfds);
 
-        // Adjust select timeout - a reasonable value for polling might be 1 second
+        // Set timeout for select (a reasonable value for blocking may be 10 seconds)
         struct timeval timeout;
-        timeout.tv_sec = 1;  // 1-second timeout
+        timeout.tv_sec = 10;  // 10-second timeout for backend data
         timeout.tv_usec = 0;
 
         // Use select() to wait for data on the backend socket
         printf("Waiting for data from backend server (select)...\n");
         int ret = select(http_fd + 1, &readfds, NULL, NULL, &timeout);
-
+        printf("Got a result: %d\n", ret);
         if (ret < 0) {
             perror("Error with select()");
             break;
         } else if (ret == 0) {
             // Timeout expired, no data received
-            printf("Timeout expired, no data received (polling continues)...\n");
-            continue; // Continue to wait for data without exiting
+            printf("Timeout expired, no data received (waiting continues)...\n");
+            continue;  // Continue the loop, allowing more time for event stream to begin
         }
 
         // Check if the backend socket is ready for reading
@@ -462,8 +462,9 @@ void* handleClientConnection(void* arg) {
         usleep(500000);  // Sleep for 500ms (half a second) before the next poll
     }
 
-    
-    printf("Backend HTTP connection closed\n");
+    // Cleanup backend HTTP connection
+    printf("Cleaning up backend HTTP connection...\n");
+    close(http_fd);
 
 
     // Cleanup client SSL connection
