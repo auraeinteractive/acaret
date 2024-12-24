@@ -338,25 +338,99 @@ mlObject *mlViewCreate(mlObject *parent) {
     gtk_window_set_title(GTK_WINDOW(view->window), "Aide");
     gtk_window_set_default_size(GTK_WINDOW(view->window), 1280, 800);
 
+    // Create a vertical box layout
+    GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_container_add(GTK_CONTAINER(view->window), vbox);
+
+    // Create a menu bar
+    GtkWidget *menu_bar = gtk_menu_bar_new();
+
+    // File menu
+    GtkWidget *file_menu = gtk_menu_new();
+    GtkWidget *file_menu_item = gtk_menu_item_new_with_label("File");
+    gtk_menu_item_set_submenu(GTK_MENU_ITEM(file_menu_item), file_menu);
+
+    GtkWidget *new_project = gtk_menu_item_new_with_label("New Project");
+    GtkWidget *open_project = gtk_menu_item_new_with_label("Open Project");
+    GtkWidget *close_project = gtk_menu_item_new_with_label("Close Project");
+    GtkWidget *separator1 = gtk_separator_menu_item_new();
+    GtkWidget *new_file = gtk_menu_item_new_with_label("New File");
+    GtkWidget *open_file = gtk_menu_item_new_with_label("Open File");
+    GtkWidget *close_file = gtk_menu_item_new_with_label("Close File");
+    GtkWidget *separator2 = gtk_separator_menu_item_new();
+    GtkWidget *quit = gtk_menu_item_new_with_label("Quit");
+
+    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), new_project);
+    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), open_project);
+    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), close_project);
+    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), separator1);
+    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), new_file);
+    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), open_file);
+    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), close_file);
+    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), separator2);
+    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), quit);
+
+    // Edit menu
+    GtkWidget *edit_menu = gtk_menu_new();
+    GtkWidget *edit_menu_item = gtk_menu_item_new_with_label("Edit");
+    gtk_menu_item_set_submenu(GTK_MENU_ITEM(edit_menu_item), edit_menu);
+
+    GtkWidget *cut = gtk_menu_item_new_with_label("Cut");
+    GtkWidget *copy = gtk_menu_item_new_with_label("Copy");
+    GtkWidget *paste = gtk_menu_item_new_with_label("Paste");
+    GtkWidget *separator3 = gtk_separator_menu_item_new();
+    GtkWidget *record_macro = gtk_menu_item_new_with_label("Record Macro");
+    GtkWidget *store_macro = gtk_menu_item_new_with_label("Store Macro");
+    GtkWidget *run_macro = gtk_menu_item_new_with_label("Run Macro");
+
+    gtk_menu_shell_append(GTK_MENU_SHELL(edit_menu), cut);
+    gtk_menu_shell_append(GTK_MENU_SHELL(edit_menu), copy);
+    gtk_menu_shell_append(GTK_MENU_SHELL(edit_menu), paste);
+    gtk_menu_shell_append(GTK_MENU_SHELL(edit_menu), separator3);
+    gtk_menu_shell_append(GTK_MENU_SHELL(edit_menu), record_macro);
+    gtk_menu_shell_append(GTK_MENU_SHELL(edit_menu), store_macro);
+    gtk_menu_shell_append(GTK_MENU_SHELL(edit_menu), run_macro);
+
+    // Settings menu
+    GtkWidget *settings_menu = gtk_menu_new();
+    GtkWidget *settings_menu_item = gtk_menu_item_new_with_label("Settings");
+    gtk_menu_item_set_submenu(GTK_MENU_ITEM(settings_menu_item), settings_menu);
+
+    GtkWidget *edit_settings = gtk_menu_item_new_with_label("Edit Settings");
+    GtkWidget *load_settings = gtk_menu_item_new_with_label("Load Settings");
+    GtkWidget *save_settings = gtk_menu_item_new_with_label("Save Settings");
+
+    gtk_menu_shell_append(GTK_MENU_SHELL(settings_menu), edit_settings);
+    gtk_menu_shell_append(GTK_MENU_SHELL(settings_menu), load_settings);
+    gtk_menu_shell_append(GTK_MENU_SHELL(settings_menu), save_settings);
+
+    // Add menus to the menu bar
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu_bar), file_menu_item);
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu_bar), edit_menu_item);
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu_bar), settings_menu_item);
+
+    // Add menu bar to the layout
+    gtk_box_pack_start(GTK_BOX(vbox), menu_bar, FALSE, FALSE, 0);
+
     // Create the WebView
     WebKitWebsiteDataManager *data_manager = webkit_website_data_manager_new(NULL);
     webkit_website_data_manager_set_tls_errors_policy(data_manager, WEBKIT_TLS_ERRORS_POLICY_IGNORE);
-    view->webview = webkit_web_view_new_with_context(webkit_web_context_new_with_website_data_manager(data_manager));
+    view->webview = ( WebKitWebView *)webkit_web_view_new_with_context(webkit_web_context_new_with_website_data_manager(data_manager));
     if (!view->webview) {
         fprintf(stderr, "Failed to create WebKit WebView\n");
         gtk_widget_destroy(view->window); // Destroy the GTK window
         free(view); // Clean up memory
         return NULL;
     }
-    
+
     // Set up settings for file access if not already done
     WebKitSettings *settings = webkit_web_view_get_settings(view->webview);
     webkit_settings_set_allow_file_access_from_file_urls(settings, TRUE);
-    webkit_settings_set_auto_load_images(settings, TRUE); // Ensure images load if they're in CSS
-    webkit_settings_set_enable_javascript(settings, TRUE); // In case your CSS depends on JavaScript for some reason
+    webkit_settings_set_auto_load_images(settings, TRUE);
+    webkit_settings_set_enable_javascript(settings, TRUE);
     webkit_settings_set_enable_developer_extras(settings, TRUE);
     webkit_settings_set_disable_web_security(settings, TRUE);
-    
+
     WebKitWebContext *web_context = webkit_web_context_get_default();
     g_object_set(web_context, "ssl-strict", FALSE, NULL);
 
@@ -364,7 +438,7 @@ mlObject *mlViewCreate(mlObject *parent) {
     webkit_web_context_register_uri_scheme(context, "ihttp", on_uri_scheme_request, view->webview, NULL);
 
     webkit_web_view_load_html(view->webview, "<html><body><h1>Hello, World!</h1></body></html>", NULL);
-    gtk_container_add(GTK_CONTAINER(view->window), GTK_WIDGET(view->webview));
+    gtk_box_pack_end(GTK_BOX(vbox), GTK_WIDGET(view->webview), TRUE, TRUE, 0);
 
     // Add event listeners (e.g., window close event)
     mlAddEvent((mlObject *)view, "closed", mlViewOnWindowClosed);
@@ -387,9 +461,17 @@ mlObject *mlViewCreate(mlObject *parent) {
         return NULL;
     }
 
+    // Add accelerators (keyboard shortcuts)
+    GtkAccelGroup *accel_group = gtk_accel_group_new();
+    gtk_window_add_accel_group(GTK_WINDOW(view->window), accel_group);
+
+    gtk_widget_add_accelerator(quit, "activate", accel_group, GDK_KEY_q, GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
+    gtk_widget_add_accelerator(new_project, "activate", accel_group, GDK_KEY_n, GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
+    gtk_widget_add_accelerator(open_project, "activate", accel_group, GDK_KEY_o, GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
+    gtk_widget_add_accelerator(save_settings, "activate", accel_group, GDK_KEY_s, GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
+
     return (mlObject *)view;
 }
-
 
 
 // Destroy a view object and free resources

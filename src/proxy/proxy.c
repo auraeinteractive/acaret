@@ -413,8 +413,8 @@ void* handleClientConnection(void* arg) {
 
     // Set a 1-second timeout on the socket
     struct timeval timeout;
-    timeout.tv_sec = 1; // 0 seconds
-    timeout.tv_usec = 0; // 250,000 microseconds = 0.25 seconds
+    timeout.tv_sec = 30; // 0 seconds
+    timeout.tv_usec = 0; // 0 microseconds
     if (setsockopt(http_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
         perror("Failed to set socket timeout");
         // Handle error if needed
@@ -424,6 +424,16 @@ void* handleClientConnection(void* arg) {
     while (1) {
         memset(buffer, 0, sizeof(buffer)); // Clear the buffer before reading
         bytes = recv(http_fd, buffer, sizeof(buffer), 0);
+        
+        if( timeout.tv_sec == 30 )
+        {
+            timeout.tv_sec = 0; // 0 seconds
+            timeout.tv_usec = 100000; // 100,000 microseconds = 0.1 seconds
+            if (setsockopt(http_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
+                perror("Failed to set socket timeout");
+                // Handle error if needed
+            }
+        }
         
         if (bytes > 0) {
             printf("Forwarding %d bytes from backend to client\n", bytes);
