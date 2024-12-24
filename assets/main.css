@@ -1,6 +1,7 @@
 :root
 {
     --panel-background: #202020;
+    --tab-background: #303030;
 }
 
 
@@ -59,7 +60,7 @@ body
     width: calc(100% - 300px);
     height: 100%;
     top: 0;
-    padding: 0 10px 0 10px;
+    padding: 0;
     line-height: 34px;
     color: white;
 }
@@ -438,5 +439,58 @@ body
     height: 100%;
     overflow: auto;
     box-sizing: border-box;
-    padding: 10px;
+    padding: 0px;
 }
+
+/* Top tabs */
+
+.TopTabs
+{
+    display: inline-block;
+}
+
+.TopTab
+{
+    background-color: var(--tab-background);
+    border-radius: 3px 3px 0 0;
+    padding: 0 10px;
+    margin: 0 10px 0 0;
+    top: 4px;
+    box-sizing: border-box;
+    position: relative;
+    height: 30px;
+    line-height: 30px;
+    display: inline-block;
+}
+
+.TopTabOption
+{
+    float: right;
+    display: block;
+    margin: 0;    
+    padding: 0;
+}
+
+.TopTabOption .taboption
+{
+    background: transparent;
+    border: 0;
+    color: white;
+    padding: 0 10px;
+}
+
+.TopTabOption .taboption.add:before
+{
+    content: " ";
+    width: 16px;
+    height: 16px;
+    background-image: url('feather/file-plus.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    display: inline-block;
+    margin: 0 5px 0 0;
+    filter: invert(1);
+    position: relative;
+    top: 2px;
+}
+

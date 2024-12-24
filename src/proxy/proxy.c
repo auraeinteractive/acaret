@@ -427,8 +427,8 @@ void* handleClientConnection(void* arg) {
         
         if( timeout.tv_sec == 30 )
         {
-            timeout.tv_sec = 0; // 0 seconds
-            timeout.tv_usec = 100000; // 100,000 microseconds = 0.1 seconds
+            timeout.tv_sec = 3; // 3 seconds
+            timeout.tv_usec = 0; // 0 microseconds = 0.0 seconds
             if (setsockopt(http_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
                 perror("Failed to set socket timeout");
                 // Handle error if needed

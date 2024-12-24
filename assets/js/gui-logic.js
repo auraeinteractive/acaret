@@ -1,5 +1,7 @@
 // Main GUI logic
 
+window.toolbar = {};
+
 function initializeGUI()
 {
     initTabs( 'leftbar' );
@@ -34,7 +36,12 @@ function initTabs( element )
                 tabButtons[b].classList.remove( 'active' );
                 document.getElementById( tabButtons[b].id.split( 'tab_' ).join( 'page_' ) ).classList.remove( 'active' );
             }
+            if( window.toolbar[ tabButtons[a].id.split( '_' )[1] ] )
+            {
+                window.toolbar[ tabButtons[a].id.split( '_' )[1] ]();
+            }
         }
     }
+    tabButtons[0].click();
 }
 
