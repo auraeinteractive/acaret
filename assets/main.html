@@ -19,9 +19,11 @@
             <button class="button btn-flow-nodes" id="tab_flow-nodes"><span>Flow nodes</span></button>
             <button class="button btn-ai-tools" id="tab_ai-tools"><span>AI tools</span></button>
             <button class="button btn-version-control" id="tab_version-control"><span>Version control</span></button>
-            <button class="button btn-settings" id="tab_settings"><span>Settings</span></button>
+            <button class="button btn-project" id="tab_project"><span>Project</span></button>
         </div>
         <div id="topbar">
+            <div id="top_toolbar"></div>
+            <div id="top_chat_title"></div>
         </div>
         <div id="bottombar">
             <button class="button btn-debug" id="tab_debug">Debug</div>
@@ -41,23 +43,32 @@
         </div>
         
         <div id="pages">
-            <div class="page active" id="page_editor">
+            <div class="page active" id="page_editor" toolbar="editor">
                 <pre id="editor"></pre>
             </div>
-            <div class="page" id="page_contexts">
+            <div class="page" id="page_contexts" toolbar="contexts">
                 Hello world contexts
             </div>
-            <div class="page" id="page_flow-nodes">
+            <div class="page" id="page_flow-nodes" toolbar="flow-nodes">
                 nodes
             </div>
-            <div class="page" id="page_ai-tools">
+            <div class="page" id="page_ai-tools" toolbar="ai-tools">
                 ai tools
             </div>
-            <div class="page" id="page_version-control">
+            <div class="page" id="page_version-control" toolbar="version-control">
                 version control
             </div>
-            <div class="page" id="page_settings">
-                settings
+            <div class="page" id="page_project" toolbar="project">
+                <div class="BarSetup">
+                    <div class="TabBar">
+                        <div class="barTab active">Main</div>
+                    </div>
+                    <div class="TabPages">
+                        <div class="barPage active">
+                            Hello world
+                        </div>
+                    </div>
+                </div>
             </div>
             
         </div>

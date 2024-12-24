@@ -9,7 +9,7 @@ OBJ_DIR = obj
 CONFIG_DIR = config
 
 # Source files
-SRC_FILES := $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/oop/*.c) $(wildcard $(SRC_DIR)/gui/*.c) $(wildcard $(SRC_DIR)/proxy/*.c)
+SRC_FILES := $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/oop/*.c) $(wildcard $(SRC_DIR)/gui/*.c) $(wildcard $(SRC_DIR)/proxy/*.c) $(wildcard $(SRC_DIR)/system/*.c)
 OBJ_FILES := $(SRC_FILES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
 # Output executable

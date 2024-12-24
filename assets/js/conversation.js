@@ -212,6 +212,8 @@ class Conversation
         if( options.messageContainer )
             this.messageContainer = options.messageContainer;
         this.chunkBuffer = ''; // To store incomplete chunks
+        
+        document.getElementById( 'top_chat_title' ).innerHTML = 'Global chat';
     }
 
     sendMessage( messageStr, options = false )

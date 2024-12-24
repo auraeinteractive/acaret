@@ -4,7 +4,8 @@
 }
 
 
-body {
+body 
+{
     background-color: #303030;
     color: white;
     overflow: hidden;
@@ -19,6 +20,48 @@ body {
     right: 0px;
     height: 34px;
     background: var(--panel-background);
+}
+
+#topbar #top_chat_title
+{
+    position: absolute;
+    left: calc(100% - 300px);
+    width: 300px;
+    height: 100%;
+    top: 0;
+    padding: 0 10px 0 10px;
+    line-height: 34px;
+    border-left: 1px solid #00000055;
+    color: white;
+}
+
+#topbar #top_chat_title:before
+{
+    content: " ";
+    width: 16px;
+    height: 16px;
+    background-image: url(feather/message-circle.svg);
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: inline-block;
+    margin: 0 10px 0 0px;
+    filter: invert(1);
+    opacity: 0.7;
+    position: relative;
+    top: 2px;
+}
+
+#topbar #top_toolbar
+{
+    position: absolute;
+    left: 0;
+    width: calc(100% - 300px);
+    height: 100%;
+    top: 0;
+    padding: 0 10px 0 10px;
+    line-height: 34px;
+    color: white;
 }
 
 #leftbar
@@ -92,7 +135,7 @@ body {
 #leftbar .button.btn-flow-nodes:before { background-image: url(feather/hexagon.svg); }
 #leftbar .button.btn-ai-tools:before { background-image: url(feather/user.svg); }
 #leftbar .button.btn-version-control:before { background-image: url(feather/git-branch.svg); }
-#leftbar .button.btn-settings:before { background-image: url(feather/settings.svg); }
+#leftbar .button.btn-project:before { background-image: url(feather/briefcase.svg); }
 
 #rightbar
 {
@@ -360,4 +403,40 @@ body {
     height: 50px;
     padding: 10px;
     box-sizing: border-box;
+}
+
+/* Bar setup */
+
+.BarSetup
+{
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.BarSetup > .TabBar
+{
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 150px;
+    height: 100%;
+    overflow: auto;
+    background-color: #00000033;
+    box-sizing: border-box;
+    padding: 10px;
+}
+
+.BarSetup > .TabPages
+{
+    position: absolute;
+    top: 0;
+    left: 150px;
+    width: calc(100% - 150px);
+    height: 100%;
+    overflow: auto;
+    box-sizing: border-box;
+    padding: 10px;
 }
