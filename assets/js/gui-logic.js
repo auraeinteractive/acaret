@@ -5,10 +5,10 @@ window.toolbar = {};
 function initializeGUI()
 {
     initTabs( 'leftbar' );
-    initTabs( 'bottombar' );
+    initTabs( 'bottombar', { state: 'inactive' } );
 }
 
-function initTabs( element )
+function initTabs( element, options = false )
 {
     let tabButtons = document.querySelector( '#' + element ).getElementsByTagName( 'button' );
     for( let a = 0; a < tabButtons.length; a++ )
@@ -42,6 +42,7 @@ function initTabs( element )
             }
         }
     }
-    tabButtons[0].click();
+    if( !options || options.state != 'inactive' )
+        tabButtons[0].click();
 }
 
