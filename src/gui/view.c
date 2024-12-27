@@ -5,6 +5,22 @@ static void on_resource_failed(WebKitWebResource *resource, GError *error, gpoin
     fprintf(stderr, "Failed to load resource: %s\n", error->message);
 }
 
+void mlViewOnWindowClosed(void *instance, void *data);
+gboolean on_key_press_event(GtkWidget *widget, GdkEventKey *event, gpointer user_data) {
+    // Check if Ctrl+S is pressed
+    if ((event->state & GDK_CONTROL_MASK) && event->keyval == GDK_KEY_s) {
+        g_print("Ctrl+S detected. Save action triggered.\n");
+        // Call your save callback function here
+        // save_callback_function();
+        return TRUE; // Stop further handling of this event
+    }
+    if ((event->state & GDK_CONTROL_MASK) && event->keyval == GDK_KEY_q) {
+        g_print("Ctrl+Q detected. Quit action triggered.\n");
+        return TRUE; // Stop further handling of this event
+    }
+    return FALSE; // Allow other handlers to process this event
+}
+
 // New function to convert file path to data URI for local assets
 static char* convertDataURLToLocalPath( const char* cwd, const char* relative_path )
 {
@@ -447,6 +463,9 @@ mlObject *mlViewCreate(mlObject *parent) {
 
     // Automatically connect the "destroy" signal for the window
     g_signal_connect(G_OBJECT(view->window), "destroy", G_CALLBACK(mlViewOnWindowClosed), (gpointer)view);
+
+    // Connect the key-press-event signal to the WebView
+    g_signal_connect( G_OBJECT( view->window ), "key-press-event", G_CALLBACK( on_key_press_event ), NULL );
 
     // Set the method table for the view
     mlMethodEntry *method_table = malloc(sizeof(mlMethodEntry) * 3);

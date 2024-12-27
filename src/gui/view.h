@@ -11,6 +11,7 @@
 #include <string.h> // For strncat
 #include <stddef.h>
 #include <gio/gio.h>
+#include "../proxy/proxy.h"
 
 typedef struct mlView {
     mlObject base;  // Inherits from mlObject
