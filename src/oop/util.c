@@ -1,14 +1,10 @@
-#ifndef GUI_VIEW_H
-#define GUI_VIEW_H
+#include "util.h"
 
-#include "../oop/base.h"
+// String duplication helper (if strdup is unavailable)
+char *ml_strdup(const char *str) {
+    char *copy = (char *)malloc(strlen(str) + 1);
+    if (copy) strcpy(copy, str);
+    return copy;
+}
 
-// Create a new view
-mlObject *mlCreateView(mlObject *parent);
-
-// View-specific methods
-void mlViewSetSize(void *instance, void *data);
-void mlViewShow(void *instance, void *data);
-
-#endif // GUI_VIEW_H
 

@@ -3,6 +3,9 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
 // Event callback typedef
 typedef void (*mlEventCallback)(void *instance, void *data);

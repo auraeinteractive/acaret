@@ -5,6 +5,7 @@
 // Function to quit the application
 void doQuit();
 mlObject *mainView;
+pthread_mutex_t networkMutex;
 
 int main(int argc, char *argv[]) {
     // Start the proxy server
@@ -30,15 +31,13 @@ int main(int argc, char *argv[]) {
     // Show the view
     mlDoMethod( mainView, "show", NULL );  // Call the show method
 
-
     // Register doQuit function to be called when the view is closed
-    mlAddEvent(mainView, "closed", (mlEventCallback)doQuit);
+    mlAddEvent(mainView, "closed", ( mlEventCallback )doQuit);
 
     // Run the main loop
     mlMain();
-
-    // Clean up by destroying the view object
-    mlViewDestroy(mainView);
+    
+    doQuit();
 
     return 0;
 }
@@ -47,5 +46,7 @@ void doQuit()
 {
     printf( "Handling quit.\n" );
     mlViewDestroy( mainView );
+    stopProxyNetwork();
     mlQuit(); // Assuming mlQuit is defined in init.c
+    printf( "All operating should now be stopped.\n" );
 }

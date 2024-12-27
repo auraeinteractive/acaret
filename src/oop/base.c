@@ -1,7 +1,4 @@
 #include "base.h"
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 
 // In base.c
 mlObject *mlObjectCreate(void *parent) {
@@ -93,9 +90,12 @@ void mlDoMethod(mlObject *obj, char *method, void *data) {
         }
     }
     // If method not found in current object, check the parent object
-    if (obj->parent) {
-        mlDoSuperMethod(obj->parent, method, data);
-    } else {
+    if( obj->parent )
+    {
+        mlDoSuperMethod( obj->parent, method, data );
+    }
+    else
+    {
         printf("Method '%s' not found.\n", method);  // Print error if method not found
     }
 }
@@ -166,7 +166,7 @@ void mlAddEvent(mlObject *obj, char *event_name, mlEventCallback callback) {
 void mlTriggerEvent(mlObject *obj, const char *event_name, void *data)
 {
     printf( "Trying to find event \"%s\".\n", event_name );
-    if( obj->events && obj->event_count > 0 )
+    if( obj->event_count > 0 )
     {
         printf( "Found events. %d events total.\n", obj->event_count );
         for( int i = 0; i < obj->event_count; i++ ) 

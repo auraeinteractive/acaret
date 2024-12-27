@@ -1,11 +1,4 @@
 #include "view.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h> // For getcwd on POSIX systems
-#include <limits.h> // For PATH_MAX
-#include <string.h> // For strncat
-#include <stddef.h>
-#include <gio/gio.h>
 
 // Callback to handle resource loading failures
 static void on_resource_failed(WebKitWebResource *resource, GError *error, gpointer user_data) {
@@ -13,17 +6,20 @@ static void on_resource_failed(WebKitWebResource *resource, GError *error, gpoin
 }
 
 // New function to convert file path to data URI for local assets
-static char* convertDataURLToLocalPath(const char* cwd, const char* relative_path) {
-    size_t path_length = strlen(cwd) + strlen("/assets/") + strlen(relative_path) + 1;
-    char *full_path = malloc(path_length);
-    if (!full_path) {
+static char* convertDataURLToLocalPath( const char* cwd, const char* relative_path )
+{
+    size_t path_length = strlen( cwd ) + strlen( "/assets/" ) + strlen( relative_path ) + 1;
+    char *full_path = malloc( path_length );
+    if( !full_path )
+    {
         fprintf(stderr, "Failed to allocate memory for full path.\n");
         return NULL;
     }
     
-    if (snprintf(full_path, path_length, "%s/assets/%s", cwd, relative_path) < 0) {
-        free(full_path);
-        fprintf(stderr, "Failed to construct full path.\n");
+    if( snprintf( full_path, path_length, "%s/assets/%s", cwd, relative_path ) < 0 )
+    {
+        free( full_path );
+        fprintf( stderr, "Failed to construct full path.\n" );
         return NULL;
     }
     

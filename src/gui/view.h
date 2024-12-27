@@ -4,6 +4,13 @@
 #include "../oop/base.h"
 #include <webkit2/webkit2.h>
 #include <gtk/gtk.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h> // For getcwd on POSIX systems
+#include <limits.h> // For PATH_MAX
+#include <string.h> // For strncat
+#include <stddef.h>
+#include <gio/gio.h>
 
 typedef struct mlView {
     mlObject base;  // Inherits from mlObject
@@ -20,9 +27,6 @@ void mlViewShow(void *instance, void *data);
 
 // Setting HTML content
 void mlViewSetHTML(void *instance, void *data);
-
-// Event handling methods
-void mlViewOnWindowClosed(void *instance, void *data);
 
 void mlViewDestroy(mlObject *instance);
 

@@ -1,26 +1,12 @@
 #include "proxy.h"
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <pthread.h>
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-#include <fcntl.h> 
-#include <sys/epoll.h>
-#include <sys/select.h>
-#include <errno.h>
-#include <stdbool.h>
 
 #define PORT 11434
 #define PROXYPORT 8089
 #define TIMEOUT_SECONDS 10
 
 static pthread_t proxyThread;
-static int running = 1;
+extern pthread_mutex_t networkMutex;
+int *networkRunning;
 
 // Timeout in seconds for backend response
 #define RESPONSE_TIMEOUT 5
@@ -133,58 +119,75 @@ void* proxyThreadFunction(void* arg) {
     }
 
     // Main epoll loop
-    while (running) {
+    for( ; ; )
+    {
+        pthread_mutex_lock( &networkMutex );
+        
+        if( *networkRunning == 0 )
+        {
+            pthread_mutex_unlock( &networkMutex );
+            break;
+        }
+        pthread_mutex_unlock( &networkMutex );
+        usleep( 2500 );
+        
+           
         struct epoll_event events[10];  // max 10 connections at once
-        printf("Waiting for connections\n");
-        int num_events = epoll_wait(epoll_fd, events, 10, -1);
+        //printf("Waiting for connections (running %d)\n", *networkRunning);
+        int num_events = epoll_wait(epoll_fd, events, 10, 0);
         if (num_events == -1) {
             perror("Epoll wait failed");
             break;
         }
         
-        printf("Got events %d\n", num_events);
+        //printf("Got events %d\n", num_events);
 
         // Handle events
-        for (int i = 0; i < num_events; i++) {
-            if (events[i].data.fd == server_fd) {
+        for( int i = 0; i < num_events; i++ )
+        {
+            if( events[ i ].data.fd == server_fd )
+            {
                 // New connection, accept it
                 struct sockaddr_in client_addr;
                 socklen_t client_len = sizeof(client_addr);
                 int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
-                if (client_fd < 0) {
+                if( client_fd < 0 )
+                {
                     perror("Accept failed");
                     continue;
                 }
 
                 // Set client socket to non-blocking mode
-                if (setSocketNonBlocking(client_fd) < 0) {
-                    close(client_fd);
+                if( setSocketNonBlocking( client_fd ) < 0 )
+                {
+                    close( client_fd );
                     continue;
                 }
 
                 // Allocate memory for the thread arguments and pass SSL_CTX and client_fd
-                thread_args_t* thread_args = malloc(sizeof(thread_args_t));
+                thread_args_t* thread_args = malloc( sizeof( thread_args_t ) );
                 thread_args->ctx = ctx;
                 thread_args->client_fd = client_fd;
 
                 // Create a new thread to handle the client
                 pthread_t client_thread;
-                if (pthread_create(&client_thread, NULL, handleClientConnection, thread_args) != 0) {
+                if( pthread_create( &client_thread, NULL, handleClientConnection, thread_args ) != 0 )
+                {
                     perror("Thread creation failed");
-                    free(thread_args);
-                    close(client_fd);
+                    free( thread_args );
+                    close( client_fd );
                     continue;
                 }
 
                 // Detach the thread so it cleans up after itself
-                pthread_detach(client_thread);
+                pthread_detach( client_thread );
             }
         }
     }
 
     // Cleanup resources
     close(server_fd);
-    SSL_CTX_free(ctx);
+    SSL_CTX_free( ctx );
     EVP_cleanup();
     ERR_free_strings();
     CRYPTO_cleanup_all_ex_data();
@@ -435,29 +438,38 @@ void* handleClientConnection(void* arg) {
             }
         }
         
-        if (bytes > 0) {
+        if( bytes > 0 )
+        {
             printf("Forwarding %d bytes from backend to client\n", bytes);
 
             // Print the data from backend in green before sending
             print_green("Sending the following data to client:\n");
             printf("%.*s\n", bytes, buffer);
 
-            if (SSL_write(ssl, buffer, bytes) <= 0) {
-                ERR_print_errors_fp(stderr);
+            if( SSL_write( ssl, buffer, bytes ) <= 0 )
+            {
+                ERR_print_errors_fp( stderr );
                 printf("SSL_write failed while sending data to client\n");
                 break;
             }
-        } else if (bytes == 0) {
+        }
+        else if (bytes == 0)
+        {
             // End of data from backend, close the connection
             printf("Backend server closed connection\n");
             break;
-        } else {
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        }
+        else
+        {
+            if( errno == EAGAIN || errno == EWOULDBLOCK )
+            {
                 // Timeout occurred
-                printf("Timeout waiting for data from backend\n");
+                printf( "Timeout waiting for data from backend\n" );
                 break;
-            } else {
-                perror("Error reading from backend server");
+            } 
+            else
+            {
+                perror( "Error reading from backend server" );
                 break;
             }
         }
@@ -473,18 +485,32 @@ void* handleClientConnection(void* arg) {
     return NULL;
 }
 
-unsigned int startProxyServer() {
-    running = 1;
-    if (pthread_create(&proxyThread, NULL, proxyThreadFunction, NULL) != 0) {
-        perror("Failed to create proxy thread");
+unsigned int startProxyServer()
+{
+    networkRunning = malloc( sizeof( int ) );
+    *networkRunning = 1;
+    if( pthread_create( &proxyThread, NULL, proxyThreadFunction, NULL ) != 0 )
+    {
+        perror( "Failed to create proxy thread" );
         return 1;
     }
     return 0;
 }
 
-void stopProxyServer() {
-    running = 0;
+void stopProxyNetwork()
+{
+    printf( "[stopProxyNetwork] Waiting for mytex.\n" );
+    pthread_mutex_lock( &networkMutex );
+    printf( "[stopProxyNetwork] Setting network running to zero!\n" );
+    *networkRunning = 0;
+    pthread_mutex_unlock( &networkMutex );
+}
+
+void stopProxyServer()
+{
+    stopProxyNetwork();
     pthread_join(proxyThread, NULL);
+    free( networkRunning );
     printf("Proxy server stopped.\n");
 }
 
