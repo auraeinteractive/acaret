@@ -11,6 +11,7 @@
         <script type="text/javascript" src="data://js/page-ai-tools.js"></script>
         <script type="text/javascript" src="data://js/page-version-control.js"></script>
         <script type="text/javascript" src="data://js/page-settings.js"></script>
+        <script type="text/javascript" src="data://libs/ace/src-noconflict/ace.js" charset="utf-8"></script>
     </head>
     <body onload="window.convos = new Conversation( { messageContainer: document.querySelector( '.messages' ) } ); initializeGUI()">
         <div id="leftbar">
@@ -44,7 +45,6 @@
         
         <div id="pages">
             <div class="page active" id="page_editor" toolbar="editor">
-                <pre id="editor"></pre>
             </div>
             <div class="page" id="page_contexts" toolbar="contexts">
                 Hello world contexts
@@ -72,17 +72,6 @@
             </div>
             
         </div>
-
-        <script src="data://libs/ace/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
-        <script>
-            var editor = ace.edit("editor");
-            editor.setTheme("ace/theme/twilight");
-            editor.session.setMode("ace/mode/javascript");
-            editor.setOptions({
-                fontFamily: "tahoma",
-                fontSize: "15px"
-            });
-        </script>
     </body>
 </html>
 
