@@ -46,39 +46,49 @@ void *mlObjectCreateWithSize(size_t base_size, size_t derived_size, void *parent
 
 // Destroy an object and free resources
 void mlObjectDestroy(mlObject *obj) {
-    if (!obj) return;
+    if( !obj ) return;
 
     // Free methods (if dynamically allocated)
-    if (obj->method_table) {
-        free(obj->method_table);
+    if( obj->method_table )
+    {
+        free( obj->method_table );
     }
 
     // Free attributes
-    for (int i = 0; i < obj->attribute_count; i++) {
-        free(obj->attributes[i].key);
+    for( int i = 0; i < obj->attribute_count; i++ )
+    {
+        free( obj->attributes[i].key );
+        
         // Assuming values are pointers to dynamically allocated memory
-        free(obj->attributes[i].value);
+        free( obj->attributes[i].value );
     }
     free(obj->attributes);
 
     // Free events
-    for (int i = 0; i < obj->event_count; i++) {
-        free(obj->events[i].event_name);
+    for( int i = 0; i < obj->event_count; i++ )
+    {
+        free( obj->events[i].event_name );
+        obj->events[i].event_name = NULL;
     }
-    free(obj->events);
+    obj->event_count = 0;
+    free( obj->events );
+    printf( "Object events destroyed\n" );
 
-    free(obj);
+    free( obj );
+    printf( "Object destroyed\n" );
 }
 
 // Dispatch a method
 void mlDoMethod(mlObject *obj, char *method, void *data) {
-    if (obj == NULL || obj->method_table == NULL) {
-        printf("Object or method table is NULL\n");
+    if( obj == NULL || obj->method_table == NULL )
+    {
+        printf( "Object or method table is NULL\n" );
         return;
     }
-    for (int i = 0; i < obj->method_count; i++) {
-        if (strcmp(obj->method_table[i].name, method) == 0) {  // Find the method
-            obj->method_table[i].method(obj, data);  // Call the method
+    for( int i = 0; i < obj->method_count; i++ )
+    {
+        if( strcmp( obj->method_table[ i ].name, method ) == 0) {  // Find the method
+            obj->method_table[ i ].method( obj, data );  // Call the method
             return;  // Exit after method is found and called
         }
     }
@@ -91,10 +101,14 @@ void mlDoMethod(mlObject *obj, char *method, void *data) {
 }
 
 // Dispatch a method in the parent class
-void mlDoSuperMethod(mlObject *obj, char *method, void *data) {
-    if (obj->parent) {
-        mlDoMethod(obj->parent, method, data);  // Call the method on the parent object
-    } else {
+void mlDoSuperMethod(mlObject *obj, char *method, void *data )
+{
+    if( obj->parent )
+    {
+        mlDoMethod( obj->parent, method, data );  // Call the method on the parent object
+    }
+    else
+    {
         printf("Super method '%s' not found.\n", method);  // Print error if super method not found
     }
 }
@@ -131,33 +145,52 @@ void *myGetAttribute(mlObject *obj, char *key) {
 
 // Add an event to the object
 void mlAddEvent(mlObject *obj, char *event_name, mlEventCallback callback) {
-    obj->event_count++;
-    obj->events = (mlEvent *)realloc(obj->events, obj->event_count * sizeof(mlEvent));
+    obj->events = (mlEvent *)realloc(obj->events, ( obj->event_count + 1 ) * sizeof(mlEvent));
     if (obj->events == NULL) {
         fprintf(stderr, "Reallocation failed for events\n");
         return;
     }
-    obj->events[obj->event_count - 1].event_name = strdup(event_name);
-    obj->events[obj->event_count - 1].callback = callback;
-    if (obj->events[obj->event_count - 1].event_name == NULL) {
-        fprintf(stderr, "String duplication failed for event name\n");
+    
+    printf( "Adding event: %s\n", event_name );
+    obj->events[obj->event_count].event_name = strdup(event_name);
+    obj->events[obj->event_count].callback = callback;
+    if (obj->events[obj->event_count].event_name == NULL) {
+        fprintf(stderr, "String duplication failed for event name.\n");
         return;
     }
+    obj->event_count++;
+    printf( "Added event \"%s\" (new event count %d)\n", event_name, obj->event_count );
 }
 
 // Trigger an event
-void mlTriggerEvent(mlObject *obj, char *event_name, void *data) {
-    for (int i = 0; i < obj->event_count; i++) {
-        if (strcmp(obj->events[i].event_name, event_name) == 0) {  // Find the event
-            obj->events[i].callback(obj, data);  // Trigger the event callback
-            return;  // Exit after triggering the event
+void mlTriggerEvent(mlObject *obj, const char *event_name, void *data)
+{
+    printf( "Trying to find event \"%s\".\n", event_name );
+    if( obj->events && obj->event_count > 0 )
+    {
+        printf( "Found events. %d events total.\n", obj->event_count );
+        for( int i = 0; i < obj->event_count; i++ ) 
+        {
+            printf( "Looking at event %d\n", (i+1));
+            // Find the event
+            if( strcmp(obj->events[i].event_name, event_name) == 0 )
+            {  
+                //
+                printf( "Found event %s\n", event_name );
+                obj->events[i].callback(obj, data);  // Trigger the event callback
+                return;  // Exit after triggering the event
+            }
+        }
+        // If event not found, check the parent object
+        if (obj->parent) {
+            mlTriggerEvent(obj->parent, event_name, data);
+        } else {
+            printf("Event '%s' not found.\n", event_name);  // Print error if event not found
         }
     }
-    // If event not found, check the parent object
-    if (obj->parent) {
-        mlTriggerEvent(obj->parent, event_name, data);
-    } else {
-        printf("Event '%s' not found.\n", event_name);  // Print error if event not found
+    else
+    {
+        printf( "Could not find any events.\n" );
     }
 }
 

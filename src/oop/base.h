@@ -51,7 +51,7 @@ void mlSetAttribute(mlObject *obj, char *key, void *value);   // Set an attribut
 void *myGetAttribute(mlObject *obj, char *key);               // Get an attribute value by key
 
 void mlAddEvent(mlObject *obj, char *event_name, mlEventCallback callback);  // Add an event to an object
-void mlTriggerEvent(mlObject *obj, char *event_name, void *data);           // Trigger an event
+void mlTriggerEvent(mlObject *obj, const char *event_name, void *data);           // Trigger an event
 
 #endif // OOP_BASE_H
 

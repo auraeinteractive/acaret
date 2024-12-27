@@ -172,8 +172,11 @@ void mlViewShow(void *instance, void *data) {
 // Handle the window close event
 void mlViewOnWindowClosed(void *instance, void *data) {
     printf("Window closed.\n");
-    if (instance) {  // Check if the instance is still valid
-        mlTriggerEvent((mlObject *)instance, "closed", NULL);
+    if( instance )
+    {  // Check if the instance is still valid
+        printf( "Triggering \"closed\" event\n" );
+        mlTriggerEvent( (mlObject *)instance, "closed", NULL );
+        printf( "Event triggered.\n" );
     }
 }
 
@@ -283,7 +286,7 @@ static void on_uri_scheme_request(WebKitURISchemeRequest *request, gpointer user
                 gchar *js_command = g_strdup_printf(
                     "handleStreamData('%d', '%s');",
                     globalMessage,
-                    g_base64_encode(buffer, bytes_read)  // Base64 encode the chunk for safe JavaScript transfer
+                    g_base64_encode(( unsigned char *)buffer, bytes_read)  // Base64 encode the chunk for safe JavaScript transfer
                 );
 
                 // Evaluate JavaScript in the WebView to handle the chunk
@@ -335,6 +338,9 @@ mlObject *mlViewCreate(mlObject *parent) {
         free(view); // Clean up memory
         return NULL;
     }
+    
+    printf( "Adding new view!\n" );
+    
     gtk_window_set_title(GTK_WINDOW(view->window), "Aide");
     gtk_window_set_default_size(GTK_WINDOW(view->window), 1280, 800);
 

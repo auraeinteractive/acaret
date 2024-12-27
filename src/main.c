@@ -3,10 +3,8 @@
 #include "proxy/proxy.h"
 
 // Function to quit the application
-void doQuit() {
-    printf( "Handling quit.\n" );
-    mlQuit(); // Assuming mlQuit is defined in init.c
-}
+void doQuit();
+mlObject *mainView;
 
 int main(int argc, char *argv[]) {
     // Start the proxy server
@@ -20,27 +18,34 @@ int main(int argc, char *argv[]) {
     mlInit(&argc, &argv);  // Initialize GTK
 
     // Create a view object (inherits from base object)
-    mlObject *view = mlViewCreate(NULL);
+    mainView = mlViewCreate(NULL);
 
     // Set size of the view
     int size[2] = {1280, 800};
-    mlDoMethod(view, "setSize", size);  // Call the setSize method
+    mlDoMethod(mainView, "setSize", size);  // Call the setSize method
 
     // Set HTML file
-    mlDoMethod(view, "setHTML", "main.html" );
+    mlDoMethod( mainView, "setHTML", "main.html" );
     
     // Show the view
-    mlDoMethod(view, "show", NULL);  // Call the show method
+    mlDoMethod( mainView, "show", NULL );  // Call the show method
 
 
     // Register doQuit function to be called when the view is closed
-    mlAddEvent(view, "closed", (mlEventCallback)doQuit);
+    mlAddEvent(mainView, "closed", (mlEventCallback)doQuit);
 
     // Run the main loop
     mlMain();
 
     // Clean up by destroying the view object
-    mlViewDestroy(view);
+    mlViewDestroy(mainView);
 
     return 0;
+}
+
+void doQuit()
+{
+    printf( "Handling quit.\n" );
+    mlViewDestroy( mainView );
+    mlQuit(); // Assuming mlQuit is defined in init.c
 }
