@@ -1,11 +1,23 @@
 // Main GUI logic
 
 window.toolbar = {};
+window.chatShift = false;
 
 function initializeGUI()
 {
     initTabs( 'leftbar' );
     initTabs( 'bottombar', { state: 'inactive' } );
+    
+    document.body.addEventListener( 'keyup', function( e )
+    {
+        if( e.which == 16 )
+            window.chatShift = false;
+    } );
+    document.body.addEventListener( 'keydown', function( e )
+    {
+        if( e.which == 16 )
+            window.chatShift = true;
+    } );
 }
 
 function initTabs( element, options = false )

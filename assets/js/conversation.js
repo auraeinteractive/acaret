@@ -1,6 +1,22 @@
 let currentContext = 'global';
 let messageContext = { global: [] };
 
+let chatShift = false;
+
+function checkChatEvents( event, keyUp = false )
+{
+    let t = event.target;
+
+    if( event.which == 13 && !window.chatShift )
+    { 
+        let tv = t.value; 
+        t.value = ''; 
+        window.convos.sendMessage( tv ); 
+        event.stopPropagation(); 
+        event.preventDefault(); 
+    }
+}
+
 function base64DecodeUtf8( base64 )
 {
     // Decode base64 string into a binary string
@@ -50,10 +66,11 @@ function handleStreamData(streamId, chunk = false) {
     if( streamIdCurrent != streamId )
     {
         currentMsg = document.createElement( 'div' );
-        outputContainer.appendChild(currentMsg);
+        outputContainer.appendChild( currentMsg );
         scrollDownMessages();
         currentMsg.className = 'message assistant';
         currentMsg.rawData = '';
+        currentMsg.innerHTML = '<strong>Assistant:</strong> ';
         streamIdCurrent = streamId;
     }
     if( !streamBuffer[ streamIdCurrent ] )
@@ -144,7 +161,7 @@ function checkMessageFormatting( currentMsg )
             str = str.split( oblock ).join( '<p class="block" id="codeblock_' + ++num + '">Examine: <strong>' + type + '</strong></p>' );
         }
     }
-    currentMsg.innerHTML = str;
+    currentMsg.innerHTML = '<strong>Assistant:</strong> ' + str;
     
     let eles = currentMsg.getElementsByClassName( 'block' );
     for( let a = 0; a < eles.length; a++ )
@@ -175,8 +192,6 @@ function checkMessageFormatting( currentMsg )
                 let blk = blocks[ parseInt( eles[a].id.split( '_' )[1] )-1 ];
                 this.classList.add( 'active' );
                 
-                document.getElementById( 'page_codehelp' ).classList.add( 'active' );
-                
                 this.help = ace.edit( 'page_codehelp_editor' );
                 this.help.setTheme( 'ace/theme/twilight' );
                 this.help.session.setMode( 'ace/mode/' + blk.type );
@@ -185,6 +200,8 @@ function checkMessageFormatting( currentMsg )
                     fontSize: '15px'
                 });
                 this.help.setValue( blk.content, -1 );
+                
+                document.getElementById( 'page_codehelp' ).classList.add( 'active' );
                 
                 document.getElementById( 'page_codehelp' ).querySelector( '.close' ).onclick = () =>
                 {
@@ -218,9 +235,10 @@ class Conversation
 
     sendMessage( messageStr, options = false )
     {
+        if( !messageStr.trim() ) return;
         const messageElement = document.createElement( 'div' );
         messageElement.className = 'message user';
-        messageElement.textContent = messageStr;
+        messageElement.innerHTML = '<strong>You:</strong> ' + messageStr.split( "\n" ).join( "<br>" );
         this.messageContainer.appendChild( messageElement );
         scrollDownMessages();
         
@@ -289,7 +307,6 @@ class Conversation
             console.error("Error occurred:", error);
         }
     }
-
 
 }
 

@@ -5,13 +5,126 @@ static void on_resource_failed(WebKitWebResource *resource, GError *error, gpoin
     fprintf(stderr, "Failed to load resource: %s\n", error->message);
 }
 
+// Function to read the file content
+char *read_file_content(const char *file_path) {
+    FILE *file = fopen(file_path, "rb");
+    if (!file) {
+        fprintf(stderr, "Error: Unable to open file '%s'\n", file_path);
+        return NULL;
+    }
+
+    // Seek to the end to get the file size
+    fseek(file, 0, SEEK_END);
+    long file_size = ftell(file);
+    rewind(file);
+
+    // Allocate memory for the file content
+    char *content = (char *)malloc(file_size + 1); // +1 for null terminator
+    if (!content) {
+        fprintf(stderr, "Error: Unable to allocate memory for file content\n");
+        fclose(file);
+        return NULL;
+    }
+
+    // Read the file into the buffer
+    fread(content, 1, file_size, file);
+    content[file_size] = '\0'; // Null-terminate the content
+    fclose(file);
+    return content;
+}
+
+// Function to pass file content to JavaScript
+void pass_file_to_js(WebKitWebView *webview, const char *file_path) {
+    char *file_content = read_file_content(file_path);
+    if (!file_content) {
+        return; // Exit if file could not be read
+    }
+
+    // Extract filename from the path
+
+    char *encoded_content = g_base64_encode( ( const guchar * )file_content, strlen( file_content ) );
+    const char *filename = g_path_get_basename( file_path );
+    const char *dir_path = g_path_get_dirname( file_path );
+
+    // Create the JavaScript command
+    char *js_command = g_strdup_printf("loadFile(`%s`, \"%s\", \"%s\");",
+                                        encoded_content,
+                                        dir_path,
+                                        filename);
+
+    // Execute the JavaScript command in the WebView
+    webkit_web_view_evaluate_javascript(webview, 
+                                        js_command, 
+                                        -1,  // -1 means the length is determined automatically
+                                        NULL, // world_name (NULL for default)
+                                        NULL, // source_uri (NULL for no source)
+                                        NULL, // cancellable (no cancelation)
+                                        NULL, // callback (no callback needed)
+                                        NULL  // user_data (no user data)
+    );
+
+    // Free allocated resources
+    free(file_content);
+    g_free(encoded_content);
+    g_free((void *)filename);
+    g_free((void *)dir_path);
+    g_free(js_command);
+}
+
+// Function to open file manager and get selected file path
+char *open_file_dialog(GtkWindow *parent) {
+    GtkWidget *dialog;
+    char *filename = NULL;
+
+    // Create a file chooser dialog
+    dialog = gtk_file_chooser_dialog_new("Open File",
+                                         parent,
+                                         GTK_FILE_CHOOSER_ACTION_OPEN,
+                                         "_Cancel", GTK_RESPONSE_CANCEL,
+                                         "_Open", GTK_RESPONSE_ACCEPT,
+                                         NULL);
+
+    // Show the dialog and wait for a user response
+    if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
+        GtkFileChooser *chooser = GTK_FILE_CHOOSER(dialog);
+        // Get the selected file path
+        filename = g_strdup(gtk_file_chooser_get_filename(chooser));
+    }
+
+    // Destroy the dialog after use
+    gtk_widget_destroy(dialog);
+
+    return filename; // Caller must free this memory
+}
+
 void mlViewOnWindowClosed(void *instance, void *data);
 gboolean on_key_press_event(GtkWidget *widget, GdkEventKey *event, gpointer user_data) {
+    if( ( event->state && GDK_CONTROL_MASK ) && event->keyval == GDK_KEY_o ){
+        char *path = open_file_dialog( ( GtkWindow *)widget );
+        if( path != NULL )
+        {
+            pass_file_to_js( ( WebKitWebView *)user_data, path );
+            free( path );
+        }
+        return TRUE;
+    }
+    
     // Check if Ctrl+S is pressed
     if ((event->state & GDK_CONTROL_MASK) && event->keyval == GDK_KEY_s) {
         g_print("Ctrl+S detected. Save action triggered.\n");
-        // Call your save callback function here
-        // save_callback_function();
+        gchar *js_command = strdup( "saveData( currentEditor.path + currentEditor.filename + '\\n' + currentEditor.getValue() );" );
+        // Evaluate JavaScript in the WebView to handle the chunk
+        webkit_web_view_evaluate_javascript((WebKitWebView *)user_data, 
+                                            js_command, 
+                                            -1,  // -1 means the length is determined automatically
+                                            NULL, // world_name (NULL for default)
+                                            NULL, // source_uri (NULL for no source)
+                                            NULL, // cancellable (no cancelation)
+                                            NULL, // callback (no callback needed)
+                                            NULL  // user_data (no user data)
+        );
+        g_free(js_command);
+        
         return TRUE; // Stop further handling of this event
     }
     if ((event->state & GDK_CONTROL_MASK) && event->keyval == GDK_KEY_q) {
@@ -190,6 +303,47 @@ void mlViewOnWindowClosed(void *instance, void *data) {
         printf( "Triggering \"closed\" event\n" );
         mlTriggerEvent( (mlObject *)instance, "closed", NULL );
         printf( "Event triggered.\n" );
+    }
+}
+
+// Callback to handle messages from JavaScript
+static void on_script_message_received(WebKitUserContentManager *manager,
+                                        WebKitJavascriptResult *result,
+                                        gpointer user_data) {
+    // Extract the message as a string
+    JSCValue *value = webkit_javascript_result_get_js_value(result);
+    if (jsc_value_is_string(value)) {
+        gchar *message = jsc_value_to_string(value);
+        g_print("Received message from JavaScript: %s\n", message);
+
+        // Find the position of the newline (\n) that separates the path from the data
+        char *newline_pos = strchr(message, '\n');
+        printf( "Going ahead with save test!\n" );
+        if (newline_pos) {
+            // Null-terminate the path at the newline
+            *newline_pos = '\0';
+            const char *path = message;  // Path is everything before the newline
+            const char *data = newline_pos + 1;  // Data is everything after the newlin
+
+            printf( "Trying to save to: %s\n", path );
+
+            // Save the data to the specified path
+            FILE *file = fopen(path, "w");
+            if (file) {
+                fprintf(file, "%s\n", data);
+                fclose(file);
+                g_print("Data saved to %s\n", path);
+            } else {
+                g_print("Error: Unable to open file at %s for writing\n", path);
+            }
+        } else {
+            g_print("Error: No newline found in the message\n");
+        }
+
+        // Clean up
+        g_free(message);
+    } else {
+        g_print("Unexpected message type\n");
     }
 }
 
@@ -466,7 +620,25 @@ mlObject *mlViewCreate(mlObject *parent) {
     g_signal_connect(G_OBJECT(view->window), "destroy", G_CALLBACK(mlViewOnWindowClosed), (gpointer)view);
 
     // Connect the key-press-event signal to the WebView
-    g_signal_connect( G_OBJECT( view->window ), "key-press-event", G_CALLBACK( on_key_press_event ), NULL );
+    g_signal_connect( G_OBJECT( view->window ), "key-press-event", G_CALLBACK( on_key_press_event ), ( gpointer )view->webview );
+
+    // Create a WebKitUserContentManager
+    WebKitUserContentManager *content_manager = webkit_web_view_get_user_content_manager(view->webview);
+
+    // Connect for saving
+    webkit_user_content_manager_register_script_message_handler( content_manager, "saveData" );
+    g_signal_connect(content_manager, "script-message-received::saveData", G_CALLBACK(on_script_message_received), NULL);
+
+    // Inject JavaScript to send messages
+    const gchar *script = 
+        "function saveData(data) {"
+        "    console.log( \"Saving\", data ); window.webkit.messageHandlers.saveData.postMessage(data);"
+        "}";
+    WebKitUserScript *user_script = webkit_user_script_new(script,
+       WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES,
+       WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START,
+       NULL, NULL);
+    webkit_user_content_manager_add_script(content_manager, user_script);
 
     // Set the method table for the view
     mlMethodEntry *method_table = malloc(sizeof(mlMethodEntry) * 3);

@@ -1,5 +1,6 @@
 // Editor
 let editorDocuments = {};
+let currentEditor = false;
 
 window.toolbar = window.toolbar ? window.toolbar : {};
 window.toolbar.editor = function() {
@@ -34,6 +35,7 @@ window.toolbar.editor = function() {
             {
                 let ed = this.getAttribute( 'editor' );
                 this.classList.add( 'active' );
+                currentEditor = this.editor;
                 for( let c = 0; c < allTabs.length; c++ )
                     if( allTabs[ c ] != this ) allTabs[ c ].classList.remove( 'active' );
                 
@@ -42,6 +44,7 @@ window.toolbar.editor = function() {
                     if( pages[ b ].getAttribute( 'editor' ) == ed )
                     {
                         pages[ b ].classList.add( 'active' );
+                        
                         console.log( 'Found the thing' );
                     }
                     else
@@ -57,11 +60,20 @@ window.toolbar.editor = function() {
         }
     }
 };
+function loadFile( str, path, filename )
+{
+    console.log( 'Loading file: ' + filename, path );
+    let editor = newEditor( filename, path );
+    editor.setValue( atob( str ) );
+}
 
 let edName = 1;
-function newEditor()
+function newEditor( filename = false, path = false )
 {
     edName++;
+    
+    if( path && path.substr( -1, 1 ) != '/' )
+        path += '/';
     
     let p = document.createElement( 'pre' );
     p.setAttribute( 'editor', edName );
@@ -76,13 +88,19 @@ function newEditor()
     });
     
     editorDocuments[ edName ] = editor;
+    editor.filename = filename ? filename : 'unnamed file';
+    editor.path = path ? path : '';
     
     let tab = document.createElement( 'div' );
-    tab.innerHTML = 'unnamed2.html';
+    tab.innerHTML = editor.filename;
     tab.className = 'TopTab';
     tab.setAttribute( 'editor', edName );
+    tab.editor = editor;
     document.getElementById( 'top_toolbar' ).querySelector( '.TopTabs' ).appendChild( tab );
     
     // Reinit
     toolbar.editor();
+    
+    // Return reference to editor
+    return editor;
 }

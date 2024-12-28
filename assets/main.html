@@ -34,7 +34,7 @@
             <div class="messages">
             </div>
             <div class="chat">
-                <textarea class="prompt" onkeydown="if( event.which == 13 ){ let t = this.value; this.value = ''; window.convos.sendMessage(t); event.stopPropagation(); event.preventDefault(); }"></textarea>
+                <textarea class="prompt" onkeyup="checkChatEvents( event, true )" onkeydown="checkChatEvents( event )"></textarea>
             </div>
         </div>
         
