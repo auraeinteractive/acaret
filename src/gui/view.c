@@ -109,8 +109,30 @@ gboolean on_key_press_event(GtkWidget *widget, GdkEventKey *event, gpointer user
         return TRUE;
     }
     
+    // Check if Ctrl+Shift +S is pressed
+    if( 
+        ( event->state & ( GDK_CONTROL_MASK | GDK_SHIFT_MASK ) ) == ( GDK_CONTROL_MASK | GDK_SHIFT_MASK ) 
+        && event->keyval == GDK_KEY_S
+    )
+    {
+        g_print("Ctrl+Shift+S detected. Save AS action triggered.\n");
+        gchar *js_command = strdup( "saveAsData( currentEditor.path + currentEditor.filename + '\\n' + currentEditor.getValue() );" );
+        // Evaluate JavaScript in the WebView to handle the chunk
+        webkit_web_view_evaluate_javascript((WebKitWebView *)user_data, 
+                                            js_command, 
+                                            -1,  // -1 means the length is determined automatically
+                                            NULL, // world_name (NULL for default)
+                                            NULL, // source_uri (NULL for no source)
+                                            NULL, // cancellable (no cancelation)
+                                            NULL, // callback (no callback needed)
+                                            NULL  // user_data (no user data)
+        );
+        g_free(js_command);
+        
+        return TRUE; // Stop further handling of this event
+    }
     // Check if Ctrl+S is pressed
-    if ((event->state & GDK_CONTROL_MASK) && event->keyval == GDK_KEY_s) {
+    else if ((event->state & GDK_CONTROL_MASK) && event->keyval == GDK_KEY_s) {
         g_print("Ctrl+S detected. Save action triggered.\n");
         gchar *js_command = strdup( "saveData( currentEditor.path + currentEditor.filename + '\\n' + currentEditor.getValue() );" );
         // Evaluate JavaScript in the WebView to handle the chunk
@@ -346,6 +368,70 @@ static void on_script_message_received(WebKitUserContentManager *manager,
         g_print("Unexpected message type\n");
     }
 }
+
+// Callback to handle messages from JavaScript
+static void on_script_message_received_saveas(WebKitUserContentManager *manager,
+                                              WebKitJavascriptResult *result,
+                                              gpointer user_data) {
+    // Extract the message as a string
+    JSCValue *value = webkit_javascript_result_get_js_value(result);
+    if (jsc_value_is_string(value)) {
+        gchar *message = jsc_value_to_string(value);
+        g_print("Received message from JavaScript: %s\n", message);
+
+        // Find the position of the newline (\n) that separates the path from the data
+        char *newline_pos = strchr(message, '\n');
+        if (newline_pos) {
+            // Null-terminate the path at the newline
+            *newline_pos = '\0';
+            const char *original_path = message;  // Original path (not used here)
+            const char *data = newline_pos + 1;   // Data is everything after the newline
+
+            // Show GTK Save As dialog
+            GtkWidget *dialog;
+            GtkWindow *parent_window = GTK_WINDOW(user_data);  // Assuming user_data is a GtkWindow*
+            dialog = gtk_file_chooser_dialog_new(
+                "Save As",
+                parent_window,
+                GTK_FILE_CHOOSER_ACTION_SAVE,
+                "_Cancel", GTK_RESPONSE_CANCEL,
+                "_Save", GTK_RESPONSE_ACCEPT,
+                NULL);
+
+            // Set suggested filename
+            gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(dialog), "untitled.txt");
+
+            if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
+                char *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+                g_print("Selected file: %s\n", filename);
+
+                // Save the data to the selected path
+                FILE *file = fopen(filename, "w");
+                if (file) {
+                    fprintf(file, "%s\n", data);
+                    fclose(file);
+                    g_print("Data saved to %s\n", filename);
+                } else {
+                    g_print("Error: Unable to open file at %s for writing\n", filename);
+                }
+
+                g_free(filename);
+            } else {
+                g_print("Save As dialog canceled\n");
+            }
+
+            gtk_widget_destroy(dialog);
+        } else {
+            g_print("Error: No newline found in the message\n");
+        }
+
+        // Clean up
+        g_free(message);
+    } else {
+        g_print("Unexpected message type\n");
+    }
+}
+
 
 int globalMessage = 1;
 
@@ -627,12 +713,17 @@ mlObject *mlViewCreate(mlObject *parent) {
 
     // Connect for saving
     webkit_user_content_manager_register_script_message_handler( content_manager, "saveData" );
+    webkit_user_content_manager_register_script_message_handler( content_manager, "saveAsData" );
     g_signal_connect(content_manager, "script-message-received::saveData", G_CALLBACK(on_script_message_received), NULL);
+    g_signal_connect(content_manager, "script-message-received::saveAsData", G_CALLBACK(on_script_message_received_saveas), NULL);
 
     // Inject JavaScript to send messages
     const gchar *script = 
         "function saveData(data) {"
         "    console.log( \"Saving\", data ); window.webkit.messageHandlers.saveData.postMessage(data);"
+        "};"
+        "function saveAsData(data) {"
+        "    console.log( \"Saving AS\", data ); window.webkit.messageHandlers.saveAsData.postMessage(data);"
         "}";
     WebKitUserScript *user_script = webkit_user_script_new(script,
        WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES,
