@@ -483,6 +483,28 @@ body
     background-color: var(--tab-background-active);
 }
 
+.TopTab > .close
+{
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-image: url(feather/x.svg);
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    filter: invert(1);
+    cursor: pointer;
+    position: relative;
+    top: 2px;
+    opacity: 0.8;
+    margin: 0 10px 0 0;
+}
+.TopTab > .close:hover
+{
+    opacity: 1;
+}
+
+
 .TopTabOption
 {
     float: right;

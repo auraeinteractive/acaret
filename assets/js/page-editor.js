@@ -92,7 +92,11 @@ function newEditor( filename = false, path = false )
     editor.path = path ? path : '';
     
     let tab = document.createElement( 'div' );
-    tab.innerHTML = editor.filename;
+    tab.innerHTML = '<span class="close"></span>' + editor.filename;
+    tab.querySelector( '.close' ).onclick = () => {
+        tab.parentNode.removeChild( tab );
+        editor.destroy();
+    };
     tab.className = 'TopTab';
     tab.setAttribute( 'editor', edName );
     tab.editor = editor;
