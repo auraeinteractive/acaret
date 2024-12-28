@@ -16,6 +16,7 @@ gboolean on_key_press_event(GtkWidget *widget, GdkEventKey *event, gpointer user
     }
     if ((event->state & GDK_CONTROL_MASK) && event->keyval == GDK_KEY_q) {
         g_print("Ctrl+Q detected. Quit action triggered.\n");
+        doQuit();
         return TRUE; // Stop further handling of this event
     }
     return FALSE; // Allow other handlers to process this event

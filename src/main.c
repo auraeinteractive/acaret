@@ -1,11 +1,12 @@
 #include "gui/view.h"
 #include "gui/init.h"  // Include the new abstracted init functions
 #include "proxy/proxy.h"
+#include "system/signals.h"
 
 // Function to quit the application
-void doQuit();
 mlObject *mainView;
 pthread_mutex_t networkMutex;
+int hasQuit = 0;
 
 int main(int argc, char *argv[]) {
     // Start the proxy server
@@ -44,9 +45,17 @@ int main(int argc, char *argv[]) {
 
 void doQuit()
 {
-    printf( "Handling quit.\n" );
-    mlViewDestroy( mainView );
-    stopProxyNetwork();
-    mlQuit(); // Assuming mlQuit is defined in init.c
-    printf( "All operating should now be stopped.\n" );
+    if( hasQuit == 0 )
+    {
+        printf( "Handling quit.\n" );
+        mlViewDestroy( mainView );
+        stopProxyNetwork();
+        mlQuit(); // Assuming mlQuit is defined in init.c
+        printf( "All operating should now be stopped.\n" );
+        hasQuit = 1;
+    }
+    else
+    {
+        printf( "Already quit.\n" );
+    }
 }

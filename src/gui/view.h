@@ -12,6 +12,7 @@
 #include <stddef.h>
 #include <gio/gio.h>
 #include "../proxy/proxy.h"
+#include "../system/signals.h"
 
 typedef struct mlView {
     mlObject base;  // Inherits from mlObject
