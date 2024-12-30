@@ -178,6 +178,12 @@ function handleStreamData(streamId, chunk = false, options = false) {
     }
 }
 
+function resetAIContext( type = 'global' )
+{
+    messageContext[ currentContext ] = [];
+    document.getElementById( 'chat' ).querySelector( '.messages' ).innerHTML = '';
+}
+
 function checkMessageFormatting( currentMsg )
 {
     let str = currentMsg.rawData;
@@ -317,7 +323,7 @@ class Conversation
             this.messageContainer = options.messageContainer;
         this.chunkBuffer = ''; // To store incomplete chunks
         
-        document.getElementById( 'top_chat_title' ).innerHTML = 'Global chat';
+        document.getElementById( 'top_chat_title' ).getElementsByTagName( 'div' )[0].innerHTML = 'Global chat';
     }
 
     sendMessage( messageStr, options = false )

@@ -8,6 +8,17 @@ function initializeGUI()
     initTabs( 'leftbar' );
     initTabs( 'bottombar', { state: 'inactive' } );
     
+    let closers = document.getElementById( 'debug' ).getElementsByClassName( 'close-page' );
+    let closerp = document.getElementById( 'debug' ).getElementsByClassName( 'page' );
+    for( let a = 0; a < closers.length; a++ )
+    {
+        closers[a].onclick = () => {
+            console.log( 'fop' );
+            for( let b = 0; b < closerp.length; b++ )
+                closerp[b].classList.remove( 'active' );
+        };
+    }
+    
     document.body.addEventListener( 'keyup', function( e )
     {
         if( e.which == 16 )
@@ -18,6 +29,15 @@ function initializeGUI()
         if( e.which == 16 )
             window.chatShift = true;
     } );
+    
+    document.querySelector( '.chat-reset' ).onclick = function( e )
+    {
+        // TODO: Trigger native confirm dialog
+        if( confirm( 'Are you sure?' ) )
+        {
+            resetAIContext();
+        }
+    }
 }
 
 function initTabs( element, options = false )

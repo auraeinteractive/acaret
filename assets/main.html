@@ -25,10 +25,13 @@
         </div>
         <div id="topbar">
             <div id="top_toolbar"></div>
-            <div id="top_chat_title"></div>
+            <div id="top_chat_title">
+                <div></div><em class="chat-reset" title="Reset chat"></em><em class="chat-save" title="Save chat"></em>
+            </div>
         </div>
         <div id="bottombar">
-            <button class="button btn-debug" id="tab_debug">Debug</div>
+            <button class="button btn-document" id="tab_document">Document settings</button>
+            <button class="button btn-debug" id="tab_debug">Debug</button>
         </div>
         <div id="rightbar"></div>
         <div id="chat">
@@ -40,7 +43,8 @@
         </div>
         
         <div id="debug">
-            <div class="page" id="page_debug"></div>
+            <div class="page" id="page_debug"><div class="close-page"></div><div class="page-content"></div></div>
+            <div class="page" id="page_document"><div class="close-page"></div><div class="page-content">...</div></div>
             <div class="page" id="page_codehelp"><pre id="page_codehelp_editor"></pre><div class="close"></div></div>
         </div>
         
