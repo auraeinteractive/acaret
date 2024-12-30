@@ -108,9 +108,30 @@ gboolean on_key_press_event(GtkWidget *widget, GdkEventKey *event, gpointer user
         }
         return TRUE;
     }
-    
+    // Check if Ctrl+N is pressed
+    else if( 
+        ( event->state & GDK_CONTROL_MASK )
+        && event->keyval == GDK_KEY_n
+    )
+    {
+        g_print("Ctrl+N detected. New file triggered.\n");
+        gchar *js_command = strdup( "newEditor()" );
+        // Evaluate JavaScript in the WebView to handle the chunk
+        webkit_web_view_evaluate_javascript((WebKitWebView *)user_data, 
+                                            js_command, 
+                                            -1,  // -1 means the length is determined automatically
+                                            NULL, // world_name (NULL for default)
+                                            NULL, // source_uri (NULL for no source)
+                                            NULL, // cancellable (no cancelation)
+                                            NULL, // callback (no callback needed)
+                                            NULL  // user_data (no user data)
+        );
+        g_free(js_command);
+        
+        return TRUE; // Stop further handling of this event
+    }
     // Check if Ctrl+Shift +S is pressed
-    if( 
+    else if( 
         ( event->state & ( GDK_CONTROL_MASK | GDK_SHIFT_MASK ) ) == ( GDK_CONTROL_MASK | GDK_SHIFT_MASK ) 
         && event->keyval == GDK_KEY_S
     )
@@ -328,6 +349,10 @@ void mlViewOnWindowClosed(void *instance, void *data) {
     }
 }
 
+static void on_script_message_received_saveas(WebKitUserContentManager *manager,
+                                              WebKitJavascriptResult *result,
+                                              gpointer user_data);
+
 // Callback to handle messages from JavaScript
 static void on_script_message_received(WebKitUserContentManager *manager,
                                         WebKitJavascriptResult *result,
@@ -348,6 +373,11 @@ static void on_script_message_received(WebKitUserContentManager *manager,
             const char *data = newline_pos + 1;  // Data is everything after the newlin
 
             printf( "Trying to save to: %s\n", path );
+            if( path[0] != '/' )
+            {
+                printf( "No filename or path - trying save as\n" );
+                return on_script_message_received_saveas( manager, result, user_data );
+            }
 
             // Save the data to the specified path
             FILE *file = fopen(path, "w");
@@ -384,7 +414,6 @@ static void on_script_message_received_saveas(WebKitUserContentManager *manager,
         if (newline_pos) {
             // Null-terminate the path at the newline
             *newline_pos = '\0';
-            const char *original_path = message;  // Original path (not used here)
             const char *data = newline_pos + 1;   // Data is everything after the newline
 
             // Show GTK Save As dialog
@@ -402,20 +431,51 @@ static void on_script_message_received_saveas(WebKitUserContentManager *manager,
             gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(dialog), "untitled.txt");
 
             if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
-                char *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
-                g_print("Selected file: %s\n", filename);
+                char *path = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+                g_print("Selected file: %s\n", path);
 
-                // Save the data to the selected path
-                FILE *file = fopen(filename, "w");
+                // Save the data to the specified path
+                FILE *file = fopen(path, "w");
                 if (file) {
                     fprintf(file, "%s\n", data);
                     fclose(file);
-                    g_print("Data saved to %s\n", filename);
+
+                    // Extract the filename from the path
+                    gchar *filename = g_path_get_basename(path);
+
+                    // Create JavaScript command to update the editor
+                    
+                    char onlypath[ strlen( path ) - strlen( filename ) + 1 ];
+                    snprintf( onlypath, sizeof( onlypath ), "%s", path );
+                    
+                    gchar *js_command = g_strdup_printf(
+                        "setCurrentEditor( { path: '%s', filename: '%s' } );", 
+                        onlypath, 
+                        filename
+                    );
+                    printf( "Evaluating: %s\n", js_command );
+
+                    // Evaluate JavaScript in the WebView
+                    webkit_web_view_evaluate_javascript(
+                        (WebKitWebView *)user_data, 
+                        js_command, 
+                        -1,  // -1 means the length is determined automatically
+                        NULL, // world_name (NULL for default)
+                        NULL, // source_uri (NULL for no source)
+                        NULL, // cancellable (no cancelation)
+                        NULL, // callback (no callback needed)
+                        NULL  // user_data (no user data)
+                    );
+
+                    // Free allocated memory
+                    g_free(js_command);
+                    g_free(filename);
+
+                    g_print("Data saved to %s\n", path);
                 } else {
-                    g_print("Error: Unable to open file at %s for writing\n", filename);
+                    g_print("Error: Unable to open file at %s for writing\n", path);
                 }
 
-                g_free(filename);
             } else {
                 g_print("Save As dialog canceled\n");
             }
@@ -714,8 +774,8 @@ mlObject *mlViewCreate(mlObject *parent) {
     // Connect for saving
     webkit_user_content_manager_register_script_message_handler( content_manager, "saveData" );
     webkit_user_content_manager_register_script_message_handler( content_manager, "saveAsData" );
-    g_signal_connect(content_manager, "script-message-received::saveData", G_CALLBACK(on_script_message_received), NULL);
-    g_signal_connect(content_manager, "script-message-received::saveAsData", G_CALLBACK(on_script_message_received_saveas), NULL);
+    g_signal_connect(content_manager, "script-message-received::saveData", G_CALLBACK(on_script_message_received), ( gpointer )view->webview );
+    g_signal_connect(content_manager, "script-message-received::saveAsData", G_CALLBACK(on_script_message_received_saveas), ( gpointer )view->webview );
 
     // Inject JavaScript to send messages
     const gchar *script = 

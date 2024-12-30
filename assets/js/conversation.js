@@ -60,19 +60,31 @@ let streamIdSeed = 1;
 let streamIdCurrent = null;
 let currentMsg = null;
 let streamBuffer = {};
-function handleStreamData(streamId, chunk = false) {
+function handleStreamData(streamId, chunk = false, options = false) {
     const outputContainer = document.querySelector(".messages");
     
     if( streamIdCurrent != streamId )
     {
         currentMsg = document.createElement( 'div' );
-        outputContainer.appendChild( currentMsg );
-        scrollDownMessages();
-        currentMsg.className = 'message assistant';
         currentMsg.rawData = '';
-        currentMsg.innerHTML = '<strong>Assistant:</strong> ';
+        if( !options )
+        {
+            outputContainer.appendChild( currentMsg );
+            currentMsg.className = 'message assistant';
+            currentMsg.innerHTML = '<strong>Assistant:</strong> ';
+        }
+        else
+        {
+            if( options == 'loopthrough' )
+            {
+                currentMsg.className = 'message assistant';
+                currentMsg.innerHTML = '<strong>Assistant:</strong> Generating...';
+            }
+        }
         streamIdCurrent = streamId;
+        scrollDownMessages();
     }
+    
     if( !streamBuffer[ streamIdCurrent ] )
          streamBuffer[ streamIdCurrent ] = '';
     
@@ -97,10 +109,32 @@ function handleStreamData(streamId, chunk = false) {
             if( js.choices[0].delta.content && js.choices[0].delta.content.length )
             {
                 const textNode = document.createTextNode( js.choices[0].delta.content );
-                console.log( js.choices[0].delta.content );
-                currentMsg.appendChild( textNode );
                 currentMsg.rawData += js.choices[0].delta.content;
-                scrollDownMessages();
+                
+                // Uses a processing function
+                if( options && options.processingFunction )
+                {
+                    options.processingFunction( {
+                        chunk: js.choices[0].delta.content,
+                        messageDiv: currentMsg,
+                        done: false,
+                        options: options
+                    } );
+                }
+                // Check special behavior for modes
+                else if( options && options.mode )
+                {
+                    if( options.mode == 'loopthrough' )
+                    {
+                        options.result += js.choices[0].delta.content;
+                    }
+                }
+                // Default behavior
+                else
+                {
+                    currentMsg.appendChild( textNode );
+                    scrollDownMessages();
+                }
                 streamBuffer[ streamIdCurrent ] = null;
             }
             
@@ -108,16 +142,38 @@ function handleStreamData(streamId, chunk = false) {
             if( js.choices[0].finish_reason == 'stop' )
             {
                 let ctx = messageContext[ currentContext ];
-                ctx.push( { role: 'assistant', content: currentMsg.rawData } );
                 
-                // Parse content properly
+                // Only do this when needed
+                if( !( options && options.skipStoringResponse ) )
+                    ctx.push( { role: 'assistant', content: currentMsg.rawData } );
+                
+                // Uses a processing function
+                if( options && options.processingFunction )
+                {
+                    options.processingFunction( {
+                        chunk: js.choices[0].delta.content,
+                        messageDiv: currentMsg,
+                        done: true,
+                        options: options
+                    } );
+                }
+                // Special behavior for modes
+                else if( options && options.mode && options.callback )
+                {
+                    if( options.mode == 'loopthrough' )
+                    {
+                        console.log( 'Done looping through, now running callback!' );
+                        options.callback( options.result );
+                        currentMsg.innerHTML = '<strong>Assistant:</strong> Done generating.';
+                    }
+                }
                 checkMessageFormatting( currentMsg );
             }
         }
         catch( e )
         {
             //document.getElementById( 'page_debug' ).innerHTML += 'ERROR' + "\n" + ch;
-            console.log( 'WIP: ' + streamBuffer[ streamIdCurrent ] );
+            //console.log( 'WIP: ' + streamBuffer[ streamIdCurrent ] );
         }
     }
 }
@@ -126,8 +182,37 @@ function checkMessageFormatting( currentMsg )
 {
     let str = currentMsg.rawData;
     let pos;
+    let iscripts = [];
     let blocks = [];
     let num = 0;
+    console.log( '[checkMessageFormatting] Working on checking message: \n' + str );
+    
+    while( ( pos = str.indexOf( '<iscript>' ) ) >= 0 )
+    {
+        // Skip encapsulation mark to find code type
+        let block = str.substr( pos + 9, str.length - (pos + 9) );
+        let type = '';
+        
+        let end = block.indexOf( '</iscript>' );
+        
+        let bcontent = block.substr( 0, end );
+        
+        iscripts.push( bcontent.trim() );
+        
+        // Original found block
+        let oblock = '<iscript>' + bcontent + '</iscript>';
+        
+        str = str.split( oblock ).join( '<p class="block">Action executed.</p>' );
+    }
+    
+    if( iscripts.length )
+    {
+        for( let a = 0; a < iscripts.length; a++ )
+        {
+            eval( iscripts[a] );
+        }
+    }
+    
     while( ( pos = str.indexOf( '```' ) ) >= 0 )
     {
         // Skip encapsulation mark to find code type
@@ -202,6 +287,7 @@ function checkMessageFormatting( currentMsg )
                 this.help.setValue( blk.content, -1 );
                 
                 document.getElementById( 'page_codehelp' ).classList.add( 'active' );
+                document.getElementById( 'page_codehelp' ).getElementsByTagName( 'pre' )[0].classList.add( 'active' );
                 
                 document.getElementById( 'page_codehelp' ).querySelector( '.close' ).onclick = () =>
                 {
@@ -216,6 +302,7 @@ function checkMessageFormatting( currentMsg )
             }
         }
     }
+    console.log( '[checkMessageFormatting] The message was properly checked.' );
 }
 
 class Conversation
@@ -243,13 +330,76 @@ class Conversation
         scrollDownMessages();
         
         setTimeout( () => {
-            this.sendMessageNow( messageStr, options );
+            this.evaluateMessageNow( messageStr, options );
         }, 25 );
+    }
+    
+    // Loop through instructions with data with a callback
+    loopThroughAI( instructions, callback )
+    {
+        this.sendMessageNow( instructions, {
+            mode: 'loopthrough',
+            result: '',
+            callback: callback
+        } );
+    }
+    
+    // This evaluates a message with AI to see how it should be handled
+    evaluateMessageNow( messageStr, options )
+    {
+        console.log( 'Passing through evaluateMessageNow()' );
+        let self = this;
+        let response = '';
+        this.sendMessageNow( messageStr, {
+            /*
+            Template:
+            {
+                chunk: str part,
+                messageDiv: div,
+                done: true|false,
+                options: options
+            }
+            */
+            skipStoringResponse: true,
+            context: [ {
+                role: 'system',
+                content: conversationLogic
+            } ], // Clear context
+            processingFunction: function( data )
+            {
+                response += data.chunk ? data.chunk : '';
+                if( data.done )
+                {
+                    if( response.trim() == 'OK' )
+                    {
+                        self.sendMessageNow( messageStr, options );
+                    }
+                    // Try to eval
+                    else
+                    {
+                        console.log( 'Code output: window.AIMethods.' + response.trim() + '(`' + messageStr + '`)' );
+                        try
+                        {
+                            eval( 'window.AIMethods.' + response.trim() + '(`' + messageStr + '`)' );
+                        }
+                        catch( e )
+                        {
+                            console.error( 'Some error: ', e );
+                        }
+                    }
+                }
+            }
+        } );
     }
 
     // Send a message
     async sendMessageNow(messageStr, options = false) {
-        let ctx = messageContext[currentContext];
+        let self = this;
+        
+        // Get context (or override)
+        // TODO: Allow to do more context management
+        let ctx = ( options && typeof( options.context ) != 'undefined' ) ? options.context : messageContext[currentContext];
+        
         ctx.push({ role: 'user', content: messageStr });
 
         // Define the API endpoint
@@ -257,7 +407,7 @@ class Conversation
 
         // Define the system prompt configuration (if needed)
         const systemPrompt = {
-            prompt: 'You are expert at evaluating prompts.',
+            prompt: 'You are helpful.',
             anti_prompt: 'User:',
             assistant_name: 'Assistant:'
         };
@@ -301,7 +451,7 @@ class Conversation
                 const { value, done: chunkDone } = await reader.read();
                 done = chunkDone;
                 const chunkText = decoder.decode(value, { stream: true });
-                handleStreamData(streamId, chunkText);
+                handleStreamData(streamId, chunkText, options );
             }
         } catch (error) {
             console.error("Error occurred:", error);

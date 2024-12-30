@@ -428,16 +428,6 @@ void* handleClientConnection(void* arg) {
         memset(buffer, 0, sizeof(buffer)); // Clear the buffer before reading
         bytes = recv(http_fd, buffer, sizeof(buffer), 0);
         
-        if( timeout.tv_sec == 30 )
-        {
-            timeout.tv_sec = 3; // 3 seconds
-            timeout.tv_usec = 0; // 0 microseconds = 0.0 seconds
-            if (setsockopt(http_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
-                perror("Failed to set socket timeout");
-                // Handle error if needed
-            }
-        }
-        
         if( bytes > 0 )
         {
             printf("Forwarding %d bytes from backend to client\n", bytes);

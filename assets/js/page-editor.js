@@ -67,6 +67,14 @@ function loadFile( str, path, filename )
     editor.setValue( atob( str ) );
 }
 
+function setCurrentEditor( data )
+{
+    currentEditor.path = data.path;
+    currentEditor.filename = data.filename;
+    currentEditor.tab.innerHTML = '<span class="close"></span>' + currentEditor.filename;
+    console.log( 'Updated current editor data' );
+}
+
 let edName = 1;
 function newEditor( filename = false, path = false )
 {
@@ -84,7 +92,8 @@ function newEditor( filename = false, path = false )
     editor.session.setMode("ace/mode/javascript");
     editor.setOptions({
         fontFamily: "tahoma",
-        fontSize: "15px"
+        fontSize: "15px",
+        wrap: true
     });
     
     editorDocuments[ edName ] = editor;
@@ -100,10 +109,14 @@ function newEditor( filename = false, path = false )
     tab.className = 'TopTab';
     tab.setAttribute( 'editor', edName );
     tab.editor = editor;
+    editor.tab = tab;
     document.getElementById( 'top_toolbar' ).querySelector( '.TopTabs' ).appendChild( tab );
     
     // Reinit
     toolbar.editor();
+    
+    tab.click();
+    editor.focus();
     
     // Return reference to editor
     return editor;
