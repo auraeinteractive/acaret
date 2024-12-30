@@ -8,6 +8,7 @@ mlObject *mainView;
 pthread_mutex_t networkMutex;
 int hasQuit = 0;
 
+// Initiates the program
 int main(int argc, char *argv[]) {
     // Start the proxy server
     printf( "Starting proxy.\n" );
@@ -59,3 +60,4 @@ void doQuit()
         printf( "Already quit.\n" );
     }
 }
+

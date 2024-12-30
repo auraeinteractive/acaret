@@ -265,6 +265,17 @@ body
     opacity: 0.5;
 }
 
+#bottombar .bottom-info
+{
+    position: relative;
+    display: block;
+    float: left;
+    height: 34px;
+    line-height: 34px;
+    color: white;
+    padding: 0 10px 0 10px;
+}
+
 #debug
 {
     z-index: 2;
@@ -488,7 +499,7 @@ body
     content: " ";
     display: block;
     position: absolute;
-    top: 100%;
+    top: calc(100% - 0.1px);
     left: 10px;
     width: 16px;
     height: 16px;

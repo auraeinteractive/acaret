@@ -36,6 +36,7 @@ window.toolbar.editor = function() {
                 let ed = this.getAttribute( 'editor' );
                 this.classList.add( 'active' );
                 currentEditor = this.editor;
+                updateBottomBar();
                 for( let c = 0; c < allTabs.length; c++ )
                     if( allTabs[ c ] != this ) allTabs[ c ].classList.remove( 'active' );
                 
@@ -44,8 +45,6 @@ window.toolbar.editor = function() {
                     if( pages[ b ].getAttribute( 'editor' ) == ed )
                     {
                         pages[ b ].classList.add( 'active' );
-                        
-                        console.log( 'Found the thing' );
                     }
                     else
                     {
@@ -72,7 +71,82 @@ function setCurrentEditor( data )
     currentEditor.path = data.path;
     currentEditor.filename = data.filename;
     currentEditor.tab.innerHTML = '<span class="close"></span>' + currentEditor.filename;
-    console.log( 'Updated current editor data' );
+    updateBottomBar();
+}
+
+function updateBottomBar()
+{
+    let mode = 'ace/mode/plain_text';
+    try
+    {
+        let ext = currentEditor.filename.split('.').pop();
+        if( ext )
+        {
+            ext = ext.toLowerCase();
+            switch( ext )
+            {
+                case 'js':
+                    mode = 'ace/mode/javascript';
+                    break;
+                case 'html':
+                    mode = 'ace/mode/html';
+                    break;
+                case 'css':
+                    mode = 'ace/mode/css';
+                    break;
+                case 'json':
+                    mode = 'ace/mode/json';
+                    break;
+                case 'xml':
+                    mode = 'ace/mode/xml';
+                    break;
+                case 'php':
+                    mode = 'ace/mode/php';
+                    break;
+                case 'py':
+                    mode = 'ace/mode/python';
+                    break;
+                case 'rb':
+                    mode = 'ace/mode/ruby';
+                    break;
+                case 'c':
+                    mode = 'ace/mode/c_cpp';
+                    break;
+                case 'cpp':
+                    mode = 'ace/mode/c_cpp';
+                    break;
+                case 'java':
+                    mode = 'ace/mode/java';
+                    break;
+                case 'swift':
+                    mode = 'ace/mode/swift';
+                    break;
+                case 'go':
+                    mode = 'ace/mode/go';
+                    break;
+                case 'rs':
+                    mode = 'ace/mode/rust';
+                    break;
+                case 'ts':
+                    mode = 'ace/mode/typescript';
+                    break;
+                case 'vue':
+                    mode = 'ace/mode/vue';
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    catch( e ){ console.log( 'Some error' ); }
+    
+    if( currentEditor.filename == 'Makefile' )
+        mode = 'ace/mode/makefile';
+    
+    currentEditor.session.setMode( mode );
+    
+    // Set the bottom bar info
+    document.getElementById( 'bottombar' ).querySelector( '.bottom-info' ).innerHTML = 'Editing: ' + mode.split( '/' ).pop().split( '_' ).join( '/' );
 }
 
 let edName = 1;
@@ -117,6 +191,8 @@ function newEditor( filename = false, path = false )
     
     tab.click();
     editor.focus();
+    
+    updateBottomBar();
     
     // Return reference to editor
     return editor;

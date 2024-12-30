@@ -155,7 +155,7 @@ gboolean on_key_press_event(GtkWidget *widget, GdkEventKey *event, gpointer user
     // Check if Ctrl+S is pressed
     else if ((event->state & GDK_CONTROL_MASK) && event->keyval == GDK_KEY_s) {
         g_print("Ctrl+S detected. Save action triggered.\n");
-        gchar *js_command = strdup( "saveData( currentEditor.path + currentEditor.filename + '\\n' + currentEditor.getValue() );" );
+        gchar *js_command = strdup( "saveData( currentEditor.path + currentEditor.filename + '\\n' + currentEditor.getValue() ); updateBottomBar();" );
         // Evaluate JavaScript in the WebView to handle the chunk
         webkit_web_view_evaluate_javascript((WebKitWebView *)user_data, 
                                             js_command, 
@@ -781,9 +781,11 @@ mlObject *mlViewCreate(mlObject *parent) {
     const gchar *script = 
         "function saveData(data) {"
         "    console.log( \"Saving\", data ); window.webkit.messageHandlers.saveData.postMessage(data);"
+        "    updateBottomBar();"
         "};"
         "function saveAsData(data) {"
         "    console.log( \"Saving AS\", data ); window.webkit.messageHandlers.saveAsData.postMessage(data);"
+        "    updateBottomBar();"
         "}";
     WebKitUserScript *user_script = webkit_user_script_new(script,
        WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES,
