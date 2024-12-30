@@ -133,6 +133,9 @@ function updateBottomBar()
                 case 'vue':
                     mode = 'ace/mode/vue';
                     break;
+                case 'md':
+                    mode = 'ace/mode/markdown';
+                    break;
                 default:
                     break;
             }
@@ -165,7 +168,7 @@ function newEditor( filename = false, path = false )
     editor.setTheme("ace/theme/twilight");
     editor.session.setMode("ace/mode/javascript");
     editor.setOptions({
-        fontFamily: "tahoma",
+        fontFamily: "Ubuntu Mono, Monospace",
         fontSize: "15px",
         wrap: true
     });

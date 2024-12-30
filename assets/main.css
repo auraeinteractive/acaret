@@ -581,7 +581,7 @@ body
 
 .ace_editor *
 {
-    font-family: Monospace !important;
+    font-family: Ubuntu Mono, Monospace !important;
 }
 
 .TopTabs
