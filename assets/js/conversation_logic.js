@@ -9,6 +9,8 @@ If the user asks to take the currently selected text and improve it, just respon
 
 If the user just asks you to read or evaluate the selected text, just respond: readSelection
 
+If the user just asks you to read or evaluate the whole document or file, just respond: readDocument
+
 If none of the above, just respond: OK
 `;
 
@@ -27,6 +29,14 @@ window.AIMethods = {
             // Insert the text at the current cursor position
             currentEditor.session.insert( cursorPosition, result );
         } );
+    },
+    readDocument( str )
+    {
+        if( !currentEditor ) return;
+        
+        // Process the selection with AI (loopThroughAI)
+        console.log( '[readSelection] Looping through AI: ' + currentEditor.getValue() );
+        window.convos.sendMessageNow( str, { instruction: 'Document: ' + currentEditor.getValue() } );
     },
     readSelection( str )
     {
