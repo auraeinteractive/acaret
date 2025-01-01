@@ -60,13 +60,17 @@ let streamIdSeed = 1;
 let streamIdCurrent = null;
 let currentMsg = null;
 let streamBuffer = {};
+// TODO: complete implementation of currentMsg.mode and displayStr to make sure we don't show 
+//       output of markdown etc updated when a tag is incomplete
 function handleStreamData(streamId, chunk = false, options = false) {
     const outputContainer = document.querySelector(".messages");
     
     if( streamIdCurrent != streamId )
     {
         currentMsg = document.createElement( 'div' );
-        currentMsg.rawData = '';
+        currentMsg.rawData = ''; // raw token aggregate
+        currentMsg.displayStr = ''; // displayable string
+        currentMsg.mode = 0; // 0 text, 1 inside a tag
         if( !options )
         {
             outputContainer.appendChild( currentMsg );
@@ -108,8 +112,9 @@ function handleStreamData(streamId, chunk = false, options = false) {
             
             if( js.choices[0].delta.content && js.choices[0].delta.content.length )
             {
-                const textNode = document.createTextNode( js.choices[0].delta.content );
-                currentMsg.rawData += js.choices[0].delta.content;
+                let cnt = js.choices[0].delta.content;
+            
+                currentMsg.rawData += cnt;
                 
                 // Uses a processing function
                 if( options && options.processingFunction )
@@ -132,7 +137,8 @@ function handleStreamData(streamId, chunk = false, options = false) {
                 // Default behavior
                 else
                 {
-                    currentMsg.appendChild( textNode );
+                    currentMsg.innerHTML = new showdown.Converter().makeHtml( currentMsg.rawData );
+                    
                     scrollDownMessages();
                 }
                 streamBuffer[ streamIdCurrent ] = null;
@@ -252,6 +258,11 @@ function checkMessageFormatting( currentMsg )
             str = str.split( oblock ).join( '<p class="block" id="codeblock_' + ++num + '">Examine: <strong>' + type + '</strong></p>' );
         }
     }
+    
+    // Markdown
+    str = new showdown.Converter().makeHtml( str );
+    
+    
     currentMsg.innerHTML = '<strong>Assistant:</strong> ' + str;
     
     let eles = currentMsg.getElementsByClassName( 'block' );

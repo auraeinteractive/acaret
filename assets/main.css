@@ -533,6 +533,7 @@ body
     height: 50px;
     padding: 10px;
     box-sizing: border-box;
+    font-size: 13px;
 }
 
 /* Bar setup */
