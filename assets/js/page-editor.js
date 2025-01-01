@@ -134,6 +134,10 @@ function getSyntaxHighlightingMode( ext )
             case 'md':
                 mode = 'ace/mode/markdown';
                 break;
+            case 'bash':
+            case 'sh':
+                mode = 'ace/mode/sh';
+                break;
             default:
                 mode = 'ace/mode/' + ext.toLowerCase();
                 break;
