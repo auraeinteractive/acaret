@@ -129,8 +129,6 @@ void* proxyThreadFunction(void* arg) {
             break;
         }
         pthread_mutex_unlock( &networkMutex );
-        usleep( 2500 );
-        
            
         struct epoll_event events[10];  // max 10 connections at once
         //printf("Waiting for connections (running %d)\n", *networkRunning);
@@ -281,12 +279,12 @@ void* handleClientConnection(void* arg) {
 
     size_t send_buffer_len = 0; // This will track the length of the data in send_buffer
     int retries = READ_RETRIES;
-    int waitLength = 5;
 
     while (1) {
         memset( buffer, 0, BUFLENGTH );
         bytes = SSL_read(ssl, buffer, BUFLENGTH);
         if (bytes > 0) {
+        
             retries = READ_RETRIES;
             //printf("Forwarding %d bytes from client to backend\n", bytes);
 
@@ -316,9 +314,7 @@ void* handleClientConnection(void* arg) {
                     printf("--\nRead retries exhausted\n");
                     break;
                 }
-                usleep( waitLength );
-                if( waitLength < 250 )
-                    waitLength += 5;
+                usleep( 250 );
                 continue;
             } else {
                 perror("Error reading from client");
