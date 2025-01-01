@@ -67,6 +67,9 @@ function handleStreamData(streamId, chunk = false, options = false) {
     
     if( streamIdCurrent != streamId )
     {
+        // Remove dummy
+        if( currentMsg && currentMsg.innerHTML == '' )
+            currentMsg.parentNode.removeChild( currentMsg );
         currentMsg = document.createElement( 'div' );
         currentMsg.rawData = ''; // raw token aggregate
         currentMsg.displayStr = ''; // displayable string
@@ -79,7 +82,18 @@ function handleStreamData(streamId, chunk = false, options = false) {
         }
         else
         {
-            if( options == 'loopthrough' )
+            // If we skip storing a response, it means this isn't output to user
+            if( !options.skipStoringResponse )
+            {
+                outputContainer.appendChild( currentMsg );
+            }
+            // If this was charged with instruction, it's from the assistant
+            if( options && options.instruction )
+            {
+                currentMsg.className = 'message assistant';
+            }
+            // Loops from assistant (div will be updated later)
+            else if( options == 'loopthrough' )
             {
                 currentMsg.className = 'message assistant';
                 currentMsg.innerHTML = '<strong>Assistant:</strong> Generating...';
@@ -261,8 +275,7 @@ function checkMessageFormatting( currentMsg )
     
     // Markdown
     str = new showdown.Converter().makeHtml( str );
-    
-    
+    console.log( 'Was adding: ' + str );
     currentMsg.innerHTML = '<strong>Assistant:</strong> ' + str;
     
     let eles = currentMsg.getElementsByClassName( 'block' );
@@ -416,6 +429,11 @@ class Conversation
         // Get context (or override)
         // TODO: Allow to do more context management
         let ctx = ( options && typeof( options.context ) != 'undefined' ) ? options.context : messageContext[currentContext];
+        
+        if( options.instruction )
+        {
+            ctx.push( { role: 'system', content: options.instruction } );
+        }
         
         ctx.push({ role: 'user', content: messageStr });
 

@@ -7,6 +7,8 @@ If the user asks to generate text into the current document, and mentions the cu
 
 If the user asks to take the currently selected text and improve it, just respond: replaceSelection
 
+If the user just asks you to read or evaluate the selected text, just respond: readSelection
+
 If none of the above, just respond: OK
 `;
 
@@ -26,6 +28,20 @@ window.AIMethods = {
             currentEditor.session.insert( cursorPosition, result );
         } );
     },
+    readSelection( str )
+    {
+        if( !currentEditor ) return;
+        
+        // Get the current selection range
+        let selectionRange = currentEditor.getSelectionRange();
+        
+        // Get the currently selected text
+        let currentSelectionStr = currentEditor.session.getTextRange( selectionRange );
+        
+        // Process the selection with AI (loopThroughAI)
+        console.log( '[readSelection] Looping through AI: ' + currentSelectionStr  );
+        window.convos.sendMessageNow( str, { instruction: 'Selected text: ' + currentSelectionStr } );
+    },
     replaceSelection( str )
     {
         if( !currentEditor ) return;
@@ -42,7 +58,7 @@ window.AIMethods = {
         console.log( '[replaceSelection] Looping through AI' );
         window.convos.loopThroughAI( `User instructions: ${str}
         
-ere is the current selection to improve: ${currentSelectionStr}`, 
+Here is the current selection to improve: ${currentSelectionStr}`, 
         function( result )
         {
             console.log( 'Tried to set this: ' + result );
