@@ -309,7 +309,7 @@ function checkMessageFormatting( currentMsg )
                 
                 this.help = ace.edit( 'page_codehelp_editor' );
                 this.help.setTheme( 'ace/theme/twilight' );
-                this.help.session.setMode( 'ace/mode/' + blk.type );
+                this.help.session.setMode( getSyntaxHighlightingMode( blk.type.toLowerCase() ) );
                 this.help.setOptions({
                     fontFamily: 'tahoma',
                     fontSize: '15px'

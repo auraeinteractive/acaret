@@ -27,8 +27,8 @@ body
 #topbar #top_chat_title
 {
     position: absolute;
-    left: calc(100% - 300px);
-    width: 300px;
+    left: calc(100% - 450px);
+    width: 450px;
     height: 100%;
     top: 0;
     padding: 0 10px 0 10px;
@@ -97,7 +97,7 @@ body
 {
     position: absolute;
     left: 0;
-    width: calc(100% - 300px);
+    width: calc(100% - 450px);
     height: 100%;
     top: 0;
     padding: 0;
@@ -390,7 +390,7 @@ body
     top: 35px;
     bottom: 35px;
     left: 51px;
-    width: calc(100% - 351px);
+    width: calc(100% - 501px);
     overflow: hidden;
     pointer-events: none;
 }
@@ -426,8 +426,8 @@ body
     margin: 0;
     position: absolute;
     top: 35px;
-    left: calc(100% - 300px);
-    width: 300px;
+    left: calc(100% - 450px);
+    width: 450px;
     bottom: 35px;
     background: var(--panel-background);
     color: white;

@@ -74,72 +74,85 @@ function setCurrentEditor( data )
     updateBottomBar();
 }
 
+function getSyntaxHighlightingMode( ext )
+{
+    let mode = 'ace/mode/plain_text';
+    
+    if( ext )
+    {
+        ext = ext.toLowerCase();
+        switch( ext )
+        {
+            case 'js':
+                mode = 'ace/mode/javascript';
+                break;
+            case 'html':
+                mode = 'ace/mode/html';
+                break;
+            case 'css':
+                mode = 'ace/mode/css';
+                break;
+            case 'json':
+                mode = 'ace/mode/json';
+                break;
+            case 'xml':
+                mode = 'ace/mode/xml';
+                break;
+            case 'php':
+                mode = 'ace/mode/php';
+                break;
+            case 'py':
+                mode = 'ace/mode/python';
+                break;
+            case 'rb':
+                mode = 'ace/mode/ruby';
+                break;
+            case 'c':
+                mode = 'ace/mode/c_cpp';
+                break;
+            case 'cpp':
+                mode = 'ace/mode/c_cpp';
+                break;
+            case 'java':
+                mode = 'ace/mode/java';
+                break;
+            case 'swift':
+                mode = 'ace/mode/swift';
+                break;
+            case 'go':
+                mode = 'ace/mode/go';
+                break;
+            case 'rs':
+                mode = 'ace/mode/rust';
+                break;
+            case 'ts':
+                mode = 'ace/mode/typescript';
+                break;
+            case 'vue':
+                mode = 'ace/mode/vue';
+                break;
+            case 'md':
+                mode = 'ace/mode/markdown';
+                break;
+            default:
+                mode = 'ace/mode/' + ext.toLowerCase();
+                break;
+        }
+    }
+    if( mode == 'makefile' )
+    {
+        return 'ace/mode/makefile';
+    }
+    return mode;    
+}
+
 function updateBottomBar()
 {
     let mode = 'ace/mode/plain_text';
     try
     {
         let ext = currentEditor.filename.split('.').pop();
-        if( ext )
-        {
-            ext = ext.toLowerCase();
-            switch( ext )
-            {
-                case 'js':
-                    mode = 'ace/mode/javascript';
-                    break;
-                case 'html':
-                    mode = 'ace/mode/html';
-                    break;
-                case 'css':
-                    mode = 'ace/mode/css';
-                    break;
-                case 'json':
-                    mode = 'ace/mode/json';
-                    break;
-                case 'xml':
-                    mode = 'ace/mode/xml';
-                    break;
-                case 'php':
-                    mode = 'ace/mode/php';
-                    break;
-                case 'py':
-                    mode = 'ace/mode/python';
-                    break;
-                case 'rb':
-                    mode = 'ace/mode/ruby';
-                    break;
-                case 'c':
-                    mode = 'ace/mode/c_cpp';
-                    break;
-                case 'cpp':
-                    mode = 'ace/mode/c_cpp';
-                    break;
-                case 'java':
-                    mode = 'ace/mode/java';
-                    break;
-                case 'swift':
-                    mode = 'ace/mode/swift';
-                    break;
-                case 'go':
-                    mode = 'ace/mode/go';
-                    break;
-                case 'rs':
-                    mode = 'ace/mode/rust';
-                    break;
-                case 'ts':
-                    mode = 'ace/mode/typescript';
-                    break;
-                case 'vue':
-                    mode = 'ace/mode/vue';
-                    break;
-                case 'md':
-                    mode = 'ace/mode/markdown';
-                    break;
-                default:
-                    break;
-            }
-        }
+        mode = getSyntaxHighlightingMode( ext );
     }
     catch( e ){ console.log( 'Some error' ); }
     
