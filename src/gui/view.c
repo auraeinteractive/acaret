@@ -1,5 +1,69 @@
 #include "view.h"
 
+char *open_file_dialog(GtkWindow *parent);
+char *read_file_content(const char *file_path);
+void pass_file_to_js(WebKitWebView *webview, const char *file_path);
+
+// Some menu functions
+void on_new_file(GtkWidget *widget, gpointer user_data )
+{
+    printf( "Tried to execute the new file..\n" );
+    gchar *js_command = strdup( "newEditor()" );
+    // Evaluate JavaScript in the WebView to handle the chunk
+    webkit_web_view_evaluate_javascript((WebKitWebView *)user_data, 
+                                        js_command, 
+                                        -1,  // -1 means the length is determined automatically
+                                        NULL, // world_name (NULL for default)
+                                        NULL, // source_uri (NULL for no source)
+                                        NULL, // cancellable (no cancelation)
+                                        NULL, // callback (no callback needed)
+                                        NULL  // user_data (no user data)
+    );
+    g_free(js_command);
+}
+void on_open_file(GtkWidget *widget, gpointer user_data )
+{
+    printf( "Tried to execute the open file..\n" );
+    char *path = open_file_dialog( ( GtkWindow *)widget );
+    if( path != NULL )
+    {
+        pass_file_to_js( ( WebKitWebView *)user_data, path );
+        free( path );
+    }
+}
+void on_save_file(GtkWidget *widget, gpointer user_data )
+{
+    printf( "Tried to execute the new file..\n" );
+    gchar *js_command = strdup( "saveData( currentEditor.path + currentEditor.filename + '\\n' + currentEditor.getValue() ); updateBottomBar();" );
+    // Evaluate JavaScript in the WebView to handle the chunk
+    webkit_web_view_evaluate_javascript((WebKitWebView *)user_data, 
+                                        js_command, 
+                                        -1,  // -1 means the length is determined automatically
+                                        NULL, // world_name (NULL for default)
+                                        NULL, // source_uri (NULL for no source)
+                                        NULL, // cancellable (no cancelation)
+                                        NULL, // callback (no callback needed)
+                                        NULL  // user_data (no user data)
+    );
+    g_free(js_command);
+}
+void on_save_file_as(GtkWidget *widget, gpointer user_data )
+{
+    printf( "Tried to execute the new file..\n" );
+    gchar *js_command = strdup( "saveAsData( currentEditor.path + currentEditor.filename + '\\n' + currentEditor.getValue() );" );
+    // Evaluate JavaScript in the WebView to handle the chunk
+    webkit_web_view_evaluate_javascript((WebKitWebView *)user_data, 
+                                        js_command, 
+                                        -1,  // -1 means the length is determined automatically
+                                        NULL, // world_name (NULL for default)
+                                        NULL, // source_uri (NULL for no source)
+                                        NULL, // cancellable (no cancelation)
+                                        NULL, // callback (no callback needed)
+                                        NULL  // user_data (no user data)
+    );
+    g_free(js_command);
+}
+
 // Callback to handle resource loading failures
 static void on_resource_failed(WebKitWebResource *resource, GError *error, gpointer user_data) {
     fprintf(stderr, "Failed to load resource: %s\n", error->message);
@@ -100,12 +164,7 @@ char *open_file_dialog(GtkWindow *parent) {
 void mlViewOnWindowClosed(void *instance, void *data);
 gboolean on_key_press_event(GtkWidget *widget, GdkEventKey *event, gpointer user_data) {
     if( ( event->state && GDK_CONTROL_MASK ) && event->keyval == GDK_KEY_o ){
-        char *path = open_file_dialog( ( GtkWindow *)widget );
-        if( path != NULL )
-        {
-            pass_file_to_js( ( WebKitWebView *)user_data, path );
-            free( path );
-        }
+        on_open_file( widget, user_data );
         return TRUE;
     }
     // Check if Ctrl+N is pressed
@@ -115,18 +174,7 @@ gboolean on_key_press_event(GtkWidget *widget, GdkEventKey *event, gpointer user
     )
     {
         g_print("Ctrl+N detected. New file triggered.\n");
-        gchar *js_command = strdup( "newEditor()" );
-        // Evaluate JavaScript in the WebView to handle the chunk
-        webkit_web_view_evaluate_javascript((WebKitWebView *)user_data, 
-                                            js_command, 
-                                            -1,  // -1 means the length is determined automatically
-                                            NULL, // world_name (NULL for default)
-                                            NULL, // source_uri (NULL for no source)
-                                            NULL, // cancellable (no cancelation)
-                                            NULL, // callback (no callback needed)
-                                            NULL  // user_data (no user data)
-        );
-        g_free(js_command);
+        on_new_file( widget, user_data );
         
         return TRUE; // Stop further handling of this event
     }
@@ -137,36 +185,14 @@ gboolean on_key_press_event(GtkWidget *widget, GdkEventKey *event, gpointer user
     )
     {
         g_print("Ctrl+Shift+S detected. Save AS action triggered.\n");
-        gchar *js_command = strdup( "saveAsData( currentEditor.path + currentEditor.filename + '\\n' + currentEditor.getValue() );" );
-        // Evaluate JavaScript in the WebView to handle the chunk
-        webkit_web_view_evaluate_javascript((WebKitWebView *)user_data, 
-                                            js_command, 
-                                            -1,  // -1 means the length is determined automatically
-                                            NULL, // world_name (NULL for default)
-                                            NULL, // source_uri (NULL for no source)
-                                            NULL, // cancellable (no cancelation)
-                                            NULL, // callback (no callback needed)
-                                            NULL  // user_data (no user data)
-        );
-        g_free(js_command);
+        on_save_file_as( widget, user_data );
         
         return TRUE; // Stop further handling of this event
     }
     // Check if Ctrl+S is pressed
     else if ((event->state & GDK_CONTROL_MASK) && event->keyval == GDK_KEY_s) {
         g_print("Ctrl+S detected. Save action triggered.\n");
-        gchar *js_command = strdup( "saveData( currentEditor.path + currentEditor.filename + '\\n' + currentEditor.getValue() ); updateBottomBar();" );
-        // Evaluate JavaScript in the WebView to handle the chunk
-        webkit_web_view_evaluate_javascript((WebKitWebView *)user_data, 
-                                            js_command, 
-                                            -1,  // -1 means the length is determined automatically
-                                            NULL, // world_name (NULL for default)
-                                            NULL, // source_uri (NULL for no source)
-                                            NULL, // cancellable (no cancelation)
-                                            NULL, // callback (no callback needed)
-                                            NULL  // user_data (no user data)
-        );
-        g_free(js_command);
+        on_open_file( widget, user_data );
         
         return TRUE; // Stop further handling of this event
     }
@@ -634,7 +660,6 @@ static void on_uri_scheme_request(WebKitURISchemeRequest *request, gpointer user
     }
 }
 
-
 // Create a new view (this function should be called from the main program)
 mlObject *mlViewCreate(mlObject *parent) {
     // Dynamically create the derived mlView object
@@ -661,6 +686,8 @@ mlObject *mlViewCreate(mlObject *parent) {
     GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_container_add(GTK_CONTAINER(view->window), vbox);
 
+    // #tag: Set up window menu
+
     // Create a menu bar
     GtkWidget *menu_bar = gtk_menu_bar_new();
 
@@ -673,18 +700,22 @@ mlObject *mlViewCreate(mlObject *parent) {
     GtkWidget *open_project = gtk_menu_item_new_with_label("Open Project");
     GtkWidget *close_project = gtk_menu_item_new_with_label("Close Project");
     GtkWidget *separator1 = gtk_separator_menu_item_new();
-    GtkWidget *new_file = gtk_menu_item_new_with_label("New File");
-    GtkWidget *open_file = gtk_menu_item_new_with_label("Open File");
-    GtkWidget *close_file = gtk_menu_item_new_with_label("Close File");
+    GtkWidget *new_file = gtk_menu_item_new_with_label("New");
+    GtkWidget *open_file = gtk_menu_item_new_with_label("Open");
+    GtkWidget *save_file = gtk_menu_item_new_with_label("Save");
+    GtkWidget *save_file_as = gtk_menu_item_new_with_label("Save As");
+    GtkWidget *close_file = gtk_menu_item_new_with_label("Close");
     GtkWidget *separator2 = gtk_separator_menu_item_new();
     GtkWidget *quit = gtk_menu_item_new_with_label("Quit");
-
+    
     gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), new_project);
     gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), open_project);
     gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), close_project);
     gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), separator1);
     gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), new_file);
     gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), open_file);
+    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), save_file);
+    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), save_file_as);
     gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), close_file);
     gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), separator2);
     gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), quit);
@@ -741,6 +772,11 @@ mlObject *mlViewCreate(mlObject *parent) {
         free(view); // Clean up memory
         return NULL;
     }
+
+    g_signal_connect(new_file, "activate", G_CALLBACK(on_new_file), ( gpointer )view->webview);
+    g_signal_connect(open_file, "activate", G_CALLBACK(on_open_file), ( gpointer )view->webview);
+    g_signal_connect(save_file, "activate", G_CALLBACK(on_save_file), ( gpointer )view->webview);
+    g_signal_connect(save_file_as, "activate", G_CALLBACK(on_save_file_as), ( gpointer )view->webview);
 
     // Set up settings for file access if not already done
     WebKitSettings *settings = webkit_web_view_get_settings(view->webview);
@@ -843,4 +879,6 @@ void mlViewDestroy(mlObject *obj) {
     // Call the base destroy function to clean up common resources
     mlObjectDestroy(obj);
 }
+
+
 

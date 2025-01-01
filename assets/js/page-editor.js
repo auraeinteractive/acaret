@@ -64,6 +64,7 @@ function loadFile( str, path, filename )
     console.log( 'Loading file: ' + filename, path );
     let editor = newEditor( filename, path );
     editor.setValue( atob( str ) );
+    editor.clearSelection();
 }
 
 function setCurrentEditor( data )
@@ -138,8 +139,10 @@ function getSyntaxHighlightingMode( ext )
             case 'sh':
                 mode = 'ace/mode/sh';
                 break;
+            case 'txt':
+            case 'unnamed file':
             default:
-                mode = 'ace/mode/' + ext.toLowerCase();
+                mode = 'ace/mode/plain_text';
                 break;
         }
     }
@@ -217,3 +220,4 @@ function newEditor( filename = false, path = false )
     // Return reference to editor
     return editor;
 }
+

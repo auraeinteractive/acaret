@@ -68,16 +68,18 @@ function handleStreamData(streamId, chunk = false, options = false) {
     if( streamIdCurrent != streamId )
     {
         // Remove dummy
-        if( currentMsg && currentMsg.innerHTML == '' )
+        if( currentMsg && currentMsg.innerHTML == '' && currentMsg.parentNode )
             currentMsg.parentNode.removeChild( currentMsg );
         currentMsg = document.createElement( 'div' );
         currentMsg.rawData = ''; // raw token aggregate
         currentMsg.displayStr = ''; // displayable string
         currentMsg.mode = 0; // 0 text, 1 inside a tag
+        
+        currentMsg.className = 'message assistant';
+        
         if( !options )
         {
             outputContainer.appendChild( currentMsg );
-            currentMsg.className = 'message assistant';
             currentMsg.innerHTML = '<strong>Assistant:</strong> ';
         }
         else
@@ -87,15 +89,9 @@ function handleStreamData(streamId, chunk = false, options = false) {
             {
                 outputContainer.appendChild( currentMsg );
             }
-            // If this was charged with instruction, it's from the assistant
-            if( options && options.instruction )
-            {
-                currentMsg.className = 'message assistant';
-            }
             // Loops from assistant (div will be updated later)
             else if( options == 'loopthrough' )
             {
-                currentMsg.className = 'message assistant';
                 currentMsg.innerHTML = '<strong>Assistant:</strong> Generating...';
             }
         }
@@ -430,12 +426,14 @@ class Conversation
         // TODO: Allow to do more context management
         let ctx = ( options && typeof( options.context ) != 'undefined' ) ? options.context : messageContext[currentContext];
         
+        
+        
+        ctx.push({ role: 'user', content: messageStr });
+        
         if( options.instruction )
         {
             ctx.push( { role: 'system', content: options.instruction } );
         }
-        
-        ctx.push({ role: 'user', content: messageStr });
 
         // Define the API endpoint
         const API_URL = 'https://localhost:8089/v1/chat/completions';

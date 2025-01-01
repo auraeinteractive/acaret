@@ -9,7 +9,8 @@ If the user asks to take the currently selected text and improve it, just respon
 
 If the user just asks you to read or evaluate the selected text, just respond: readSelection
 
-If the user just asks you to read or evaluate the whole document or file, just respond: readDocument
+If the user asks you to read or evaluate the current open file or code or document, just respond: readDocument
+If the user asks you to read the current file, just respond: readDocument
 
 If none of the above, just respond: OK
 `;
@@ -36,7 +37,7 @@ window.AIMethods = {
         
         // Process the selection with AI (loopThroughAI)
         console.log( '[readSelection] Looping through AI: ' + currentEditor.getValue() );
-        window.convos.sendMessageNow( str, { instruction: 'Document: ' + currentEditor.getValue() } );
+        window.convos.sendMessageNow( str, { instruction: 'Document content: ' + currentEditor.getValue() } );
     },
     readSelection( str )
     {
@@ -50,7 +51,7 @@ window.AIMethods = {
         
         // Process the selection with AI (loopThroughAI)
         console.log( '[readSelection] Looping through AI: ' + currentSelectionStr  );
-        window.convos.sendMessageNow( str, { instruction: 'Selected text: ' + currentSelectionStr } );
+        window.convos.sendMessageNow( str, { instruction: 'Selected text content: ' + currentSelectionStr } );
     },
     replaceSelection( str )
     {
