@@ -39,15 +39,22 @@
             <button class="button btn-chat active" id="tab_chat"><span>Chat</span></button>
             <button class="button btn-folders" id="tab_folders"><span>Folders</span></button>
         </div>
-        <div id="chat">
-            <div class="messages">
-            </div>
-            <div class="chat">
-                <div><span class="chat-aperture"></span></div>
-                <div class="prompt">
-                    <textarea class="prompt" onkeyup="checkChatEvents( event, true )" onkeydown="checkChatEvents( event )"></textarea>
+        <div id="rightpages">
+            <div class="page active" id="page_chat">
+                <div id="chat">
+                    <div class="messages">
+                    </div>
+                    <div class="chat">
+                        <div><span class="chat-aperture"></span></div>
+                        <div class="prompt">
+                            <textarea class="prompt" onkeyup="checkChatEvents( event, true )" onkeydown="checkChatEvents( event )"></textarea>
+                        </div>
+                        <div><span class="chat-send" onclick="sendPrompt()"></span></div>
+                    </div>
                 </div>
-                <div><span class="chat-send" onclick="sendPrompt()"></span></div>
+            </div>
+            <div class="page" id="page_folders">
+                There be folders!
             </div>
         </div>
         

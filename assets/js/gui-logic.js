@@ -6,6 +6,7 @@ window.chatShift = false;
 function initializeGUI()
 {
     initTabs( 'leftbar' );
+    initTabs( 'rightbar' );
     initTabs( 'bottombar', { state: 'inactive' } );
     
     let closers = document.getElementById( 'debug' ).getElementsByClassName( 'close-page' );

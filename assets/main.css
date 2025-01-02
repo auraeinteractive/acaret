@@ -155,15 +155,16 @@ hr
     justify-content: center;
     width: 50px; 
     height: auto; 
-    border: none;
     margin: 0;
     cursor: pointer;
     transform-origin: center;
     background: transparent;
     color: white;
     opacity: 0.8;
-    border-bottom: 1px solid #00000055;
     padding: 0 0 10px 0;
+    box-sizing: border-box;
+    border: 6px solid var(--panel-background);
+    border-radius: 9px;
 }
 
 #leftbar .button > span, #rightbar .button > span
@@ -175,8 +176,9 @@ hr
 
 #leftbar .button.active, #rightbar .button.active
 {
-    font-weight: bold;
+    border: 6px solid var(--panel-background);
     opacity: 1;
+    background-color: var(--tab-background-active);
 }
 
 #leftbar .button:hover, #rightbar .button:hover
@@ -229,7 +231,7 @@ hr
     bottom: 0;
     height: 34px;
     left: 50px;
-    right: 0px;
+    right: 51px;
     background: var(--panel-background);
     text-align: right;
     box-sizing: border-box;
@@ -244,11 +246,13 @@ hr
 #bottombar button
 {
     margin: 0;
+    border-radius: 0;
 }
 
 #bottombar .button
 {
-    display: inline-block;
+    display: block;
+    float: right;
     height: 34px;
     border: 0;
     background: transparent;
@@ -437,7 +441,7 @@ hr
     pointer-events: none;
 }
 
-#pages .page, #debug .page
+#pages .page, #debug .page, #rightpages .page
 {
     position: absolute;
     top: 0;
@@ -457,13 +461,13 @@ hr
     height: 100%;
 }
 
-#pages .page.active, #debug .page.active
+#pages .page.active, #debug .page.active, #rightpages .page.active
 {
     opacity: 1;
     pointer-events: all;
 }
 
-#chat
+#rightpages
 {
     margin: 0;
     position: absolute;
@@ -475,6 +479,15 @@ hr
     color: white;
     color: black;
     box-sizing: border-box;
+}
+
+#chat
+{
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
 }
 
 #chat .messages
