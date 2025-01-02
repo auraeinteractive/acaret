@@ -143,6 +143,8 @@ function getSyntaxHighlightingMode( ext )
                 mode = 'ace/mode/sh';
                 break;
             case 'txt':
+            case 'new file':
+            case 'New file':
             case 'unnamed file':
             default:
                 mode = 'ace/mode/plain_text';
@@ -197,7 +199,7 @@ function newEditor( filename = false, path = false )
     });
     
     editorDocuments[ edName ] = editor;
-    editor.filename = filename ? filename : 'unnamed file';
+    editor.filename = filename ? filename : 'New file';
     editor.path = path ? path : '';
     
     let tab = document.createElement( 'div' );
