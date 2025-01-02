@@ -203,8 +203,30 @@ function newEditor( filename = false, path = false )
     let tab = document.createElement( 'div' );
     tab.innerHTML = '<span class="close"></span>' + editor.filename;
     tab.querySelector( '.close' ).onclick = () => {
-        tab.parentNode.removeChild( tab );
+        let p = tab.parentNode;
+        let activate = false;
+        // Try to activate next/prev?
+        for( let a = 0; a < p.childNodes.length; a++ )
+        {
+            if( p.childNodes[a] == tab )
+            {
+                if( a + 1 < p.childNodes.length )
+                {
+                    activate = p.childNodes[ a + 1 ];
+                }
+                else if( a > 0 )
+                {
+                    activate = p.childNodes[ a - 1 ];
+                }
+            }
+        }
+        
+        p.removeChild( tab );
         editor.destroy();
+        if( activate ) 
+        {
+            setTimeout( () => { activate.click(); }, 1 );
+        }
     };
     tab.className = 'TopTab';
     tab.setAttribute( 'editor', edName );
