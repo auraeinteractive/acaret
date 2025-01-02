@@ -26,3 +26,4 @@ response_text=$(echo $response | jq -r '.response')
 
 # Print the response text
 echo "$response_text"
+

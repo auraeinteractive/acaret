@@ -9,7 +9,7 @@ function checkChatEvents( event, keyUp = false )
 {
     let t = event.target;
 
-    if( event.which == 13 && window.chatCtrl )
+    if( event.which == 13 && !window.chatShift )
     { 
         let tv = t.value; 
         t.value = ''; 
@@ -153,6 +153,7 @@ function handleStreamData(streamId, chunk = false, options = false) {
         }
         else
         {
+            console.log( 'Attempting to decode... ' + streamBuffer[ streamIdCurrent ] );
             try
             {
                 let js = JSON.parse( streamBuffer[ streamIdCurrent ] );
@@ -186,7 +187,7 @@ function handleStreamData(streamId, chunk = false, options = false) {
                         // Default behavior
                         else
                         {
-                            currentMsg.innerHTML = new showdown.Converter().makeHtml( currentMsg.rawData );
+                            currentMsg.innerHTML = '<strong>Assistant:</strong> ' + new showdown.Converter().makeHtml( currentMsg.rawData );
                             
                             scrollDownMessages();
                         }
@@ -462,13 +463,14 @@ class Conversation
                     else
                     {
                         console.log( 'Code output: window.AIMethods.' + response.trim() + '(`' + messageStr + '`)' );
-                        try
+                        if( typeof( window.AIMethods[ response.trim() ] ) != 'undefined' )
                         {
                             eval( 'window.AIMethods.' + response.trim() + '(`' + messageStr + '`)' );
                         }
-                        catch( e )
+                        // Probably wasn't one
+                        else
                         {
-                            console.error( 'Some error: ', e );
+                            self.sendMessageNow( messageStr, options );
                         }
                     }
                 }
@@ -484,7 +486,14 @@ class Conversation
         // TODO: Allow to do more context management
         let ctx = ( options && typeof( options.context ) != 'undefined' ) ? options.context : messageContext[currentContext];
         
-        
+        // In regular calls, consult current file
+        if( !options || !options.skipStoringResponse )
+        {
+            ctx = [ {
+                    role: 'system',
+                    content: 'Current file: ' + currentEditor.filename + "\n\nPath: " + currentEditor.path + "\n\nContent:\n\n" + currentEditor.getValue()
+                } ].concat( ctx );
+        }
         
         ctx.push({ role: 'user', content: messageStr });
         

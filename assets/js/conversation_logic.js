@@ -9,10 +9,7 @@ If the user asks to take the currently selected text and improve it, just respon
 
 If the user just asks you to read or evaluate the selected text, just respond: readSelection
 
-If the user asks you to read or evaluate the current open file or code or document, just respond: readDocument
-If the user asks you to read the current file, just respond: readDocument
-
-If none of the above, just respond: OK
+Important! If none of the above, just respond: OK
 `;
 
 window.AIMethods = {
@@ -43,6 +40,7 @@ window.AIMethods = {
             }
         } );
     },
+    // Unused! Deprecated
     readDocument( str )
     {
         if( !currentEditor ) return;

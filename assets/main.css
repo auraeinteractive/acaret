@@ -1,6 +1,8 @@
 :root
 {
     --panel-background: #202020;
+    --panel-border: 1px solid #00000088;
+    --background-border: 1px solid #30303088;
     --tab-background: #262626;
     --tab-background-active: #303030;
 }
@@ -49,7 +51,7 @@ hr
 #topbar #top_chat_title
 {
     position: absolute;
-    left: calc(100% - 450px);
+    left: calc(100% - 501px);
     width: 450px;
     height: 100%;
     top: 0;
@@ -124,7 +126,7 @@ hr
 {
     position: absolute;
     left: 0;
-    width: calc(100% - 450px);
+    width: calc(100% - 501px);
     height: 100%;
     top: 0;
     padding: 0;
@@ -132,7 +134,7 @@ hr
     color: white;
 }
 
-#leftbar
+#leftbar, #rightbar
 {
     position: absolute;
     left: 0;
@@ -140,13 +142,12 @@ hr
     width: 50px;
     height: 100%;
     background: var(--panel-background);
-    
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-#leftbar .button 
+#leftbar .button, #rightbar .button
 {
     display: flex;
     flex-direction: column; 
@@ -165,26 +166,26 @@ hr
     padding: 0 0 10px 0;
 }
 
-#leftbar .button > span 
+#leftbar .button > span, #rightbar .button > span
 {
     writing-mode: vertical-rl;
     text-align: center;
     transform: rotate(180deg);
 }
 
-#leftbar .button.active
+#leftbar .button.active, #rightbar .button.active
 {
     font-weight: bold;
     opacity: 1;
 }
 
-#leftbar .button:hover
+#leftbar .button:hover, #rightbar .button:hover
 {
     opacity: 1;
     background-color: #44444488;
 }
 
-#leftbar .button:before
+#leftbar .button:before, #rightbar .button:before
 {
     content: " ";
     display: block;
@@ -207,12 +208,20 @@ hr
 
 #rightbar
 {
-    position: absolute; /* todo enable */
+    left: auto;
     right: 0;
-    top: 0;
-    width: 0;
-    height: 100%;
+    width: 51px;
+    border-left: var(--background-border);
 }
+
+#rightbar .button > span
+{
+    writing-mode: vertical-lr;
+    transform: rotate(0deg);
+}
+
+#rightbar .button.btn-chat:before { background-image: url(feather/message-circle.svg); }
+#rightbar .button.btn-folders:before { background-image: url(feather/folder.svg); }
 
 #bottombar
 {
@@ -324,7 +333,7 @@ hr
     box-sizing: border-box;
     overflow: auto;
     padding: 10px;
-    border-right: 1px solid #00000088;
+    border-right: var(--panel-border);
 }
 
 #debug .close-page
@@ -423,7 +432,7 @@ hr
     top: 35px;
     bottom: 35px;
     left: 51px;
-    width: calc(100% - 501px);
+    width: calc(100% - 551px);
     overflow: hidden;
     pointer-events: none;
 }
@@ -459,8 +468,8 @@ hr
     margin: 0;
     position: absolute;
     top: 35px;
-    left: calc(100% - 450px);
-    width: 450px;
+    left: calc(100% - 501px);
+    width: 449px;
     bottom: 35px;
     background: var(--panel-background);
     color: white;
