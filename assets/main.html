@@ -27,7 +27,7 @@
         <div id="topbar">
             <div id="top_toolbar"></div>
             <div id="top_chat_title">
-                <div></div><em class="chat-reset" title="Reset chat"></em><em class="chat-save" title="Save chat"></em>
+                <div></div><em class="chat-reset" title="Reset chat"></em><em class="chat-save" title="Save chat"></em><em class="chat-more" title="Options"></em>
             </div>
         </div>
         <div id="bottombar">
@@ -40,7 +40,11 @@
             <div class="messages">
             </div>
             <div class="chat">
-                <textarea class="prompt" onkeyup="checkChatEvents( event, true )" onkeydown="checkChatEvents( event )"></textarea>
+                <div><span class="chat-aperture"></span></div>
+                <div class="prompt">
+                    <textarea class="prompt" onkeyup="checkChatEvents( event, true )" onkeydown="checkChatEvents( event )"></textarea>
+                </div>
+                <div><span class="chat-send" onclick="sendPrompt()"></span></div>
             </div>
         </div>
         
@@ -66,19 +70,95 @@
                 version control
             </div>
             <div class="page" id="page_project" toolbar="project">
+                <div class="hints"></div>
                 <div class="BarSetup">
                     <div class="TabBar">
-                        <div class="barTab active">Main</div>
+                        <div class="barTab active" id="btab_main">Main</div>
                     </div>
                     <div class="TabPages">
-                        <div class="barPage active">
-                            Hello world
+                        <div class="barPage active" id="bpage_main">
+                            <table>
+                                <tr>
+                                    <td>
+                                        <label>Project title</label>
+                                    </td>
+                                    <td>
+                                        <div class="form-element"><input type="text" value="" size="45"/></div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2">
+                                        <hr/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <label>Git repository uri</label>
+                                    </td>
+                                    <td>
+                                        <div class="form-element"><input type="text" value="" size="45"/></div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <label>Git username</label>
+                                    </td>
+                                    <td>
+                                        <div class="form-element"><input type="text" value="" size="45"/></div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <label>Git password</label>
+                                    </td>
+                                    <td>
+                                        <div class="form-element"><input type="text" value="" size="45"/></div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <label>Git private key</label>
+                                    </td>
+                                    <td>
+                                        <div class="form-element"><textarea cols="45" rows="4" value="" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"></textarea></div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2">
+                                        <hr/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                       &nbsp;
+                                    </td>
+                                    <td>
+                                        <button type="button">
+                                            Test Git settings
+                                        </button>
+                                    </td>
+                                </tr>
+                            </table>
                         </div>
                     </div>
                 </div>
             </div>
-            
         </div>
     </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

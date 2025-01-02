@@ -23,11 +23,15 @@ function initializeGUI()
     {
         if( e.which == 16 )
             window.chatShift = false;
+        if( e.which == 17 )
+            window.chatCtrl = false;
     } );
     document.body.addEventListener( 'keydown', function( e )
     {
         if( e.which == 16 )
             window.chatShift = true;
+        if( e.which == 17 )
+            window.chatCtrl = true;
     } );
     
     document.querySelector( '.chat-reset' ).onclick = function( e )
@@ -77,4 +81,5 @@ function initTabs( element, options = false )
     if( !options || options.state != 'inactive' )
         tabButtons[0].click();
 }
+
 

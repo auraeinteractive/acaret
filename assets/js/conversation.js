@@ -1,19 +1,40 @@
 let currentContext = 'global';
 let messageContext = { global: [] };
+let promptConnCtrl = false;
 
 let chatShift = false;
+let chatCtrl  = false;
 
 function checkChatEvents( event, keyUp = false )
 {
     let t = event.target;
 
-    if( event.which == 13 && !window.chatShift )
+    if( event.which == 13 && window.chatCtrl )
     { 
         let tv = t.value; 
         t.value = ''; 
         window.convos.sendMessage( tv ); 
         event.stopPropagation(); 
         event.preventDefault(); 
+    }
+}
+
+function sendPrompt()
+{
+    if( document.body.classList.contains( 'chat-generating' ) )
+    {
+        messageContext[ currentContext ].push( {
+            role: 'assistant',
+            content: currentMsg.rawData + "\nConnection cancelled."
+        } );
+        promptConnCtrl.abort();
+        document.body.classList.remove( 'chat-generating' );
+        return;
+    }
+    let tx = document.getElementById( 'chat' ).getElementsByTagName( 'textarea' )[0];
+    if( tx.value.trim().length > 0 )
+    {
+        window.convos.sendMessage( tx.value );
     }
 }
 
@@ -64,6 +85,7 @@ let streamBuffer = {};
 //       output of markdown etc updated when a tag is incomplete
 function handleStreamData(streamId, chunk = false, options = false) {
     const outputContainer = document.querySelector(".messages");
+    let status = 'add'; // status indicator (stop)
     
     if( streamIdCurrent != streamId )
     {
@@ -90,7 +112,7 @@ function handleStreamData(streamId, chunk = false, options = false) {
                 outputContainer.appendChild( currentMsg );
             }
             // Loops from assistant (div will be updated later)
-            else if( options == 'loopthrough' )
+            if( options.mode && options.mode == 'loopthrough' )
             {
                 currentMsg.innerHTML = '<strong>Assistant:</strong> Generating...';
             }
@@ -116,81 +138,119 @@ function handleStreamData(streamId, chunk = false, options = false) {
         {
             streamBuffer[ streamIdCurrent ] += ch;
         }
-        try
+        
+        // No data
+        if( streamBuffer[ streamIdCurrent ] == null )
+            continue;
+        
+        if( streamBuffer[ streamIdCurrent ] == '' )
         {
-            let js = JSON.parse( streamBuffer[ streamIdCurrent ] );
-            
-            if( js.choices[0].delta.content && js.choices[0].delta.content.length )
+            status = 'remove';
+        }
+        else if( streamBuffer[ streamIdCurrent ].substr( -1, 1 ) != '}' )
+        {
+            console.log( 'Processing... ' + streamBuffer[ streamIdCurrent ] );
+        }
+        else
+        {
+            try
             {
-                let cnt = js.choices[0].delta.content;
-            
-                currentMsg.rawData += cnt;
+                let js = JSON.parse( streamBuffer[ streamIdCurrent ] );
                 
-                // Uses a processing function
-                if( options && options.processingFunction )
+                if( js )
                 {
-                    options.processingFunction( {
-                        chunk: js.choices[0].delta.content,
-                        messageDiv: currentMsg,
-                        done: false,
-                        options: options
-                    } );
-                }
-                // Check special behavior for modes
-                else if( options && options.mode )
-                {
-                    if( options.mode == 'loopthrough' )
+                    if( js.choices[0].delta.content && js.choices[0].delta.content.length )
                     {
-                        options.result += js.choices[0].delta.content;
+                        let cnt = js.choices[0].delta.content;
+                    
+                        currentMsg.rawData += cnt;
+                        
+                        // Uses a processing function
+                        if( options && options.processingFunction )
+                        {
+                            options.processingFunction( {
+                                chunk: js.choices[0].delta.content,
+                                messageDiv: currentMsg,
+                                done: false,
+                                options: options
+                            } );
+                        }
+                        // Check special behavior for modes
+                        else if( options && options.mode )
+                        {
+                            if( options.mode == 'loopthrough' )
+                            {
+                                options.result += js.choices[0].delta.content;
+                            }
+                        }
+                        // Default behavior
+                        else
+                        {
+                            currentMsg.innerHTML = new showdown.Converter().makeHtml( currentMsg.rawData );
+                            
+                            scrollDownMessages();
+                        }
+                        streamBuffer[ streamIdCurrent ] = null;
+                    }
+                    
+                    // We're done
+                    if( js.choices[0].finish_reason == 'stop' )
+                    {
+                        status = 'remove';
+                        let ctx = messageContext[ currentContext ];
+                        
+                        // Only do this when needed
+                        if( !( options && options.skipStoringResponse ) )
+                            ctx.push( { role: 'assistant', content: currentMsg.rawData } );
+                        
+                        // Uses a processing function
+                        if( options && options.processingFunction )
+                        {
+                            options.processingFunction( {
+                                chunk: js.choices[0].delta.content,
+                                messageDiv: currentMsg,
+                                done: true,
+                                options: options
+                            } );
+                        }
+                        // Special behavior for modes
+                        else if( options && options.mode && options.callback )
+                        {
+                            if( options.mode == 'loopthrough' )
+                            {
+                                console.log( 'Done looping through, now running callback!' );
+                                options.callback( options.result );
+                                currentMsg.innerHTML = '<strong>Assistant:</strong> Done generating.';
+                            }
+                        }
+                        if( !( options && options.mode && options.mode == 'loopthrough' ) )
+                        {
+                            checkMessageFormatting( currentMsg );
+                        }
                     }
                 }
-                // Default behavior
                 else
                 {
-                    currentMsg.innerHTML = new showdown.Converter().makeHtml( currentMsg.rawData );
-                    
-                    scrollDownMessages();
+                    console.log( 'Something else.' );
                 }
-                streamBuffer[ streamIdCurrent ] = null;
             }
-            
-            // We're done
-            if( js.choices[0].finish_reason == 'stop' )
+            catch( e )
             {
-                let ctx = messageContext[ currentContext ];
-                
-                // Only do this when needed
-                if( !( options && options.skipStoringResponse ) )
-                    ctx.push( { role: 'assistant', content: currentMsg.rawData } );
-                
-                // Uses a processing function
-                if( options && options.processingFunction )
-                {
-                    options.processingFunction( {
-                        chunk: js.choices[0].delta.content,
-                        messageDiv: currentMsg,
-                        done: true,
-                        options: options
-                    } );
-                }
-                // Special behavior for modes
-                else if( options && options.mode && options.callback )
-                {
-                    if( options.mode == 'loopthrough' )
-                    {
-                        console.log( 'Done looping through, now running callback!' );
-                        options.callback( options.result );
-                        currentMsg.innerHTML = '<strong>Assistant:</strong> Done generating.';
-                    }
-                }
-                checkMessageFormatting( currentMsg );
+                console.log( 'Error JSON..', e );
+                //status = 'remove';
+                //document.getElementById( 'page_debug' ).innerHTML += 'ERROR' + "\n" + ch;
+                //console.log( 'WIP: ' + streamBuffer[ streamIdCurrent ] );
             }
         }
-        catch( e )
-        {
-            //document.getElementById( 'page_debug' ).innerHTML += 'ERROR' + "\n" + ch;
-            //console.log( 'WIP: ' + streamBuffer[ streamIdCurrent ] );
-        }
+    }
+    
+    if( status == 'remove' )
+    {
+        document.body.classList.remove( 'chat-generating' );
+    }
+    else
+    {
+        document.body.classList.add( 'chat-generating' );
     }
 }
 
@@ -355,9 +415,7 @@ class Conversation
         this.messageContainer.appendChild( messageElement );
         scrollDownMessages();
         
-        setTimeout( () => {
-            this.evaluateMessageNow( messageStr, options );
-        }, 25 );
+        this.evaluateMessageNow( messageStr, options );
     }
     
     // Loop through instructions with data with a callback
@@ -458,6 +516,9 @@ class Conversation
         });
 
         try {
+            promptConnCtrl = new AbortController();
+            const signal = promptConnCtrl.signal;
+            
             // Send the request using fetch
             const response = await fetch(API_URL, {
                 method: 'POST',
@@ -466,7 +527,8 @@ class Conversation
                     'Authorization': 'Bearer no-key',
                     'Accept': '*/*'
                 },
-                body: body
+                body: body,
+                signal
             });
 
             if (!response.ok) {
@@ -492,4 +554,20 @@ class Conversation
     }
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

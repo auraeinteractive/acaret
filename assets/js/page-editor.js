@@ -64,7 +64,9 @@ function loadFile( str, path, filename )
     console.log( 'Loading file: ' + filename, path );
     let editor = newEditor( filename, path );
     editor.setValue( atob( str ) );
+    editor.document_saved = true;
     editor.clearSelection();
+    updateBottomBar();
 }
 
 function setCurrentEditor( data )
@@ -84,6 +86,7 @@ function getSyntaxHighlightingMode( ext )
         ext = ext.toLowerCase();
         switch( ext )
         {
+            case 'javascript':
             case 'js':
                 mode = 'ace/mode/javascript';
                 break;
@@ -169,7 +172,7 @@ function updateBottomBar()
     currentEditor.session.setMode( mode );
     
     // Set the bottom bar info
-    document.getElementById( 'bottombar' ).querySelector( '.bottom-info' ).innerHTML = 'Editing: ' + mode.split( '/' ).pop().split( '_' ).join( '/' );
+    document.getElementById( 'bottombar' ).querySelector( '.bottom-info' ).innerHTML = '<div>Editing: ' + mode.split( '/' ).pop().split( '_' ).join( '/' ) + '</div><div>' + ( currentEditor.document_saved ? 'Saved.' : 'Not saved.' ) + '</div>';
 }
 
 let edName = 1;
@@ -212,12 +215,20 @@ function newEditor( filename = false, path = false )
     // Reinit
     toolbar.editor();
     
-    tab.click();
     editor.focus();
+    tab.click();
+    
+    editor.on( 'change', function( e ){
+        editor.document_saved = false;
+        updateBottomBar();
+    } );
     
     updateBottomBar();
     
     // Return reference to editor
     return editor;
 }
+
+
+
 

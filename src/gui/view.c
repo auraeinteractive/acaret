@@ -34,7 +34,7 @@ void on_open_file(GtkWidget *widget, gpointer user_data )
 void on_save_file(GtkWidget *widget, gpointer user_data )
 {
     printf( "Tried to execute the new file..\n" );
-    gchar *js_command = strdup( "saveData( currentEditor.path + currentEditor.filename + '\\n' + currentEditor.getValue() ); updateBottomBar();" );
+    gchar *js_command = strdup( "saveData( currentEditor.path + currentEditor.filename + '\\n' + currentEditor.getValue() );" );
     // Evaluate JavaScript in the WebView to handle the chunk
     webkit_web_view_evaluate_javascript((WebKitWebView *)user_data, 
                                         js_command, 
@@ -192,7 +192,7 @@ gboolean on_key_press_event(GtkWidget *widget, GdkEventKey *event, gpointer user
     // Check if Ctrl+S is pressed
     else if ((event->state & GDK_CONTROL_MASK) && event->keyval == GDK_KEY_s) {
         g_print("Ctrl+S detected. Save action triggered.\n");
-        on_open_file( widget, user_data );
+        on_save_file( widget, user_data );
         
         return TRUE; // Stop further handling of this event
     }
@@ -817,10 +817,12 @@ mlObject *mlViewCreate(mlObject *parent) {
     const gchar *script = 
         "function saveData(data) {"
         "    console.log( \"Saving\", data ); window.webkit.messageHandlers.saveData.postMessage(data);"
+        "    currentEditor.document_saved = true;"
         "    updateBottomBar();"
         "};"
         "function saveAsData(data) {"
         "    console.log( \"Saving AS\", data ); window.webkit.messageHandlers.saveAsData.postMessage(data);"
+        "    currentEditor.document_saved = true;"
         "    updateBottomBar();"
         "}";
     WebKitUserScript *user_script = webkit_user_script_new(script,
@@ -879,6 +881,7 @@ void mlViewDestroy(mlObject *obj) {
     // Call the base destroy function to clean up common resources
     mlObjectDestroy(obj);
 }
+
 
 
 

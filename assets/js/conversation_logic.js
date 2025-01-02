@@ -22,13 +22,25 @@ window.AIMethods = {
         
         // Process the selection with AI (loopThroughAI)
         console.log( '[insertText] Looping through AI' );
-        window.convos.loopThroughAI( `${str} (only respond with the content)`, 
+        let nl = "\n\n";
+        window.convos.loopThroughAI( `${str}${nl}Do not add explanations before or after content.`, 
         function( result )
         {
             // Get the current cursor position
             let cursorPosition = currentEditor.getCursorPosition();
             // Insert the text at the current cursor position
-            currentEditor.session.insert( cursorPosition, result );
+            if( confirm( 'May the assistant edit your document?') )
+            {
+                result = result.trim();
+                if( result.substr( -3, 3 ) == '```' )
+                    result = result.substr( 0, result.length - 3 );
+                if( result.substr( 0, 3 ) == '```' )
+                {
+                    let pos = result.indexOf( "\n" );
+                    result = result.substr( pos, result.length - pos );
+                }
+                currentEditor.session.insert( cursorPosition, result );
+            }
         } );
     },
     readDocument( str )
@@ -57,6 +69,8 @@ window.AIMethods = {
     {
         if( !currentEditor ) return;
         
+        let nl = "\n\n";
+        
         // Get the current selection range
         let selectionRange = currentEditor.getSelectionRange();
         
@@ -69,13 +83,31 @@ window.AIMethods = {
         console.log( '[replaceSelection] Looping through AI' );
         window.convos.loopThroughAI( `User instructions: ${str}
         
-Here is the current selection to improve: ${currentSelectionStr}`, 
+Here is the current selection to improve: ${currentSelectionStr}
+
+Do not add explanations before or after content.`, 
         function( result )
         {
             console.log( 'Tried to set this: ' + result );
             // Replace the current selection with the result
-            currentEditor.session.replace( selectionRange, result );
+            if( confirm( 'May the assistant edit your document?') )
+            {
+                result = result.trim();
+                if( result.substr( -3, 3 ) == '```' )
+                    result = result.substr( 0, result.length - 3 );
+                if( result.substr( 0, 3 ) == '```' )
+                {
+                    let pos = result.indexOf( "\n" );
+                    result = result.substr( pos, result.length - pos );
+                }
+                currentEditor.session.replace( selectionRange, result.trim() );
+            }
         } );
     }
 };
+
+
+
+
+
 
