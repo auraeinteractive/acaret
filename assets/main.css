@@ -202,7 +202,7 @@ hr
 }
 
 #leftbar .button.btn-editor:before { background-image: url(feather/code.svg); }
-#leftbar .button.btn-contexts:before { background-image: url(feather/list.svg); }
+#leftbar .button.btn-shop:before { background-image: url(feather/shopping-cart.svg); }
 #leftbar .button.btn-flow-nodes:before { background-image: url(feather/hexagon.svg); }
 #leftbar .button.btn-ai-tools:before { background-image: url(feather/user.svg); }
 #leftbar .button.btn-version-control:before { background-image: url(feather/git-branch.svg); }
@@ -224,6 +224,7 @@ hr
 
 #rightbar .button.btn-chat:before { background-image: url(feather/message-circle.svg); }
 #rightbar .button.btn-folders:before { background-image: url(feather/folder.svg); }
+#rightbar .button.btn-tags:before { background-image: url(feather/hash.svg); }
 
 #bottombar
 {

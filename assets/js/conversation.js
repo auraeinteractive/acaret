@@ -202,7 +202,9 @@ function handleStreamData(streamId, chunk = false, options = false) {
                         
                         // Only do this when needed
                         if( !( options && options.skipStoringResponse ) )
+                        {
                             ctx.push( { role: 'assistant', content: currentMsg.rawData } );
+                        }
                         
                         // Uses a processing function
                         if( options && options.processingFunction )
@@ -484,18 +486,20 @@ class Conversation
         
         // Get context (or override)
         // TODO: Allow to do more context management
-        let ctx = ( options && typeof( options.context ) != 'undefined' ) ? options.context : messageContext[currentContext];
+        let history = ( options && typeof( options.context ) != 'undefined' ) ? options.context : messageContext[currentContext];
+        let ctx = [].concat( history );
+        
+        history.push( { role: 'user', content: messageStr } ); // Remember this (permanent context)
+        ctx.push( { role: 'user', content: messageStr } ); // To message request
         
         // In regular calls, consult current file
         if( !options || !options.skipStoringResponse )
         {
-            ctx = [ {
-                    role: 'system',
-                    content: 'Current file: ' + currentEditor.filename + "\n\nPath: " + currentEditor.path + "\n\nContent:\n\n" + currentEditor.getValue()
-                } ].concat( ctx );
+            ctx.push( {
+                role: 'system',
+                content: 'The user is currently looking at this file in the editor: ' + currentEditor.filename + "\n\nPath: " + currentEditor.path + "\n\nContent:\n\n" + currentEditor.getValue()
+            } );
         }
-        
-        ctx.push({ role: 'user', content: messageStr });
         
         if( options.instruction )
         {
@@ -507,7 +511,7 @@ class Conversation
 
         // Define the system prompt configuration (if needed)
         const systemPrompt = {
-            prompt: 'You are helpful.',
+            prompt: 'You are the AI assistant of the editor Aide.',
             anti_prompt: 'User:',
             assistant_name: 'Assistant:'
         };
@@ -563,20 +567,4 @@ class Conversation
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

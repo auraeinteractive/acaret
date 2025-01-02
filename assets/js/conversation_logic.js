@@ -3,7 +3,7 @@ VERY IMPORTANT INSTRUCTIONS:
 
 Please be sensitive to the following rules. If the user asks you for the following, then use the following javascript API to complete your task.
 
-If the user asks to generate text into the current document, and mentions the current document or file: just respond: insertText
+If the user asks you to insert a completion just respond: insertText
 
 If the user asks to take the currently selected text and improve it, just respond: replaceSelection
 

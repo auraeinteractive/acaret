@@ -7,7 +7,7 @@
         <script type="text/javascript" src="data://js/conversation.js"></script>
         <script type="text/javascript" src="data://js/gui-logic.js"></script>
         <script type="text/javascript" src="data://js/page-editor.js"></script>
-        <script type="text/javascript" src="data://js/page-contexts.js"></script>
+        <script type="text/javascript" src="data://js/page-shop.js"></script>
         <script type="text/javascript" src="data://js/page-flow-nodes.js"></script>
         <script type="text/javascript" src="data://js/page-ai-tools.js"></script>
         <script type="text/javascript" src="data://js/page-version-control.js"></script>
@@ -18,7 +18,7 @@
     <body onload="window.convos = new Conversation( { messageContainer: document.querySelector( '.messages' ) } ); initializeGUI()">
         <div id="leftbar">
             <button class="button btn-editor active" id="tab_editor"><span>Editor</span></button>
-            <button class="button btn-contexts" id="tab_contexts"><span>Contexts</span></button>
+            <button class="button btn-shop" id="tab_shop"><span>Shop</span></button>
             <button class="button btn-flow-nodes" id="tab_flow-nodes"><span>Flow nodes</span></button>
             <button class="button btn-ai-tools" id="tab_ai-tools"><span>AI tools</span></button>
             <button class="button btn-version-control" id="tab_version-control"><span>Version control</span></button>
@@ -32,12 +32,13 @@
         </div>
         <div id="bottombar">
             <div class="bottom-info"></div>
-            <button class="button btn-document" id="tab_document">Document settings</button>
             <button class="button btn-debug" id="tab_debug">Debug</button>
+            <button class="button btn-document" id="tab_document">Document settings</button>
         </div>
         <div id="rightbar">
             <button class="button btn-chat active" id="tab_chat"><span>Chat</span></button>
             <button class="button btn-folders" id="tab_folders"><span>Folders</span></button>
+            <button class="button btn-tags" id="tab_tags"><span>Tags</span></button>
         </div>
         <div id="rightpages">
             <div class="page active" id="page_chat">
@@ -56,6 +57,9 @@
             <div class="page" id="page_folders">
                 There be folders!
             </div>
+            <div class="page" id="page_tags">
+                There will be tags!
+            </div>
         </div>
         
         <div id="debug">
@@ -67,8 +71,10 @@
         <div id="pages">
             <div class="page active" id="page_editor" toolbar="editor">
             </div>
-            <div class="page" id="page_contexts" toolbar="contexts">
-                Hello world contexts
+            <div class="page" id="page_shop" toolbar="shop">
+                <p>
+                    Hello world shop
+                </p>
             </div>
             <div class="page" id="page_flow-nodes" toolbar="flow-nodes">
                 nodes
