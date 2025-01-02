@@ -379,6 +379,123 @@ static void on_script_message_received_saveas(WebKitUserContentManager *manager,
                                               WebKitJavascriptResult *result,
                                               gpointer user_data);
 
+// Function to read directory contents and return a GPtrArray of JSON strings
+static GPtrArray *read_directory(const gchar *path)
+{
+    GPtrArray *array = g_ptr_array_new_with_free_func(g_free);
+    DIR *dir;
+    struct dirent *ent;
+
+    if ((dir = opendir(path)) != NULL) {
+        while ((ent = readdir(dir)) != NULL) {
+            if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) {
+                continue; // Skip '.' and '..'
+            }
+            gchar *entry_path = g_build_filename(path, ent->d_name, NULL);
+            struct stat file_stat;
+            if (stat(entry_path, &file_stat) == 0) {
+                // Remove the trailing newline from ctime
+                char *date_str = ctime(&file_stat.st_mtime);
+                date_str[strlen(date_str) - 1] = '\0';
+                char *mod_str = ctime(&file_stat.st_ctime);
+                mod_str[strlen(mod_str) - 1] = '\0';
+
+                // Determine if it's a file or directory
+                const gchar *type = S_ISDIR(file_stat.st_mode) ? "dir" : "file";
+
+                gchar *json_entry = g_strdup_printf("{\"name\":\"%s\", \"size\":%ld, \"date\":\"%s\", \"mod\":\"%s\", \"type\":\"%s\"}",
+                                                   ent->d_name,
+                                                   file_stat.st_size,
+                                                   date_str,
+                                                   mod_str,
+                                                   type);
+                g_ptr_array_add(array, json_entry);
+            } else {
+                g_print("Failed to get stats for %s\n", entry_path);
+            }
+            g_free(entry_path);
+        }
+        closedir(dir);
+    } else {
+        g_print("Failed to open directory: %s\n", path);
+        return NULL;
+    }
+
+    return array;
+}
+
+static void refresh_folder_structure( gchar *path, gpointer user_data );
+
+// Function to handle script messages
+static void on_script_message_received_folders(
+    WebKitUserContentManager *user_content_manager,
+    WebKitJavascriptResult *result,
+    gpointer user_data
+)
+{
+    GError *error = NULL;
+    JSCValue *value = webkit_javascript_result_get_js_value(result);
+    if (error != NULL) {
+        g_printerr("JavaScript error: %s\n", error->message);
+        g_error_free(error);
+        return;
+    }
+
+    // Handle the response as needed
+    gchar *message = jsc_value_to_string(value);
+    g_print("Received script message: %s\n", message);
+
+    // Check for specific messages and handle them accordingly
+
+    refresh_folder_structure( message, user_data);
+    
+    free( message );
+}
+
+// Function to refresh folder structure
+static void refresh_folder_structure( gchar *path, gpointer user_data )
+{
+    WebKitWebView *webview = WEBKIT_WEB_VIEW(user_data);
+    
+    g_print("Handling path: %s\n", path);
+
+    GPtrArray *files_array = read_directory(path);
+
+    if (files_array != NULL) {
+        
+        GString *json_string = g_string_new("receiveFolders(\"");
+        g_string_append( json_string, path );
+        g_string_append( json_string, "\"," );
+        g_string_append( json_string, "[" );
+        for (guint i = 0; i < files_array->len; i++) {
+            if (i > 0) {
+                g_string_append(json_string, ", ");
+            }
+            g_string_append(json_string, g_ptr_array_index(files_array, i));
+        }
+        g_string_append(json_string, "])");
+
+        // Send the JSON string back to JavaScript
+        webkit_web_view_evaluate_javascript(
+                        webview, 
+                        json_string->str, 
+                        -1,  // -1 means the length is determined automatically
+                        NULL, // world_name (NULL for default)
+                        NULL, // source_uri (NULL for no source)
+                        NULL, // cancellable (no cancelation)
+                        NULL, // callback (no callback needed)
+                        NULL  // user_data (no user data)
+                    );
+       
+        g_print( "Just handling output: %s\n", json_string->str );
+       
+        g_string_free(json_string, TRUE);
+        g_ptr_array_unref(files_array);
+    } else {
+        g_print("Failed to read directory\n");
+    }
+}
+
 // Callback to handle messages from JavaScript
 static void on_script_message_received(WebKitUserContentManager *manager,
                                         WebKitJavascriptResult *result,
@@ -816,21 +933,33 @@ mlObject *mlViewCreate(mlObject *parent) {
     // Inject JavaScript to send messages
     const gchar *script = 
         "function saveData(data) {"
-        "    console.log( \"Saving\", data ); window.webkit.messageHandlers.saveData.postMessage(data);"
+        "    console.log( \"Saving\", data );"
+        "    window.webkit.messageHandlers.saveData.postMessage(data);"
         "    currentEditor.document_saved = true;"
         "    updateBottomBar();"
         "};"
         "function saveAsData(data) {"
-        "    console.log( \"Saving AS\", data ); window.webkit.messageHandlers.saveAsData.postMessage(data);"
+        "    console.log( \"Saving AS\", data );"
+        "    window.webkit.messageHandlers.saveAsData.postMessage(data);"
         "    currentEditor.document_saved = true;"
         "    updateBottomBar();"
-        "}";
+        "};"
+        "function refreshFolderStructure(path) {"
+        "    console.log( \"Getting path: \", path );"
+        "    window.webkit.messageHandlers.refreshFolderStructure.postMessage(path);"
+        "};";
     WebKitUserScript *user_script = webkit_user_script_new(script,
        WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES,
        WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START,
        NULL, NULL);
     webkit_user_content_manager_add_script(content_manager, user_script);
 
+    // Handle folders
+    webkit_user_content_manager_register_script_message_handler( content_manager, "refreshFolderStructure" );
+    g_signal_connect(content_manager, "script-message-received::refreshFolderStructure",
+                     G_CALLBACK( on_script_message_received_folders ), view->webview);
+    
+    
     // Set the method table for the view
     mlMethodEntry *method_table = malloc(sizeof(mlMethodEntry) * 3);
     if (method_table) {

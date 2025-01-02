@@ -11,6 +11,9 @@
 #include <string.h> // For strncat
 #include <stddef.h>
 #include <gio/gio.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <glib.h>
 #include "../proxy/proxy.h"
 #include "../system/signals.h"
 
