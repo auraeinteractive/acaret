@@ -74,7 +74,6 @@ function loadFile( str, path, filename )
     let editor = newEditor( filename, path );
     
     const binaryArray = Uint8Array.from( atob( str ), char => char.charCodeAt( 0 ) );
-
     // Decode the Uint8Array as a UTF-8 string
     const utf8Decoder = new TextDecoder("utf-8");
     const utf8String = utf8Decoder.decode( binaryArray );
