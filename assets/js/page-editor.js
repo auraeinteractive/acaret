@@ -191,7 +191,7 @@ function updateBottomBar()
     currentEditor.session.setMode( mode );
     
     // Set the bottom bar info
-    document.getElementById( 'bottombar' ).querySelector( '.bottom-info' ).innerHTML = '<div>Editing: ' + mode.split( '/' ).pop().split( '_' ).join( '/' ) + '</div><div>' + ( currentEditor.document_saved ? 'Saved.' : 'Not saved.' ) + '</div>';
+    document.getElementById( 'bottombar' ).querySelector( '.bottom-info' ).innerHTML = '<div>Editing: ' + mode.split( '/' ).pop().split( '_' ).join( '/' ) + '</div><div>' + ( currentEditor.document_saved ? 'Saved.' : 'Not saved.' ) + '</div><div>' + ( currentProject.name ? ( 'Project: ' + currentProject.name ) : 'No project.' ) + '</div>';
 }
 
 let previewOn = false;

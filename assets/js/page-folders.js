@@ -2,21 +2,24 @@ let currentFolder = '/home/hogne/Projects/';
 
 window.toolbar = window.toolbar ? window.toolbar : {};
 window.toolbar.folders = function() {
-    let tct = document.getElementById( 'top_chat_title' );
-    let tcd = tct.getElementsByTagName( 'div' )[0];
-    let tci = tct.getElementsByTagName( 'div' )[1];
-    tcd.innerHTML = '<span>' + currentFolder + '</span>';
-    tcd.className = 'folders';
-    tci.innerHTML = '<em class="folders-delete" title="Delete"></em><em class="folders-rename" title="Rename"></em><em class="folders-new" title="New folder"></em><em class="folders-back" title="Up"></em>';
-    
-    tci.querySelector( '.folders-back' ).onclick = function()
+    if( document.getElementById( 'page_folders' ).classList.contains( 'active' ) )
     {
-        let cf = currentFolder; if ( cf.substr( -1, 1 ) == '/' ) cf = cf.substr( 0, cf.length - 1 );
-        let par = cf.split( '/' );
-        par.pop(); par = par.join( '/' ) + '/';
-        currentFolder = par;
-        refreshFolderStructure( currentFolder );
-        tcd.innerHTML = currentFolder;
+        let tct = document.getElementById( 'top_chat_title' );
+        let tcd = tct.getElementsByTagName( 'div' )[0];
+        let tci = tct.getElementsByTagName( 'div' )[1];
+        tcd.innerHTML = '<span>' + currentFolder + '</span>';
+        tcd.className = 'folders';
+        tci.innerHTML = '<em class="folders-delete" title="Delete"></em><em class="folders-rename" title="Rename"></em><em class="folders-new" title="New folder"></em><em class="folders-back" title="Up"></em>';
+        
+        tci.querySelector( '.folders-back' ).onclick = function()
+        {
+            let cf = currentFolder; if ( cf.substr( -1, 1 ) == '/' ) cf = cf.substr( 0, cf.length - 1 );
+            let par = cf.split( '/' );
+            par.pop(); par = par.join( '/' ) + '/';
+            currentFolder = par;
+            refreshFolderStructure( currentFolder );
+            tcd.innerHTML = currentFolder;
+        }
     }
 }
 

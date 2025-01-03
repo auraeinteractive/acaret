@@ -3,6 +3,7 @@
 char *open_file_dialog(GtkWindow *parent);
 char *read_file_content(const char *file_path);
 void pass_file_to_js(WebKitWebView *webview, const char *file_path);
+void pass_project_to_js(WebKitWebView *webview, const char *file_path);
 
 // Some menu functions
 void on_new_file(GtkWidget *widget, gpointer user_data )
@@ -21,6 +22,18 @@ void on_new_file(GtkWidget *widget, gpointer user_data )
     );
     g_free(js_command);
 }
+
+void on_open_project(GtkWidget *widget, gpointer user_data )
+{
+    printf( "Tried to execute the open project..\n" );
+    char *path = open_file_dialog( ( GtkWindow *)widget );
+    if( path != NULL )
+    {
+        pass_project_to_js( ( WebKitWebView *)user_data, path );
+        free( path );
+    }
+}
+
 void on_open_file(GtkWidget *widget, gpointer user_data )
 {
     printf( "Tried to execute the open file..\n" );
@@ -30,6 +43,38 @@ void on_open_file(GtkWidget *widget, gpointer user_data )
         pass_file_to_js( ( WebKitWebView *)user_data, path );
         free( path );
     }
+}
+void on_save_project(GtkWidget *widget, gpointer user_data )
+{
+    printf( "Tried to execute the new file..\n" );
+    gchar *js_command = strdup( "saveProject( currentProject.path + currentProject.filename + '\\n' + JSON.stringify(currentProject) );" );
+    // Evaluate JavaScript in the WebView to handle the chunk
+    webkit_web_view_evaluate_javascript((WebKitWebView *)user_data, 
+                                        js_command, 
+                                        -1,  // -1 means the length is determined automatically
+                                        NULL, // world_name (NULL for default)
+                                        NULL, // source_uri (NULL for no source)
+                                        NULL, // cancellable (no cancelation)
+                                        NULL, // callback (no callback needed)
+                                        NULL  // user_data (no user data)
+    );
+    g_free(js_command);
+}
+void on_save_project_as(GtkWidget *widget, gpointer user_data )
+{
+    printf( "Tried to execute the new file..\n" );
+    gchar *js_command = strdup( "saveProjectAs( currentProject.path + currentProject.filename + '\\n' + JSON.stringify(currentProject) );" );
+    // Evaluate JavaScript in the WebView to handle the chunk
+    webkit_web_view_evaluate_javascript((WebKitWebView *)user_data, 
+                                        js_command, 
+                                        -1,  // -1 means the length is determined automatically
+                                        NULL, // world_name (NULL for default)
+                                        NULL, // source_uri (NULL for no source)
+                                        NULL, // cancellable (no cancelation)
+                                        NULL, // callback (no callback needed)
+                                        NULL  // user_data (no user data)
+    );
+    g_free(js_command);
 }
 void on_save_file(GtkWidget *widget, gpointer user_data )
 {
@@ -150,6 +195,46 @@ char *read_file_content(const char *file_path) {
     content[file_size] = '\0'; // Null-terminate the content
     fclose(file);
     return content;
+}
+
+// Function to pass file content to JavaScript
+void pass_project_to_js(WebKitWebView *webview, const char *file_path) 
+{
+    char *file_content = read_file_content(file_path);
+    if (!file_content) {
+        printf( "No file to open.\n" );
+        return; // Exit if file could not be read
+    }
+
+    // Extract filename from the path
+
+    char *encoded_content = g_base64_encode( ( const guchar * )file_content, strlen( file_content ) );
+    const char *filename = g_path_get_basename( file_path );
+    const char *dir_path = g_path_get_dirname( file_path );
+
+    // Create the JavaScript command
+    char *js_command = g_strdup_printf("loadProject(`%s`, \"%s\", \"%s\");",
+                                        encoded_content,
+                                        dir_path,
+                                        filename);
+
+    // Execute the JavaScript command in the WebView
+    webkit_web_view_evaluate_javascript(webview, 
+                                        js_command, 
+                                        -1,  // -1 means the length is determined automatically
+                                        NULL, // world_name (NULL for default)
+                                        NULL, // source_uri (NULL for no source)
+                                        NULL, // cancellable (no cancelation)
+                                        NULL, // callback (no callback needed)
+                                        NULL  // user_data (no user data)
+    );
+
+    // Free allocated resources
+    free(file_content);
+    g_free(encoded_content);
+    g_free((void *)filename);
+    g_free((void *)dir_path);
+    g_free(js_command);
 }
 
 // Function to pass file content to JavaScript
@@ -597,6 +682,149 @@ static void on_script_message_received(WebKitUserContentManager *manager,
     }
 }
 
+static void on_script_message_received_saveas_project(WebKitUserContentManager *manager,
+                                              WebKitJavascriptResult *result,
+                                              gpointer user_data);
+
+// Callback to handle messages from JavaScript
+static void on_script_message_received_project(WebKitUserContentManager *manager,
+                                        WebKitJavascriptResult *result,
+                                        gpointer user_data) {
+    // Extract the message as a string
+    JSCValue *value = webkit_javascript_result_get_js_value(result);
+    if (jsc_value_is_string(value)) {
+        gchar *message = jsc_value_to_string(value);
+        g_print("Received message from JavaScript: %s\n", message);
+
+        // Find the position of the newline (\n) that separates the path from the data
+        char *newline_pos = strchr(message, '\n');
+        printf( "Going ahead with save test!\n" );
+        if (newline_pos) {
+            // Null-terminate the path at the newline
+            *newline_pos = '\0';
+            const char *path = message;  // Path is everything before the newline
+            const char *data = newline_pos + 1;  // Data is everything after the newlin
+
+            printf( "Trying to save to: %s\n", path );
+            if( path[0] != '/' )
+            {
+                printf( "No filename or path - trying save as\n" );
+                return on_script_message_received_saveas_project( manager, result, user_data );
+            }
+
+            // Save the data to the specified path
+            FILE *file = fopen(path, "w");
+            if (file) {
+                fprintf(file, "%s\n", data);
+                fclose(file);
+                g_print("Data saved to %s\n", path);
+            } else {
+                g_print("Error: Unable to open file at %s for writing\n", path);
+            }
+        } else {
+            g_print("Error: No newline found in the message\n");
+        }
+
+        // Clean up
+        g_free(message);
+    } else {
+        g_print("Unexpected message type\n");
+    }
+}
+
+// Callback to handle save as project from js
+static void on_script_message_received_saveas_project(WebKitUserContentManager *manager,
+                                              WebKitJavascriptResult *result,
+                                              gpointer user_data) {
+    // Extract the message as a string
+    JSCValue *value = webkit_javascript_result_get_js_value(result);
+    if (jsc_value_is_string(value)) {
+        gchar *message = jsc_value_to_string(value);
+        g_print("Received message from JavaScript: %s\n", message);
+
+        // Find the position of the newline (\n) that separates the path from the data
+        char *newline_pos = strchr(message, '\n');
+        if (newline_pos) {
+            // Null-terminate the path at the newline
+            *newline_pos = '\0';
+            const char *data = newline_pos + 1;   // Data is everything after the newline
+
+            // Show GTK Save As dialog
+            GtkWidget *dialog;
+            GtkWindow *parent_window = GTK_WINDOW(user_data);  // Assuming user_data is a GtkWindow*
+            dialog = gtk_file_chooser_dialog_new(
+                "Save As",
+                parent_window,
+                GTK_FILE_CHOOSER_ACTION_SAVE,
+                "_Cancel", GTK_RESPONSE_CANCEL,
+                "_Save", GTK_RESPONSE_ACCEPT,
+                NULL);
+
+            // Set suggested filename
+            gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(dialog), "untitled.acaret");
+
+            if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
+                char *path = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+                g_print("Selected file: %s\n", path);
+
+                // Save the data to the specified path
+                FILE *file = fopen(path, "w");
+                if (file) {
+                    fprintf(file, "%s\n", data);
+                    fclose(file);
+
+                    // Extract the filename from the path
+                    gchar *filename = g_path_get_basename(path);
+
+                    // Create JavaScript command to update the editor
+                    
+                    char onlypath[ strlen( path ) - strlen( filename ) + 1 ];
+                    snprintf( onlypath, sizeof( onlypath ), "%s", path );
+                    
+                    gchar *js_command = g_strdup_printf(
+                        "setCurrentProject( { path: '%s', filename: '%s' } );", 
+                        onlypath, 
+                        filename
+                    );
+                    printf( "Evaluating: %s\n", js_command );
+
+                    // Evaluate JavaScript in the WebView
+                    webkit_web_view_evaluate_javascript(
+                        (WebKitWebView *)user_data, 
+                        js_command, 
+                        -1,  // -1 means the length is determined automatically
+                        NULL, // world_name (NULL for default)
+                        NULL, // source_uri (NULL for no source)
+                        NULL, // cancellable (no cancelation)
+                        NULL, // callback (no callback needed)
+                        NULL  // user_data (no user data)
+                    );
+
+                    // Free allocated memory
+                    g_free(js_command);
+                    g_free(filename);
+
+                    g_print("Data saved to %s\n", path);
+                } else {
+                    g_print("Error: Unable to open file at %s for writing\n", path);
+                }
+
+            } else {
+                g_print("Save As dialog canceled\n");
+            }
+
+            gtk_widget_destroy(dialog);
+        } else {
+            g_print("Error: No newline found in the message\n");
+        }
+
+        // Clean up
+        g_free(message);
+    } else {
+        g_print("Unexpected message type\n");
+    }
+}
+
 // Callback to handle messages from JavaScript
 static void on_script_message_received_saveas(WebKitUserContentManager *manager,
                                               WebKitJavascriptResult *result,
@@ -870,6 +1098,8 @@ mlObject *mlViewCreate(mlObject *parent) {
 
     GtkWidget *new_project = gtk_menu_item_new_with_label("New Project");
     GtkWidget *open_project = gtk_menu_item_new_with_label("Open Project");
+    GtkWidget *save_project = gtk_menu_item_new_with_label("Save Project");
+    GtkWidget *save_project_as = gtk_menu_item_new_with_label("Save Project As");
     GtkWidget *close_project = gtk_menu_item_new_with_label("Close Project");
     GtkWidget *separator1 = gtk_separator_menu_item_new();
     GtkWidget *new_file = gtk_menu_item_new_with_label("New");
@@ -882,6 +1112,8 @@ mlObject *mlViewCreate(mlObject *parent) {
     
     gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), new_project);
     gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), open_project);
+    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), save_project);
+    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), save_project_as);
     gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), close_project);
     gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), separator1);
     gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), new_file);
@@ -945,6 +1177,10 @@ mlObject *mlViewCreate(mlObject *parent) {
         return NULL;
     }
 
+    g_signal_connect(open_project, "activate", G_CALLBACK(on_open_project), ( gpointer )view->webview);
+    g_signal_connect(save_project, "activate", G_CALLBACK(on_save_project), ( gpointer )view->webview);
+    g_signal_connect(save_project_as, "activate", G_CALLBACK(on_save_project_as), ( gpointer )view->webview);
+    
     g_signal_connect(new_file, "activate", G_CALLBACK(on_new_file), ( gpointer )view->webview);
     g_signal_connect(open_file, "activate", G_CALLBACK(on_open_file), ( gpointer )view->webview);
     g_signal_connect(save_file, "activate", G_CALLBACK(on_save_file), ( gpointer )view->webview);
@@ -984,6 +1220,12 @@ mlObject *mlViewCreate(mlObject *parent) {
     webkit_user_content_manager_register_script_message_handler( content_manager, "saveAsData" );
     g_signal_connect(content_manager, "script-message-received::saveData", G_CALLBACK(on_script_message_received), ( gpointer )view->webview );
     g_signal_connect(content_manager, "script-message-received::saveAsData", G_CALLBACK(on_script_message_received_saveas), ( gpointer )view->webview );
+    
+    // Connect for sacving project
+    webkit_user_content_manager_register_script_message_handler( content_manager, "saveProject" );
+    webkit_user_content_manager_register_script_message_handler( content_manager, "saveProjectAs" );
+    g_signal_connect(content_manager, "script-message-received::saveProject", G_CALLBACK(on_script_message_received_project), ( gpointer )view->webview );
+    g_signal_connect(content_manager, "script-message-received::saveProjectAs", G_CALLBACK(on_script_message_received_saveas_project), ( gpointer )view->webview );
 
     // Inject JavaScript to send messages
     const gchar *script = 
@@ -997,6 +1239,18 @@ mlObject *mlViewCreate(mlObject *parent) {
         "    console.log( \"Saving AS\", data );"
         "    window.webkit.messageHandlers.saveAsData.postMessage(data);"
         "    currentEditor.document_saved = true;"
+        "    updateBottomBar();"
+        "};"
+        "function saveProject(data) {"
+        "    console.log( \"Saving\", data );"
+        "    window.webkit.messageHandlers.saveProject.postMessage(data);"
+        "    currentEditor.project_saved = true;"
+        "    updateBottomBar();"
+        "};"
+        "function saveProjectAs(data) {"
+        "    console.log( \"Saving AS\", data );"
+        "    window.webkit.messageHandlers.saveProjectAs.postMessage(data);"
+        "    currentEditor.project_saved = true;"
         "    updateBottomBar();"
         "};"
         "function refreshFolderStructure(path) {"
