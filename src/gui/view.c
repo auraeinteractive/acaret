@@ -851,7 +851,7 @@ mlObject *mlViewCreate(mlObject *parent) {
     
     printf( "Adding new view!\n" );
     
-    gtk_window_set_title(GTK_WINDOW(view->window), "Aide");
+    gtk_window_set_title(GTK_WINDOW(view->window), "Acaret");
     gtk_window_set_default_size(GTK_WINDOW(view->window), 1280, 800);
 
     // Create a vertical box layout

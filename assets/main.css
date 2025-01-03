@@ -30,6 +30,13 @@ button:hover
     opacity: 1;
 }
 
+input, textarea
+{
+    padding: 4px 8px;
+    border: 0;
+    border-radius: 3px;
+}
+
 hr
 {
     border: 0;
@@ -85,6 +92,10 @@ hr
 #topbar #top_chat_title > div.folders:before
 {
     background-image: url(feather/folder.svg);
+}
+#topbar #top_chat_title > div.tags:before
+{
+    background-image: url(feather/tag.svg);
 }
 
 #topbar #top_chat_title > div
@@ -982,4 +993,27 @@ hr
     margin: 0 8px 0 0;
     filter: invert(1);
 }
+
+#page_tags .tags
+{
+    padding: 10px;
+}
+
+#page_tags .tag
+{
+    color: white;
+    padding: 4px;
+    background-color: #44444488;
+    opacity: 0.7;
+    cursor: hand;
+    display: block;
+    margin: 0 0 4px 0;
+    border-radius: 5px;
+    cursor: pointer;
+}
+#page_tags .tag:hover
+{
+    opacity: 1;
+}
+
 
