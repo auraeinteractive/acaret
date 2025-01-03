@@ -70,7 +70,17 @@ window.toolbar.editor = function() {
 
 function loadFile( str, path, filename )
 {
-    console.log( 'Loading file: ' + filename, path );
+    // Don't open the same one!
+    for( let a in editorDocuments )
+    {
+        if( editorDocuments[ a ].path == path && editorDocuments[ a ].filename == filename )
+        {
+            editorDocuments[ a ].tab.click();
+            return;
+        }
+    }
+    
+    console.log( 'Loading file: ' + filename, path, editorDocuments );
     let editor = newEditor( filename, path );
     
     const binaryArray = Uint8Array.from( atob( str ), char => char.charCodeAt( 0 ) );
@@ -81,6 +91,11 @@ function loadFile( str, path, filename )
     editor.setValue( utf8String );
     editor.document_saved = true;
     editor.clearSelection();
+    
+    // These needs to be here
+    editor.path = path;
+    editor.filename = filename;
+    
     updateBottomBar();
 }
 
@@ -246,6 +261,16 @@ function togglePreview( forceState = 0 )
 let edName = 1;
 function newEditor( filename = false, path = false )
 {
+    // Don't open the same one!
+    for( let a in editorDocuments )
+    {
+        if( editorDocuments[ a ].path == path && editorDocuments[ a ].filename == filename )
+        {
+            editorDocuments[ a ].tab.click();
+            return;
+        }
+    }
+
     edName++;
     
     if( path && path.substr( -1, 1 ) != '/' )
