@@ -95,6 +95,10 @@ function getSyntaxHighlightingMode( ext )
         ext = ext.toLowerCase();
         switch( ext )
         {
+            case 'yml':
+            case 'yaml':
+                mode = 'ace/mode/yaml';
+                break;
             case 'javascript':
             case 'js':
                 mode = 'ace/mode/javascript';
