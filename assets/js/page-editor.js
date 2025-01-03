@@ -397,6 +397,19 @@ function togglePreview( forceState = 0 )
     }
 }
 
+function removeDocumentFromStack( edName )
+{
+    let out = {};
+    for( let a in editorDocuments )
+    {
+        if( a != edName )
+        {
+            out[ a ] = editorDocuments[ a ];
+        }
+    }
+    editorDocuments = out;
+}
+
 let edName = 1;
 function newEditor( filename = false, path = false )
 {
@@ -456,6 +469,7 @@ function newEditor( filename = false, path = false )
         }
         
         p.removeChild( tab );
+        removeDocumentFromStack( edName );
         editor.destroy();
         if( activate ) 
         {
