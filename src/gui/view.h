@@ -12,6 +12,7 @@
 #include <stddef.h>
 #include <gio/gio.h>
 #include <dirent.h>
+#include <libgen.h>
 #include <sys/stat.h>
 #include <glib.h>
 #include "../proxy/proxy.h"

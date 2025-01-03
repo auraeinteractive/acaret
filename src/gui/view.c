@@ -370,24 +370,31 @@ void mlViewSetHTML(void *instance, void *data) {
     mlView *view = (mlView *)instance;
     char *filename = (char *)data;  // Use this if needed, otherwise remove
     
-    char cwd[PATH_MAX];
-    if (getcwd(cwd, sizeof(cwd)) == NULL) {
-        fprintf(stderr, "Failed to get current working directory.\n");
+    // Get the executable's directory
+    char exe_path[PATH_MAX];
+    ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
+    if (len == -1) {
+        fprintf(stderr, "Failed to get executable path.\n");
         return;
     }
+    exe_path[len] = '\0';  // Null-terminate the string
+    char *dir = dirname(exe_path);  // Get the directory of the executable
 
+    // Allocate memory for the full path
     char *path = malloc(PATH_MAX + strlen(filename) + 1);
     if (!path) {
         fprintf(stderr, "Failed to allocate memory for path.\n");
         return;
     }
 
-    if (snprintf(path, PATH_MAX + strlen(filename) + 1, "%s/assets/%s", cwd, filename) < 0) {
+    // Construct the path
+    if (snprintf(path, PATH_MAX + strlen(filename) + 1, "%s/assets/%s", dir, filename) < 0) {
         fprintf(stderr, "snprintf failed\n");
         free(path);
         return;
     }
 
+    // Open the file
     FILE *file = fopen(path, "r");
     if (!file) {
         fprintf(stderr, "Failed to open file: %s\n", path);
@@ -435,7 +442,7 @@ void mlViewSetHTML(void *instance, void *data) {
         
         *end = '\0';  // Null-terminate the string to get the relative path
         char *relative_path = data_start + strlen("data://");
-        char *full_path = convertDataURLToLocalPath(cwd, relative_path);
+        char *full_path = convertDataURLToLocalPath(dir, relative_path);
         if (!full_path) {
             fprintf(stderr, "Failed to convert data URL to local path.\n");
             break;
@@ -1149,6 +1156,37 @@ mlObject *mlViewCreate(mlObject *parent) {
         free(view); // Clean up memory
         return NULL;
     }
+    
+    // Get the executable's directory
+    char exe_path[PATH_MAX];
+    ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
+    if (len == -1) {
+        fprintf(stderr, "Failed to get executable path.\n");
+        return 1;
+    }
+    exe_path[len] = '\0';  // Null-terminate the string
+    char *dir = dirname(exe_path);  // Get the directory of the executable
+
+    // Construct the path to the icon file
+    char *icon_path = malloc(PATH_MAX + strlen(dir) + strlen("/icon_128.png") + 1);
+    if (!icon_path) {
+        fprintf(stderr, "Failed to allocate memory for icon path.\n");
+        return 1;
+    }
+
+    snprintf(icon_path, PATH_MAX + strlen(dir) + strlen("/icon_128.png") + 1, "%s/icon_128.png", dir);
+    
+    // Set the window icon
+    GdkPixbuf *icon = gdk_pixbuf_new_from_file(icon_path, NULL);
+    if (icon) {
+        fprintf(stderr, "Loaded icon: %s\n", icon_path);
+        gtk_window_set_icon(GTK_WINDOW(view->window), icon);
+    } else {
+        fprintf(stderr, "Failed to load icon: %s\n", icon_path);
+    }
+
+    // Clean up
+    free(icon_path);
     
     printf( "Adding new view!\n" );
     
