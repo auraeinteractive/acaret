@@ -97,6 +97,10 @@ hr
 {
     background-image: url(feather/tag.svg);
 }
+#topbar #top_chat_title > div.navigator:before
+{
+    background-image: url(feather/navigation.svg);
+}
 
 #topbar #top_chat_title > div
 {
@@ -285,7 +289,8 @@ hr
 
 #rightbar .button.btn-chat:before { background-image: url(feather/message-circle.svg); }
 #rightbar .button.btn-folders:before { background-image: url(feather/folder.svg); }
-#rightbar .button.btn-tags:before { background-image: url(feather/hash.svg); }
+#rightbar .button.btn-tags:before { background-image: url(feather/tag.svg); }
+#rightbar .button.btn-navigator:before { background-image: url(feather/navigation.svg); }
 
 #bottombar
 {
@@ -1015,5 +1020,28 @@ hr
 {
     opacity: 1;
 }
+
+#page_navigator .navigation-items
+{
+    padding: 10px;
+}
+
+#page_navigator .navigation-item
+{
+    color: white;
+    padding: 4px;
+    background-color: #44444488;
+    opacity: 0.7;
+    cursor: hand;
+    display: block;
+    margin: 0 0 4px 0;
+    border-radius: 5px;
+    cursor: pointer;
+}
+#page_navigator .navigation-item:hover
+{
+    opacity: 1;
+}
+
 
 
