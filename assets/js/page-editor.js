@@ -28,6 +28,145 @@ window.toolbar.editor = function() {
         newEditor();
     }
     
+    let toptabs = topToolbar.querySelector('.TopTabs');
+    if (toptabs)
+    {
+        let isScrolling = false; // Prevent multiple animations at the same time
+        let currentDelta = 0; // Store the current delta for smooth updates
+
+        // Add a wheel event listener to handle the scroll logic
+        toptabs.addEventListener('wheel', (event) => {
+            event.preventDefault();
+
+            // Adjust the speed multiplier based on the Shift key
+            let speedMultiplier = 3;
+            currentDelta += event.deltaY * 0.5 * speedMultiplier;
+
+            if (!isScrolling) {
+                isScrolling = true;
+
+                let startScroll = toptabs.scrollLeft;
+                let duration = 300; // Duration of the tween in milliseconds
+                let startTime = null;
+
+                // Easing function for a smooth transition (ease-out)
+                const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+
+                const animateScroll = (timestamp) => {
+                    if (!startTime) startTime = timestamp;
+
+                    let elapsed = timestamp - startTime;
+                    let progress = Math.min(elapsed / duration, 1); // Cap progress at 1
+                    let easedProgress = easeOutCubic(progress);
+
+                    // Update scroll position dynamically based on currentDelta
+                    toptabs.scrollLeft = startScroll + currentDelta * easedProgress;
+
+                    if (progress < 1) {
+                        requestAnimationFrame(animateScroll);
+                    } else {
+                        // Reset for the next scroll interaction
+                        isScrolling = false;
+                        currentDelta = 0; // Reset delta after completing animation
+                    }
+                };
+
+                requestAnimationFrame(animateScroll);
+            }
+        });
+        // Function to check overflow and add ellipsis
+        const checkOverflowAndAddEllipsis = () => {
+            // Get the last child element under toptabs
+            const tabs = Array.from(toptabs.querySelectorAll('div'));
+            if (tabs.length === 0) 
+            {
+                let ee = toptabs.parentNode.querySelector( '.TopTabEllipsis' );
+                if( ee ) ee.parentNode.removeChild( ee );
+                return;
+            }
+
+            const lastTab = tabs[tabs.length - 1];
+            const toptabsRect = toptabs.getBoundingClientRect();
+            const lastTabRect = lastTab.getBoundingClientRect();
+
+            // Check if the last tab is overflowing
+            if( lastTabRect.right > toptabsRect.right ){
+                // Add ellipsis if it doesn't already exist
+                if (!toptabs.parentNode.querySelector('.TopTabEllipsis')) {
+                    const ellipsis = document.createElement('div');
+                    ellipsis.innerHTML = ''; // Vertical ellipsis
+                    let left = toptabs.offsetWidth - 10;
+                    ellipsis.className = 'TopTabEllipsis';
+                    toptabs.style.position = 'relative'; // Ensure the parent is relatively positioned
+                    toptabs.parentNode.appendChild(ellipsis);
+
+                    // Add click event to show the widget
+                    ellipsis.addEventListener('click', () => {
+                        showOverflowWidget(toptabs.querySelectorAll('div'));
+                    });
+                }
+            }
+            else 
+            {
+                // Remove ellipsis if no overflow
+                const ee = toptabs.parentNode.querySelector( '.TopTabEllipsis' );
+                if( ee )
+                {
+                    ee.parentNode.removeChild( ee );
+                    console.log( 'REM' );
+                }
+            }
+        };
+
+        // Function to show overflow widget
+        const showOverflowWidget = (tabs) => {
+            // Create a modal-like container
+            const blocker = document.createElement( 'div' );
+            blocker.className = 'blocker';
+            document.body.appendChild( blocker );
+            toptabs.blocker = blocker;
+            
+            const widget = document.createElement('div');
+            widget.className = 'overflow-widget';
+
+            // Add tabs to the widget
+            tabs.forEach((tab) => {
+                const item = document.createElement('div');
+                item.textContent = tab.textContent;
+                item.className = 'overflow-row-element';
+                item.addEventListener('click', () => {
+                    tab.parentNode.scrollLeft = tab.offsetLeft;
+                    tab.click(); // Trigger click on the original tab
+                    if( widget && widget.parentNode )
+                        blocker.removeChild( widget ); // Close the widget
+                    if( blocker.parentNode )
+                        document.body.removeChild( blocker );
+                    toptabs.blocker = null;
+                });
+                widget.appendChild(item);
+            });
+
+            // Add the widget to the body
+            blocker.appendChild( widget );
+
+            // Close the widget on outside click
+            const closeWidget = (e) => {
+                if (!widget.contains(e.target)) {
+                    blocker.removeChild(widget);
+                    document.body.removeChild( blocker );
+                    toptabs.blocker = null;
+                    document.removeEventListener('click', closeWidget);
+                }
+            };
+            setTimeout(() => document.addEventListener('click', closeWidget), 0); // Delay to avoid immediate removal
+        };
+
+        // Initial check and attach resize listener
+        checkOverflowAndAddEllipsis();
+        window.addEventListener('resize', checkOverflowAndAddEllipsis);
+    }
+
+
     let allTabs = topToolbar.getElementsByClassName( 'TopTab' );
     let pages = document.getElementById( 'page_editor' ).getElementsByTagName( 'pre' );
     if( allTabs && pages )
@@ -322,6 +461,7 @@ function newEditor( filename = false, path = false )
         {
             setTimeout( () => { activate.click(); }, 1 );
         }
+        toolbar.editor();
     };
     tab.className = 'TopTab';
     tab.setAttribute( 'editor', edName );
