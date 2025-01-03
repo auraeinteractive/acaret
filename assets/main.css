@@ -1024,13 +1024,29 @@ hr
 #page_folders .folder, #page_folders .file
 {
     display: flex;
+    flex-wrap: wrap;
     cursor: pointer;
     padding: 2px 0;
 }
 
-#page_folders .folder:hover, #page_folders .file:hover
+#page_folders .folder-children
+{
+    display: block;
+    width: 100%;
+    margin: 0 0 0 24px;
+}
+
+#page_folders .folder-children.hidden
+{
+    display: none;
+}
+
+#page_folders .file:hover > span,
+#page_folders .folder:hover > span
 {
     background: #555555ff;
+    box-shadow: 0px 0px 0px 3px #555555;
+    border-radius: 1px;
 }
 
 #page_folders .folder:before
@@ -1108,6 +1124,7 @@ hr
 {
     opacity: 1;
 }
+
 
 
 

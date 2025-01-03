@@ -23,15 +23,35 @@ window.toolbar.folders = function() {
     }
 }
 
+// Receive from server
+let targetFolderElements = {};
+
 function receiveFolders( path, data, depth = 0 )
 {
-    currentFolder = path;
-    
-    if( depth == 0 )
-    {
-        document.getElementById( 'page_folders' ).innerHTML = '';
-    }
     let container = document.getElementById( 'page_folders' );
+    
+    console.log( 'Trying: ' + path );
+    if( targetFolderElements[ path ] )
+    {
+        container = targetFolderElements[ path ];
+        if( container.className != 'folder-children' )
+        {
+            let c = document.createElement( 'div' );
+            c.className = 'folder-children';
+            container.folderChildren = c;
+            container.appendChild( c );
+            targetFolderElements[ path ] = c;
+            container = c;
+        }
+    }
+    else
+    {
+        if( depth == 0 )
+        {
+            document.getElementById( 'page_folders' ).innerHTML = '';
+            console.log( 'No target: ' + path );
+        }
+    }
     
     let folders = [];
     for( let a = 0; a < data.length; a++ )
@@ -48,7 +68,26 @@ function receiveFolders( path, data, depth = 0 )
         let d = document.createElement( 'div' );
         d.className = 'folder';
         d.innerHTML = '<span>' + folders[a] + '/</span>';
-        d.onclick = () => { refreshFolderStructure( currentFolder + folders[a] + '/' ); }
+        targetFolderElements[ path + folders[a] + '/' ] = d;
+        d.onclick = ( e ) => { 
+            if( d.folderChildren )
+            {
+                if( d.folderChildren.classList.contains( 'hidden' ) )
+                {
+                    d.folderChildren.classList.remove( 'hidden' );
+                }
+                else
+                {
+                    d.folderChildren.classList.add( 'hidden' );
+                }
+            } 
+            else 
+            { 
+                refreshFolderStructure( path + folders[a] + '/' ); 
+            }
+            e.stopPropagation();
+            e.preventDefault();
+        }
         container.appendChild( d );
     }
     
@@ -67,7 +106,11 @@ function receiveFolders( path, data, depth = 0 )
         let d = document.createElement( 'div' );
         d.className = 'file';
         d.innerHTML = '<span>' + files[a] + '</span>';
-        d.onclick = () => { loadFileFromPath( currentFolder + files[a] ); }
+        d.onclick = ( e ) => { 
+            loadFileFromPath( path + files[a] ); 
+            e.stopPropagation();
+            e.preventDefault();
+        }
         container.appendChild( d );
     }
     
@@ -90,4 +133,7 @@ window.addEventListener('message', function(event)
         });
     }
 } );
+
+
+
 

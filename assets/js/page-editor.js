@@ -228,12 +228,15 @@ function loadFile( str, path, filename )
     const utf8String = utf8Decoder.decode( binaryArray );
     
     editor.setValue( utf8String );
+    editor.getSession().getUndoManager().reset();
     editor.document_saved = true;
     editor.clearSelection();
     
     // These needs to be here
     editor.path = path;
     editor.filename = filename;
+    if( editor.path.substr( -1, 1 ) != '/' )
+        editor.path += '/';
     
     updateBottomBar();
 }
@@ -241,6 +244,8 @@ function loadFile( str, path, filename )
 function setCurrentEditor( data )
 {
     currentEditor.path = data.path;
+    if( currentEditor.path.substr( -1, 1 ) != '/' )
+        currentEditor.path += '/';
     currentEditor.filename = data.filename;
     currentEditor.tab.innerHTML = '<span class="close"></span>' + currentEditor.filename;
     updateBottomBar();
@@ -444,6 +449,8 @@ function newEditor( filename = false, path = false )
     editorDocuments[ edName ] = editor;
     editor.filename = filename ? filename : 'New file';
     editor.path = path ? path : '';
+    if( editor.path.substr( -1, 1 ) != '/' )
+        editor.path += '/';
     
     let tab = document.createElement( 'div' );
     tab.innerHTML = '<span class="close"></span>' + editor.filename;
@@ -499,6 +506,7 @@ function newEditor( filename = false, path = false )
     // Return reference to editor
     return editor;
 }
+
 
 
 
