@@ -64,6 +64,61 @@ void on_save_file_as(GtkWidget *widget, gpointer user_data )
     g_free(js_command);
 }
 
+void on_load_file_by_path(
+    WebKitUserContentManager *user_content_manager,
+    WebKitJavascriptResult *result,
+    gpointer user_data
+)
+{
+    GError *error = NULL;
+    JSCValue *value = webkit_javascript_result_get_js_value(result);
+    if (error != NULL) {
+        g_printerr("JavaScript error: %s\n", error->message);
+        g_error_free(error);
+        return;
+    }
+
+    // Handle the response as needed
+    gchar *message = jsc_value_to_string(value);
+    g_print("Received script path: %s\n", message);
+
+    // Check for specific messages and handle them accordingly
+
+    char *file_content = read_file_content( message );
+    if( file_content )
+    {
+        char *encoded_content = g_base64_encode( ( const guchar * )file_content, strlen( file_content ) );
+        const char *filename = g_path_get_basename( message );
+        const char *dir_path = g_path_get_dirname( message );
+
+        char *js_command = g_strdup_printf(
+            "loadFile(`%s`, \"%s\", \"%s\");",
+            encoded_content,
+            dir_path,
+            filename
+        );
+        
+        // Evaluate JavaScript in the Web View to handle the chunk
+        webkit_web_view_evaluate_javascript((WebKitWebView *)user_data, 
+                                            js_command, 
+                                            -1,  // -1 means the length is determined automatically
+                                            NULL, // world_name (NULL for default)
+                                            NULL, // source_uri (NULL for no source)
+                                            NULL, // cancellable (no cancelation)
+                                            NULL, // callback (no callback needed)
+                                            NULL  // user_data (no user data)
+        );
+        printf( "Freeing js command %s\n", js_command );
+        g_free(js_command);
+        printf( "Freeing file content\n" );
+        free( file_content );
+    }
+    
+    printf( "Freeing message\n" );
+    free( message );
+    printf( "Done.\n" );
+}
+
 // Callback to handle resource loading failures
 static void on_resource_failed(WebKitWebResource *resource, GError *error, gpointer user_data) {
     fprintf(stderr, "Failed to load resource: %s\n", error->message);
@@ -947,6 +1002,10 @@ mlObject *mlViewCreate(mlObject *parent) {
         "function refreshFolderStructure(path) {"
         "    console.log( \"Getting path: \", path );"
         "    window.webkit.messageHandlers.refreshFolderStructure.postMessage(path);"
+        "};"
+        "function loadFileFromPath( path ) {"
+        "    console.log( \"Getting path: \", path );"
+        "    window.webkit.messageHandlers.loadFileFromPath.postMessage( path );"
         "};";
     WebKitUserScript *user_script = webkit_user_script_new(script,
        WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES,
@@ -958,7 +1017,10 @@ mlObject *mlViewCreate(mlObject *parent) {
     webkit_user_content_manager_register_script_message_handler( content_manager, "refreshFolderStructure" );
     g_signal_connect(content_manager, "script-message-received::refreshFolderStructure",
                      G_CALLBACK( on_script_message_received_folders ), view->webview);
-    
+    // Handle load file from path
+    webkit_user_content_manager_register_script_message_handler( content_manager, "loadFileFromPath" );
+    g_signal_connect(content_manager, "script-message-received::loadFileFromPath",
+                     G_CALLBACK( on_load_file_by_path ), view->webview);
     
     // Set the method table for the view
     mlMethodEntry *method_table = malloc(sizeof(mlMethodEntry) * 3);

@@ -93,7 +93,31 @@ hr
     float: left;
 }
 
-#topbar #top_chat_title > em
+#topbar #top_chat_title > div.folders
+{
+    max-width: calc(100% - 170px);
+    width: 100%;
+    position: relative;
+}
+
+#topbar #top_chat_title > div.folders > span
+{
+  display: block;
+  float: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  direction: rtl;
+  text-align: left;
+  width: calc(100% - 28px);
+}
+
+#topbar #top_chat_title > div + div
+{
+    float: right;
+}
+
+#topbar #top_chat_title div em
 {
     content: " ";
     display: block;
@@ -110,7 +134,7 @@ hr
     cursor: pointer;
 }
 
-#topbar #top_chat_title > em:hover
+#topbar #top_chat_title div em:hover
 {
     opacity: 1;
 }
@@ -129,6 +153,24 @@ hr
 {
     background-image: url(feather/archive.svg);
 }
+
+#topbar #top_chat_title .folders-rename
+{
+    background-image: url(feather/edit-3.svg);
+}
+#topbar #top_chat_title .folders-delete
+{
+    background-image: url(feather/trash.svg);
+}
+#topbar #top_chat_title .folders-new
+{
+    background-image: url(feather/folder-plus.svg);
+}
+#topbar #top_chat_title .folders-back
+{
+    background-image: url(feather/corner-left-up.svg);
+}
+
 
 #topbar #top_toolbar
 {
@@ -438,7 +480,7 @@ hr
     cursor: pointer;
 }
 
-#pages, #debug
+#pages, #debug, #page_preview
 {
     margin: 0;
     position: absolute;
@@ -448,6 +490,21 @@ hr
     width: calc(100% - 551px);
     overflow: hidden;
     pointer-events: none;
+}
+
+#page_preview.showing
+{
+    z-index: 10;
+    opacity: 1;
+    pointer-events: all;
+    overflow: auto;
+}
+
+#page_preview > div
+{
+    padding: 20px;
+    background: #202020;
+    color: white;
 }
 
 #pages .page, #debug .page, #rightpages .page
@@ -752,6 +809,29 @@ hr
     width: 16px;
     height: 16px;
     background-image: url('feather/file-plus.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    display: inline-block;
+    margin: 0 5px 0 0;
+    filter: invert(1);
+    position: relative;
+    top: 2px;
+}
+
+.TopTabOption .taboption.preview { display: none; }
+.filetype-md .TopTabOption .taboption.preview { display: inline-block; }
+.filetype-md.file-preview .TopTabOption .taboption.preview
+{ 
+    background-color: #44444488;
+    border-radius: 5px;
+}
+
+.TopTabOption .taboption.preview:before
+{
+    content: " ";
+    width: 16px;
+    height: 16px;
+    background-image: url('feather/eye.svg');
     background-size: contain;
     background-repeat: no-repeat;
     display: inline-block;

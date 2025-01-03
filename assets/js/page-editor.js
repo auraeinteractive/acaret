@@ -7,7 +7,7 @@ window.toolbar.editor = function() {
     let topToolbar = document.getElementById( 'top_toolbar' );
     if( !topToolbar.querySelector( '.TopTabs' ) )
     {
-        topToolbar.innerHTML = '<div class="TopTabs"></div><div class="TopTabOption"><button class="taboption add">New file</button></div>';
+        topToolbar.innerHTML = '<div class="TopTabs"></div><div class="TopTabOption"><button class="taboption preview">Preview</button><button class="taboption add">New file</button></div>';
         
         let taboptions = topToolbar.getElementsByClassName( 'taboption' );
         for( let a = 0; a < taboptions.length; a++ )
@@ -16,6 +16,12 @@ window.toolbar.editor = function() {
             {
                 taboptions[a].onclick = ( e ) => {
                     newEditor();
+                };
+            }
+            if( taboptions[a].classList.contains( 'preview' ) )
+            {
+                taboptions[a].onclick = ( e ) => {
+                    togglePreview();
                 };
             }
         }
@@ -33,6 +39,7 @@ window.toolbar.editor = function() {
                 active = allTabs[ a ];
             allTabs[ a ].onclick = function()
             {
+                togglePreview( false );
                 let ed = this.getAttribute( 'editor' );
                 this.classList.add( 'active' );
                 currentEditor = this.editor;
@@ -59,6 +66,7 @@ window.toolbar.editor = function() {
         }
     }
 };
+
 function loadFile( str, path, filename )
 {
     console.log( 'Loading file: ' + filename, path );
@@ -171,10 +179,57 @@ function updateBottomBar()
     if( currentEditor.filename == 'Makefile' )
         mode = 'ace/mode/makefile';
     
+    if( currentEditor.filename.substr( -3, 3 ).toLowerCase() == '.md' )
+    {
+        document.body.classList.add( 'filetype-md' );
+    }
+    else
+    {
+        document.body.classList.remove( 'filetype-md' );
+    }
+    
     currentEditor.session.setMode( mode );
     
     // Set the bottom bar info
     document.getElementById( 'bottombar' ).querySelector( '.bottom-info' ).innerHTML = '<div>Editing: ' + mode.split( '/' ).pop().split( '_' ).join( '/' ) + '</div><div>' + ( currentEditor.document_saved ? 'Saved.' : 'Not saved.' ) + '</div>';
+}
+
+let previewOn = false;
+
+function togglePreview( forceState = 0 )
+{
+    if( forceState === false )
+    {
+        previewOn = true;
+    }
+    else if( forceState === true )
+    {
+        previewOn = false;
+    }
+
+    if( !previewOn )
+    {
+        previewOn = true;
+        
+        document.body.classList.add( 'file-preview' );
+        
+        let str = currentEditor.getValue();
+        
+        if( document.body.classList.contains( 'filetype-md' ) )
+        {
+            str = new showdown.Converter().makeHtml( str );
+        }
+        
+        document.getElementById( 'page_preview' ).innerHTML = '<div>' + str + '</div>';
+        document.getElementById( 'page_preview' ).classList.add( 'showing' );
+    }
+    else
+    {
+        document.body.classList.remove( 'file-preview' );
+        previewOn = false;
+        document.getElementById( 'page_preview' ).classList.remove( 'showing' );
+        document.getElementById( 'page_preview' ).innerHTML = '';
+    }
 }
 
 let edName = 1;
@@ -205,6 +260,8 @@ function newEditor( filename = false, path = false )
     let tab = document.createElement( 'div' );
     tab.innerHTML = '<span class="close"></span>' + editor.filename;
     tab.querySelector( '.close' ).onclick = () => {
+        togglePreview( false );
+        
         let p = tab.parentNode;
         let activate = false;
         // Try to activate next/prev?
