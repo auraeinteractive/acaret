@@ -563,6 +563,7 @@ hr
     height: 100%;
     pointer-events: none;
     opacity: 0;
+    overflow: auto;
 }
 
 #pages .page #editor
@@ -1124,6 +1125,7 @@ hr
 {
     opacity: 1;
 }
+
 
 
 

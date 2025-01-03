@@ -49,7 +49,7 @@ function refreshNavigation() {
 
     // Match C/C++ functions
     if (ext == 'c' || ext == 'cpp') {
-        let matches = str.match(/^\s*(?:\b[a-zA-Z_][a-zA-Z0-9_]*\s+)+[a-zA-Z_][a-zA-Z0-9_]*\s*\(.*?\)\s*{/gm); // Match function declarations
+        let matches = str.match(/^\s*(?:\b(?!if|else|for|while|switch|return)[a-zA-Z_][a-zA-Z0-9_]*\s*\*?\s*)+[a-zA-Z_][a-zA-Z0-9_]*\s*\([^)]*\)\s*\{/gm);
         if (matches) {
             output = matches.map(match => {
                 let cleanName = match.split('(')[0].trim().split(' ').pop(); // Extract the function name
@@ -134,4 +134,7 @@ function refreshNavigation() {
         };
     }
 }
+
+
+
 
