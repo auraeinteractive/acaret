@@ -2,12 +2,15 @@
 
 window.toolbar = window.toolbar ? window.toolbar : {};
 window.toolbar.navigator = function() {
-    let tct = document.getElementById( 'top_chat_title' );
-    let tcd = tct.getElementsByTagName( 'div' )[0];
-    let tci = tct.getElementsByTagName( 'div' )[1];
-    tcd.innerHTML = 'Navigator: ' + currentEditor.filename;
-    tcd.className = 'navigator';
-    tci.innerHTML = ''; //<em class="chat-reset" title="Reset chat"></em><em class="chat-save" title="Save chat"></em><em class="chat-more" title="Options"></em>';
+    if( document.getElementById( 'page_navigator' ).classList.contains( 'active' ) )
+    {
+        let tct = document.getElementById( 'top_chat_title' );
+        let tcd = tct.getElementsByTagName( 'div' )[0];
+        let tci = tct.getElementsByTagName( 'div' )[1];
+        tcd.innerHTML = 'Navigator: ' + currentEditor.filename;
+        tcd.className = 'navigator';
+        tci.innerHTML = ''; //<em class="chat-reset" title="Reset chat"></em><em class="chat-save" title="Save chat"></em><em class="chat-more" title="Options"></em>';
+    }
     
     refreshNavigation();
 }
@@ -28,7 +31,7 @@ function refreshNavigation() {
     ext = ext.toLowerCase(); // Normalize the extension to lowercase
 
     // Match JavaScript or Vue.js functions
-    if (ext == 'js' || ext == 'vue') {
+    if (ext == 'js' || ext == 'vue' || ext == 'sh') {
         let matches = str.match(/^\s*function\s+[a-zA-Z_][a-zA-Z0-9_]*\s*\(/gm); // Match standalone function declarations
         if (matches) {
             output = matches.map(match => {

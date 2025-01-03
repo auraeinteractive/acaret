@@ -44,6 +44,7 @@ window.toolbar.editor = function() {
                 this.classList.add( 'active' );
                 currentEditor = this.editor;
                 updateBottomBar();
+                window.toolbar.navigator();
                 for( let c = 0; c < allTabs.length; c++ )
                     if( allTabs[ c ] != this ) allTabs[ c ].classList.remove( 'active' );
                 

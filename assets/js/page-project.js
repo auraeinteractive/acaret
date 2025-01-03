@@ -25,6 +25,10 @@ function loadProject( str, path, filename )
         let o = JSON.parse( atob( str ) );
         o.filename = filename;
         o.path = path;
+        if( o.path.substr( -1, 1 ) != '/' )
+            o.path += '/';
+        
+        console.log( 'Loaded project: ', o );
         
         document.getElementById( 'p-name' ).value = o.name ?? 'unnamed';
         document.getElementById( 'p-git-url' ).value = o.gitUrl ?? '';
