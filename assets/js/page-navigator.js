@@ -30,16 +30,22 @@ function refreshNavigation() {
     if (!ext) ext = 'js'; // Default to JavaScript if no extension is found
     ext = ext.toLowerCase(); // Normalize the extension to lowercase
 
-    // Match JavaScript or Vue.js functions
-    if (ext == 'js' || ext == 'vue' || ext == 'sh') {
-        let matches = str.match(/^\s*function\s+[a-zA-Z_][a-zA-Z0-9_]*\s*\(/gm); // Match standalone function declarations
+    if (ext === 'js' || ext === 'vue' || ext === 'sh') {
+        // Match standalone function declarations, exported functions, async functions, and Vue.js shorthand methods
+        let matches = str.match(/^\s*(?:export\s+)?(?:async\s+)?function\s+[a-zA-Z_][a-zA-Z0-9_]*\s*\(|^\s*[a-zA-Z_][a-zA-Z0-9_]*\s*\(\s*\)\s*{/gm);
+
         if (matches) {
             output = matches.map(match => {
-                let cleanName = match.replace(/^\s*function\s+/, '').split('(')[0].trim(); // Extract the function name
-                return { display: cleanName, searchString: match.trim() }; // Store both the display name and full match
+                // Extract the function name while cleaning prefixes like "export", "async", etc.
+                let cleanName = match
+                    .replace(/^\s*(?:export\s+)?(?:async\s+)?function\s+/, '') // Remove "export async function" or "function"
+                    .replace(/\(\s*\).*$/, '') // Remove everything from the first "(" onward
+                    .replace(/^\s*|\s*$/g, ''); // Trim whitespace
+                return { display: cleanName, searchString: match.trim() }; // Store both display name and full match
             });
         }
     }
+
 
     // Match C/C++ functions
     if (ext == 'c' || ext == 'cpp') {
@@ -98,7 +104,13 @@ function refreshNavigation() {
     for (let a = 0; a < output.length; a++) {
         let t = document.createElement('div'); // Create a new div for each navigation item
         t.className = 'navigation-item';
-        t.innerHTML = output[a].display; // Display the function name
+        
+        // Sanitize
+        let sout = output[a].display;
+        if( sout.substr( -1, 1 ) == '(' )
+            sout = sout.substr( 0, sout.length - 1 );
+            
+        t.innerHTML = sout; // Display the function name
         navDiv.appendChild(t); // Add the item to the navigation container
 
         // Add an event listener for clicking on the navigation item
