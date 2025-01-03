@@ -209,9 +209,13 @@ window.toolbar.editor = function() {
 
 function loadFile( str, path, filename )
 {
+    if( path.substr( -1, 1 ) != '/' )
+        path += '/';
+        
     // Don't open the same one!
     for( let a in editorDocuments )
     {
+        console.log( 'Current matrix: ' + editorDocuments[ a ].path + ' // ' + editorDocuments[ a ].filename );
         if( editorDocuments[ a ].path == path && editorDocuments[ a ].filename == filename )
         {
             editorDocuments[ a ].tab.click();
@@ -235,8 +239,6 @@ function loadFile( str, path, filename )
     // These needs to be here
     editor.path = path;
     editor.filename = filename;
-    if( editor.path.substr( -1, 1 ) != '/' )
-        editor.path += '/';
     
     updateBottomBar();
 }
@@ -418,6 +420,9 @@ function removeDocumentFromStack( edName )
 let edName = 1;
 function newEditor( filename = false, path = false )
 {
+    if( path && path.substr( -1, 1 ) != '/' )
+        path += '/';
+    
     // Don't open the same one!
     for( let a in editorDocuments )
     {
@@ -429,9 +434,6 @@ function newEditor( filename = false, path = false )
     }
 
     edName++;
-    
-    if( path && path.substr( -1, 1 ) != '/' )
-        path += '/';
     
     let p = document.createElement( 'pre' );
     p.setAttribute( 'editor', edName );
