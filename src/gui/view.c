@@ -1060,6 +1060,79 @@ static void on_uri_scheme_request(WebKitURISchemeRequest *request, gpointer user
     }
 }
 
+gboolean script_dialog_cb(WebKitWebView *web_view, WebKitScriptDialog *dialog, gpointer user_data) {
+    // Get the message from the dialog
+    const gchar *message = webkit_script_dialog_get_message(dialog);
+    printf("Dialog message: %s\n", message);
+
+    // Get the title of the current web page
+    const gchar *page_title = webkit_web_view_get_title(web_view);
+    printf("Page title: %s\n", page_title);
+
+    // Get the dialog type directly (no arguments needed for this function)
+    WebKitScriptDialogType dialog_type = webkit_script_dialog_get_dialog_type(dialog);
+    printf("Dialog type value: %d\n", dialog_type);
+    printf("WEBKIT_SCRIPT_DIALOG_ALERT = %d\n", WEBKIT_SCRIPT_DIALOG_ALERT);
+    printf("WEBKIT_SCRIPT_DIALOG_CONFIRM = %d\n", WEBKIT_SCRIPT_DIALOG_CONFIRM);
+
+    // Handle alert dialog
+    if (dialog_type == WEBKIT_SCRIPT_DIALOG_ALERT) {
+        printf("Handling alert dialog\n");
+
+        GtkWidget *dialog_box = gtk_message_dialog_new(GTK_WINDOW(user_data),
+                                                       GTK_DIALOG_MODAL,
+                                                       GTK_MESSAGE_INFO,
+                                                       GTK_BUTTONS_OK,
+                                                       "%s\n\n%s", page_title, message);
+
+        // Run the dialog
+        gtk_dialog_run(GTK_DIALOG(dialog_box));
+
+        // Destroy the dialog after it's closed
+        gtk_widget_destroy(dialog_box);
+        printf("Alert dialog handled and destroyed\n");
+    }
+    // Handle confirm dialog
+    else if (dialog_type == WEBKIT_SCRIPT_DIALOG_CONFIRM) {
+        printf("Handling confirm dialog\n");
+
+        // Create a message dialog with no default buttons
+        GtkWidget *dialog_box = gtk_message_dialog_new(GTK_WINDOW(user_data),
+                                                       GTK_DIALOG_MODAL,
+                                                       GTK_MESSAGE_QUESTION,
+                                                       GTK_BUTTONS_NONE,
+                                                       "%s\n\n%s", page_title, message);
+
+        // Explicitly add "Yes" and "No" buttons with appropriate response codes
+        gtk_dialog_add_buttons(GTK_DIALOG(dialog_box),
+                               "Yes", GTK_RESPONSE_YES,
+                               "No", GTK_RESPONSE_NO,
+                               NULL);
+
+        // Run the dialog and capture the response
+        gint response = gtk_dialog_run(GTK_DIALOG(dialog_box));
+
+        // Determine whether the user clicked "Yes" or "No"
+        gboolean result = (response == GTK_RESPONSE_YES);
+
+        // Debugging response
+        printf("User response: %s\n", result ? "Yes" : "No");
+
+        // Set the confirmed result using WebKit's function
+        webkit_script_dialog_confirm_set_confirmed(dialog, result);
+
+        // Destroy the dialog after it's closed
+        gtk_widget_destroy(dialog_box);
+        printf("Confirm dialog handled and destroyed\n");
+
+        // Return TRUE to indicate that we handled the dialog
+        return TRUE;
+    }
+
+    // Return TRUE to suppress the default dialog and allow custom handling
+    return TRUE;
+}
+
 // Create a new view (this function should be called from the main program)
 mlObject *mlViewCreate(mlObject *parent) {
     // Dynamically create the derived mlView object
@@ -1200,7 +1273,7 @@ mlObject *mlViewCreate(mlObject *parent) {
     WebKitWebContext *context = webkit_web_context_get_default();
     webkit_web_context_register_uri_scheme(context, "ihttp", on_uri_scheme_request, view->webview, NULL);
 
-    webkit_web_view_load_html(view->webview, "<html><body><h1>Hello, World!</h1></body></html>", NULL);
+    webkit_web_view_load_html(view->webview, "<html><head><title>Acursor</title></head><body></body></html>", NULL);
     gtk_box_pack_end(GTK_BOX(vbox), GTK_WIDGET(view->webview), TRUE, TRUE, 0);
 
     // Add event listeners (e.g., window close event)
@@ -1275,6 +1348,9 @@ mlObject *mlViewCreate(mlObject *parent) {
     webkit_user_content_manager_register_script_message_handler( content_manager, "loadFileFromPath" );
     g_signal_connect(content_manager, "script-message-received::loadFileFromPath",
                      G_CALLBACK( on_load_file_by_path ), view->webview);
+    
+    // Connect to the script-dialog signal to handle alert, confirm, etc.
+    g_signal_connect(view->webview, "script-dialog", G_CALLBACK(script_dialog_cb), NULL);
     
     // Set the method table for the view
     mlMethodEntry *method_table = malloc(sizeof(mlMethodEntry) * 3);

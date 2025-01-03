@@ -34,15 +34,6 @@ function initializeGUI()
         if( e.which == 17 )
             window.chatCtrl = true;
     } );
-    
-    document.querySelector( '.chat-reset' ).onclick = function( e )
-    {
-        // TODO: Trigger native confirm dialog
-        if( confirm( 'Are you sure?' ) )
-        {
-            resetAIContext();
-        }
-    }
 }
 
 function initTabs( element, options = false )
