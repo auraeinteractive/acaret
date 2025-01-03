@@ -72,7 +72,14 @@ function loadFile( str, path, filename )
 {
     console.log( 'Loading file: ' + filename, path );
     let editor = newEditor( filename, path );
-    editor.setValue( atob( str ) );
+    
+    const binaryArray = Uint8Array.from( atob( str ), char => char.charCodeAt( 0 ) );
+
+    // Decode the Uint8Array as a UTF-8 string
+    const utf8Decoder = new TextDecoder("utf-8");
+    const utf8String = utf8Decoder.decode( binaryArray );
+    
+    editor.setValue( utf8String );
     editor.document_saved = true;
     editor.clearSelection();
     updateBottomBar();

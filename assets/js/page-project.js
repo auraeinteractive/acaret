@@ -22,7 +22,12 @@ function loadProject( str, path, filename )
 {
     try
     {
-        let o = JSON.parse( atob( str ) );
+        const binaryArray = Uint8Array.from( atob( str ), char => char.charCodeAt( 0 ) );
+        // Decode the Uint8Array as a UTF-8 string
+        const utf8Decoder = new TextDecoder("utf-8");
+        const utf8String = utf8Decoder.decode( binaryArray );
+    
+        let o = JSON.parse( utf8String );
         o.filename = filename;
         o.path = path;
         if( o.path.substr( -1, 1 ) != '/' )
