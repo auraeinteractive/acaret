@@ -291,6 +291,7 @@ function getSyntaxHighlightingMode( ext )
             case 'rb':
                 mode = 'ace/mode/ruby';
                 break;
+            case 'h':
             case 'c':
                 mode = 'ace/mode/c_cpp';
                 break;
@@ -508,6 +509,7 @@ function newEditor( filename = false, path = false )
     // Return reference to editor
     return editor;
 }
+
 
 
 

@@ -1,7 +1,7 @@
 #include "gui/view.h"
 #include "gui/init.h"  // Include the new abstracted init functions
+#include "gui/signals.h"
 #include "proxy/proxy.h"
-#include "system/signals.h"
 
 // Function to quit the application
 mlObject *mainView;
@@ -60,4 +60,5 @@ void doQuit()
         printf( "Already quit.\n" );
     }
 }
+
 

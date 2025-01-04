@@ -16,7 +16,7 @@
 #include <sys/stat.h>
 #include <glib.h>
 #include "../proxy/proxy.h"
-#include "../system/signals.h"
+#include "signals.h"
 
 typedef struct mlView {
     mlObject base;  // Inherits from mlObject
@@ -37,4 +37,5 @@ void mlViewSetHTML(void *instance, void *data);
 void mlViewDestroy(mlObject *instance);
 
 #endif // GUI_VIEW_H
+
 

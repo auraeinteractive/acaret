@@ -549,13 +549,37 @@ hr
     opacity: 1;
     pointer-events: all;
     overflow: auto;
+    background: #202020;
 }
 
 #page_preview > div
 {
     padding: 20px;
-    background: #202020;
+    background: #12385833;
     color: white;
+    border-right: 1px solid #141e28;
+    max-width: 1024px;
+}
+
+#page_preview > div h1, 
+#page_preview > div h2, 
+#page_preview > div h3,
+#page_preview > div h4,
+#page_preview > div h5,
+#page_preview > div p
+{
+    margin: 0 0 20px 0;
+    font-size: 15px;
+}
+
+#page_preview > div h2
+{
+    font-size: 16px;
+}
+
+#page_preview > div h1
+{
+    font-size: 18px;
 }
 
 #pages .page, #debug .page, #rightpages .page
@@ -1150,6 +1174,10 @@ hr
 {
     opacity: 1;
 }
+
+
+
+
 
 
 
