@@ -26,6 +26,20 @@ window.toolbar.folders = function() {
 // Receive from server
 let targetFolderElements = {};
 
+function setActiveItem( itm )
+{
+    let container = document.getElementById( 'page_folders' );
+    let items = container.querySelectorAll( '.folder, .file' );
+    for( let a = 0; a < items.length; a++ )
+    {
+        if( items[ a ] != itm )
+        {
+            items[ a ].classList.remove( 'active' );
+        }
+    }
+    itm.classList.add( 'active' );
+}
+
 function receiveFolders( path, data, depth = 0 )
 {
     let container = document.getElementById( 'page_folders' );
@@ -70,6 +84,14 @@ function receiveFolders( path, data, depth = 0 )
         d.innerHTML = '<span>' + folders[a] + '/</span>';
         targetFolderElements[ path + folders[a] + '/' ] = d;
         d.onclick = ( e ) => { 
+            if( d.classList.contains( 'active' ) )
+            {
+                d.classList.remove( 'active' );
+            }
+            else
+            {
+                setActiveItem( d );
+            }
             if( d.folderChildren )
             {
                 if( d.folderChildren.classList.contains( 'hidden' ) )
@@ -107,6 +129,14 @@ function receiveFolders( path, data, depth = 0 )
         d.className = 'file';
         d.innerHTML = '<span>' + files[a] + '</span>';
         d.onclick = ( e ) => { 
+            if( d.classList.contains( 'active' ) )
+            {
+                d.classList.remove( 'active' );
+            }
+            else
+            {
+                setActiveItem( d );
+            }
             loadFileFromPath( path + files[a] ); 
             e.stopPropagation();
             e.preventDefault();
@@ -117,8 +147,11 @@ function receiveFolders( path, data, depth = 0 )
     window.toolbar.folders();
 }
 
-refreshFolderStructure( currentFolder );
 
+// Tag: Refreshing the folder structure the first time
+window.addEventListener( 'load', () => {
+    refreshFolderStructure( currentFolder );
+} );
 window.addEventListener('message', function(event) 
 {
     if (event.data && event.data.type === "folderStructure") {
@@ -133,6 +166,7 @@ window.addEventListener('message', function(event)
         });
     }
 } );
+
 
 
 

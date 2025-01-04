@@ -1027,7 +1027,12 @@ hr
     display: flex;
     flex-wrap: wrap;
     cursor: pointer;
-    padding: 2px 0;
+    padding: 1px 0;
+    margin: 7px 0;
+}
+#page_folders .folder:last-child, #page_folders .file:last-child
+{
+    margin: 7px 0 0 0;
 }
 
 #page_folders .folder-children
@@ -1042,11 +1047,27 @@ hr
     display: none;
 }
 
-#page_folders .file:hover > span,
-#page_folders .folder:hover > span
+#page_folders .file > span:hover,
+#page_folders .folder > span:hover
 {
     background: #555555ff;
     box-shadow: 0px 0px 0px 3px #555555;
+    border-radius: 1px;
+}
+
+#page_folders .file.active > span,
+#page_folders .folder.active > span
+{
+    background: #44668899;
+    box-shadow: 0px 0px 0px 3px #44668899;
+    border-radius: 1px;
+}
+
+#page_folders .file.active > span:hover,
+#page_folders .folder.active > span:hover
+{
+    background: #446688;
+    box-shadow: 0px 0px 0px 3px #446688;
     border-radius: 1px;
 }
 
@@ -1125,6 +1146,7 @@ hr
 {
     opacity: 1;
 }
+
 
 
 
