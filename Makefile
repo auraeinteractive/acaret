@@ -13,7 +13,7 @@ SRC_FILES := $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/oop/*.c) $(wildcar
 OBJ_FILES := $(SRC_FILES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
 # Output executable
-OUTPUT = aide
+OUTPUT = acaret
 
 # Assets directory (excluding libs)
 ASSETS_DIR = assets

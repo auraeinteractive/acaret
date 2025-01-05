@@ -159,7 +159,7 @@ void mlViewOnWindowClosed(void *instance, void *data) {
     }
 }
 
-static void on_script_message_received_saveas(WebKitUserContentManager *manager,
+void on_script_message_received_saveas(WebKitUserContentManager *manager,
                                               WebKitJavascriptResult *result,
                                               gpointer user_data);
 

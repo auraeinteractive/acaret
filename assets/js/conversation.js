@@ -1,6 +1,10 @@
 let currentContext = 'global';
 let messageContext = { global: [] };
 let promptConnCtrl = false;
+let chatSettings = {
+    server: 'localhost',
+    port: 8089
+};
 
 let chatShift = false;
 let chatCtrl  = false;
@@ -36,6 +40,12 @@ function sendPrompt()
     {
         window.convos.sendMessage( tx.value );
     }
+}
+
+// Check if we can contact chat server
+function checkChatConnection()
+{
+    
 }
 
 function base64DecodeUtf8( base64 )
@@ -479,6 +489,7 @@ class Conversation
     }
 
     // Send a message
+    // Tag: Send chat message
     async sendMessageNow(messageStr, options = false) {
         let self = this;
         
@@ -504,10 +515,10 @@ class Conversation
             ctx.push( { role: 'system', content: options.instruction } );
         }
 
-        // Define the API endpoint
-        const API_URL = 'https://localhost:8089/v1/chat/completions';
+        // Tag: Define the API endpoint
+        const API_URL = 'https://' + chatSettings.server + ':' + chatSettings.port + '/v1/chat/completions';
 
-        // Define the system prompt configuration (if needed)
+        // Tag: Define the system prompt configuration (if needed)
         const systemPrompt = {
             prompt: 'You are the AI assistant of the editor Aide.',
             anti_prompt: 'User:',
@@ -565,4 +576,5 @@ class Conversation
     }
 
 }
+
 
