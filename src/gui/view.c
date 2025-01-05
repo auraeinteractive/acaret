@@ -211,8 +211,6 @@ mlObject *mlViewCreate(mlObject *parent) {
     // Clean up
     free(icon_path);
     
-    printf( "Adding new view!\n" );
-    
     gtk_window_set_title(GTK_WINDOW(view->window), "Acaret");
     gtk_window_set_default_size(GTK_WINDOW(view->window), 1280, 800);
 
@@ -220,7 +218,7 @@ mlObject *mlViewCreate(mlObject *parent) {
     GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_container_add(GTK_CONTAINER(view->window), vbox);
 
-    // #tag: Set up window menu
+    // Tag: Set up window menu
 
     // Create a menu bar
     GtkWidget *menu_bar = gtk_menu_bar_new();
@@ -241,22 +239,24 @@ mlObject *mlViewCreate(mlObject *parent) {
     GtkWidget *save_file = gtk_menu_item_new_with_label("Save");
     GtkWidget *save_file_as = gtk_menu_item_new_with_label("Save As");
     GtkWidget *close_file = gtk_menu_item_new_with_label("Close");
+    GtkWidget *close_file_all = gtk_menu_item_new_with_label("Close all");
     GtkWidget *separator2 = gtk_separator_menu_item_new();
     GtkWidget *quit = gtk_menu_item_new_with_label("Quit");
     
-    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), new_project);
-    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), open_project);
-    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), save_project);
-    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), save_project_as);
-    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), close_project);
-    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), separator1);
-    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), new_file);
-    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), open_file);
-    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), save_file);
-    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), save_file_as);
-    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), close_file);
-    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), separator2);
-    gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), quit);
+    gtk_menu_shell_append( GTK_MENU_SHELL( file_menu ), new_project );
+    gtk_menu_shell_append( GTK_MENU_SHELL( file_menu ), open_project );
+    gtk_menu_shell_append( GTK_MENU_SHELL( file_menu ), save_project );
+    gtk_menu_shell_append( GTK_MENU_SHELL( file_menu ), save_project_as );
+    gtk_menu_shell_append( GTK_MENU_SHELL( file_menu ), close_project );
+    gtk_menu_shell_append( GTK_MENU_SHELL( file_menu ), separator1 );
+    gtk_menu_shell_append( GTK_MENU_SHELL( file_menu ), new_file );
+    gtk_menu_shell_append( GTK_MENU_SHELL( file_menu ), open_file );
+    gtk_menu_shell_append( GTK_MENU_SHELL( file_menu ), save_file );
+    gtk_menu_shell_append( GTK_MENU_SHELL( file_menu ), save_file_as );
+    gtk_menu_shell_append( GTK_MENU_SHELL( file_menu ), close_file );
+    gtk_menu_shell_append( GTK_MENU_SHELL( file_menu ), close_file_all );
+    gtk_menu_shell_append( GTK_MENU_SHELL( file_menu ), separator2 );
+    gtk_menu_shell_append( GTK_MENU_SHELL( file_menu ), quit );
 
     // Edit menu
     GtkWidget *edit_menu = gtk_menu_new();
@@ -319,6 +319,8 @@ mlObject *mlViewCreate(mlObject *parent) {
     g_signal_connect(open_file, "activate", G_CALLBACK(on_open_file), ( gpointer )view->webview);
     g_signal_connect(save_file, "activate", G_CALLBACK(on_save_file), ( gpointer )view->webview);
     g_signal_connect(save_file_as, "activate", G_CALLBACK(on_save_file_as), ( gpointer )view->webview);
+    g_signal_connect(close_file, "activate", G_CALLBACK(on_close_file), ( gpointer )view->webview);
+    g_signal_connect(close_file_all, "activate", G_CALLBACK(on_close_file_all), ( gpointer )view->webview);
 
     // Set up settings for file access if not already done
     WebKitSettings *settings = webkit_web_view_get_settings(view->webview);
@@ -432,10 +434,13 @@ mlObject *mlViewCreate(mlObject *parent) {
     GtkAccelGroup *accel_group = gtk_accel_group_new();
     gtk_window_add_accel_group(GTK_WINDOW(view->window), accel_group);
 
+    // Tag: Menu keyboard shortcuts
     gtk_widget_add_accelerator(quit, "activate", accel_group, GDK_KEY_q, GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
-    gtk_widget_add_accelerator(new_project, "activate", accel_group, GDK_KEY_n, GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
-    gtk_widget_add_accelerator(open_project, "activate", accel_group, GDK_KEY_o, GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
-    gtk_widget_add_accelerator(save_settings, "activate", accel_group, GDK_KEY_s, GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
+    gtk_widget_add_accelerator(new_file, "activate", accel_group, GDK_KEY_n, GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
+    gtk_widget_add_accelerator(open_file, "activate", accel_group, GDK_KEY_o, GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
+    gtk_widget_add_accelerator(save_file, "activate", accel_group, GDK_KEY_s, GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
+    gtk_widget_add_accelerator(save_file_as, "activate", accel_group, GDK_KEY_s, ( GDK_CONTROL_MASK | GDK_SHIFT_MASK ), GTK_ACCEL_VISIBLE);
+    gtk_widget_add_accelerator(close_file_all, "activate", accel_group, GDK_KEY_w, ( GDK_CONTROL_MASK | GDK_SHIFT_MASK ), GTK_ACCEL_VISIBLE);
 
     return (mlObject *)view;
 }
@@ -463,6 +468,8 @@ void mlViewDestroy(mlObject *obj) {
     // Call the base destroy function to clean up common resources
     mlObjectDestroy(obj);
 }
+
+
 
 
 

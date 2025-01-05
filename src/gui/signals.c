@@ -111,6 +111,40 @@ void on_save_file_as(GtkWidget *widget, gpointer user_data )
     g_free(js_command);
 }
 
+void on_close_file(GtkWidget *widget, gpointer user_data )
+{
+    printf( "Tried to execute close file..\n" );
+    gchar *js_command = strdup( "closeFile( currentEditor );" );
+    // Evaluate JavaScript in the WebView to handle the chunk
+    webkit_web_view_evaluate_javascript((WebKitWebView *)user_data, 
+                                        js_command, 
+                                        -1,  // -1 means the length is determined automatically
+                                        NULL, // world_name (NULL for default)
+                                        NULL, // source_uri (NULL for no source)
+                                        NULL, // cancellable (no cancelation)
+                                        NULL, // callback (no callback needed)
+                                        NULL  // user_data (no user data)
+    );
+    g_free(js_command);
+}
+
+void on_close_file_all(GtkWidget *widget, gpointer user_data )
+{
+    printf( "Tried to execute close all files..\n" );
+    gchar *js_command = strdup( "closeFileAll();" );
+    // Evaluate JavaScript in the WebView to handle the chunk
+    webkit_web_view_evaluate_javascript((WebKitWebView *)user_data, 
+                                        js_command, 
+                                        -1,  // -1 means the length is determined automatically
+                                        NULL, // world_name (NULL for default)
+                                        NULL, // source_uri (NULL for no source)
+                                        NULL, // cancellable (no cancelation)
+                                        NULL, // callback (no callback needed)
+                                        NULL  // user_data (no user data)
+    );
+    g_free(js_command);
+}
+
 void on_load_file_by_path(
     WebKitUserContentManager *user_content_manager,
     WebKitJavascriptResult *result,
@@ -943,6 +977,23 @@ gboolean on_key_press_event(GtkWidget *widget, GdkEventKey *event, gpointer user
         
         return TRUE; // Stop further handling of this event
     }
+    // Check if Ctrl+shift+w is pressed
+    else if (
+        ( event->state & ( GDK_CONTROL_MASK | GDK_SHIFT_MASK ) ) == ( GDK_CONTROL_MASK | GDK_SHIFT_MASK )
+        && event->keyval == GDK_KEY_w) 
+    {
+        g_print("Ctrl+Shift+W detected. Close action triggered.\n");
+        on_close_file_all( widget, user_data );
+        
+        return TRUE; // Stop further handling of this event
+    }
+    // Check if Ctrl+w is pressed
+    else if ((event->state & GDK_CONTROL_MASK) && event->keyval == GDK_KEY_w) {
+        g_print("Ctrl+W detected. Close action triggered.\n");
+        on_close_file( widget, user_data );
+        
+        return TRUE; // Stop further handling of this event
+    }
     if ((event->state & GDK_CONTROL_MASK) && event->keyval == GDK_KEY_q) {
         g_print("Ctrl+Q detected. Quit action triggered.\n");
         doQuit();
@@ -971,5 +1022,6 @@ char* convertDataURLToLocalPath( const char* cwd, const char* relative_path )
     
     return full_path;
 }
+
 
 

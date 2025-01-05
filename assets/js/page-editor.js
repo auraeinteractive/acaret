@@ -539,16 +539,77 @@ function newEditor( filename = false, path = false )
     return editor;
 }
 
+function closeFileAll()
+{
+    let unsaved = false;
+    for( let a in editorDocuments )
+    {
+        if( !editorDocuments[ a ].document_saved )
+        {
+            unsaved = true;
+            break;
+        }
+    }
+    let conf = true;
+    if( unsaved )
+    {
+        conf = false;
+        if( confirm( 'You have unsaved document(s). Do you still want to close all documents?' ) )
+        {
+            conf = true;
+        }
+    }
+    if( conf )
+    {
+        for( let a in editorDocuments )
+        {
+            closeFile( editorDocuments[a] );
+        }
+    }
+}
 
-
-
-
-
-
-
-
-
-
-
+function closeFile( ed = false )
+{
+    if( !ed || !ed.tab ) return;
+    let p = ed.tab.parentNode;
+    let activate = false;
+    
+    let tab = ed.tab;
+    togglePreview( false );
+    
+    // Try to activate next/prev?
+    if( p )
+    {
+        for( let a = 0; a < p.childNodes.length; a++ )
+        {
+            if( p.childNodes[a] == tab )
+            {
+                if( a + 1 < p.childNodes.length )
+                {
+                    activate = p.childNodes[ a + 1 ];
+                }
+                else if( a > 0 )
+                {
+                    activate = p.childNodes[ a - 1 ];
+                }
+            }
+        }
+        
+        p.removeChild( tab );
+    }
+    removeDocumentFromStack( ed.editorId );
+    ed.destroy();
+    
+    // Remove page
+    if( ed.parentNode )
+    {
+        ed.container.parentNode.removeChild( editor.container );
+        if( activate ) 
+        {
+            setTimeout( () => { activate.click(); }, 1 );
+        }
+    }
+    toolbar.editor();
+}
 
 

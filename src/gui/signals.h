@@ -22,6 +22,8 @@ void on_open_project(GtkWidget *widget, gpointer user_data );
 void on_open_file(GtkWidget *widget, gpointer user_data );
 void on_save_project(GtkWidget *widget, gpointer user_data );
 void on_save_project_as(GtkWidget *widget, gpointer user_data );
+void on_close_file(GtkWidget *widget, gpointer user_data );
+void on_close_file_all(GtkWidget *widget, gpointer user_data );
 void on_save_file(GtkWidget *widget, gpointer user_data );
 void on_save_file_as(GtkWidget *widget, gpointer user_data );
 void on_load_file_by_path(
@@ -63,5 +65,6 @@ gboolean on_key_press_event(GtkWidget *widget, GdkEventKey *event, gpointer user
 char* convertDataURLToLocalPath( const char* cwd, const char* relative_path );
 
 #endif // SIGNALS_H
+
 
 
