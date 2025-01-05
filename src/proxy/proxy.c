@@ -34,7 +34,8 @@ int setSocketNonBlocking(int sockfd) {
     return 0;
 }
 
-void* proxyThreadFunction(void* arg) {
+void* proxyThreadFunction( void* arg )
+{
     // Initialize OpenSSL
     SSL_library_init();
     SSL_load_error_strings();
@@ -42,68 +43,77 @@ void* proxyThreadFunction(void* arg) {
 
     // Create SSL context for the proxy (for HTTPS connections)
     const SSL_METHOD* method = TLS_server_method();
-    SSL_CTX* ctx = SSL_CTX_new(method);
-    if (!ctx) {
+    SSL_CTX* ctx = SSL_CTX_new( method );
+    if( !ctx )
+    {
         perror("Unable to create SSL context");
-        ERR_print_errors_fp(stderr);
+        ERR_print_errors_fp( stderr );
         return NULL;
     }
 
     // Load SSL certificate and private key for the proxy
-    if (SSL_CTX_use_certificate_file(ctx, "config/cert.pem", SSL_FILETYPE_PEM) <= 0 ||
-        SSL_CTX_use_PrivateKey_file(ctx, "config/key.pem", SSL_FILETYPE_PEM) <= 0) {
-        ERR_print_errors_fp(stderr);
-        SSL_CTX_free(ctx);
+    if( 
+        SSL_CTX_use_certificate_file( ctx, "config/cert.pem", SSL_FILETYPE_PEM ) <= 0 ||
+        SSL_CTX_use_PrivateKey_file( ctx, "config/key.pem", SSL_FILETYPE_PEM ) <= 0 
+    )
+    {
+        ERR_print_errors_fp( stderr );
+        SSL_CTX_free( ctx );
         return NULL;
     }
 
     // Disable certificate verification (NO VERIFICATION AT ALL)
-    SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
-    SSL_CTX_set_verify_depth(ctx, 0);  // Disable verification depth (i.e., no chain check)
-    SSL_CTX_set_cert_verify_callback(ctx, NULL, NULL);  // Disable callback for certificate verification
+    SSL_CTX_set_verify( ctx, SSL_VERIFY_NONE, NULL );
+    SSL_CTX_set_verify_depth( ctx, 0 );  // Disable verification depth (i.e., no chain check)
+    SSL_CTX_set_cert_verify_callback( ctx, NULL, NULL );  // Disable callback for certificate verification
 
     // Create server socket for the proxy (HTTPS server)
-    int server_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_fd < 0) {
+    int server_fd = socket( AF_INET, SOCK_STREAM, 0 );
+    if( server_fd < 0 )
+    {
         perror("Socket creation failed");
         SSL_CTX_free(ctx);
         return NULL;
     }
     
     int optval = 1;
-    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+    setsockopt( server_fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof( optval ) );
 
     // Configure socket address
     struct sockaddr_in addr;
-    memset(&addr, 0, sizeof(addr));
+    memset( &addr, 0, sizeof( addr ) );
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(PROXYPORT);
-    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    addr.sin_port = htons( PROXYPORT );
+    addr.sin_addr.s_addr = htonl( INADDR_LOOPBACK );
 
     // Bind socket
-    if (bind(server_fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
-        perror("Bind failed");
-        close(server_fd);
-        SSL_CTX_free(ctx);
+    if( bind( server_fd, (struct sockaddr*)&addr, sizeof( addr ) ) < 0 )
+    {
+        perror( "Bind failed" );
+        close( server_fd );
+        SSL_CTX_free( ctx );
         return NULL;
     }
 
     // Start listening for incoming client connections
-    if (listen(server_fd, 10) < 0) {
-        perror("Listen failed");
-        close(server_fd);
-        SSL_CTX_free(ctx);
+    if( listen( server_fd, 10 ) < 0 )
+    {
+        perror( "Listen failed" );
+        close( server_fd );
+        SSL_CTX_free( ctx );
         return NULL;
     }
 
-    printf("Proxy server running on https://localhost:%d (forwarding to http://localhost:%d)\n", PROXYPORT, PORT);
+    printf( "Proxy server running on https://localhost:%d "
+        "(forwarding to http://localhost:%d)\n", PROXYPORT, PORT );
 
     // Set up epoll for managing multiple connections
-    int epoll_fd = epoll_create1(0);
-    if (epoll_fd == -1) {
-        perror("Epoll creation failed");
-        close(server_fd);
-        SSL_CTX_free(ctx);
+    int epoll_fd = epoll_create1( 0 );
+    if( epoll_fd == -1 )
+    {
+        perror( "Epoll creation failed" );
+        close( server_fd );
+        SSL_CTX_free( ctx );
         return NULL;
     }
 
@@ -111,10 +121,11 @@ void* proxyThreadFunction(void* arg) {
     struct epoll_event ev;
     ev.events = EPOLLIN;
     ev.data.fd = server_fd;
-    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_fd, &ev) == -1) {
-        perror("Epoll control failed");
-        close(server_fd);
-        SSL_CTX_free(ctx);
+    if( epoll_ctl( epoll_fd, EPOLL_CTL_ADD, server_fd, &ev ) == -1 )
+    {
+        perror( "Epoll control failed" );
+        close( server_fd );
+        SSL_CTX_free( ctx );
         return NULL;
     }
 
@@ -130,11 +141,12 @@ void* proxyThreadFunction(void* arg) {
         }
         pthread_mutex_unlock( &networkMutex );
            
-        struct epoll_event events[10];  // max 10 connections at once
+        struct epoll_event events[ 10 ];  // max 10 connections at once
         //printf("Waiting for connections (running %d)\n", *networkRunning);
-        int num_events = epoll_wait(epoll_fd, events, 10, 0);
-        if (num_events == -1) {
-            perror("Epoll wait failed");
+        int num_events = epoll_wait( epoll_fd, events, 10, 0 );
+        if( num_events == -1 )
+        {
+            perror( "Epoll wait failed" );
             break;
         }
         
@@ -194,54 +206,60 @@ void* proxyThreadFunction(void* arg) {
 }
 
 // Function to print HTTP request with colorized output
-void print_green(const char *msg) {
+void print_green( const char *msg )
+{
     printf("\033[0;32m%s\033[0m", msg);  // Green color for console output
 }
 
-void* handleClientConnection(void* arg) {
+void* handleClientConnection( void* arg )
+{
     // Cast the argument back to the thread_args_t struct
-    thread_args_t* thread_args = (thread_args_t*)arg;
+    thread_args_t* thread_args = ( thread_args_t* )arg;
     SSL_CTX* ctx = thread_args->ctx;
     int client_fd = thread_args->client_fd;
 
-    printf("In handleClientConnection..\n");
+    printf( "In handleClientConnection..\n" );
 
     // Free the memory allocated for thread arguments
-    free(thread_args);
+    free( thread_args );
 
     // Initialize OpenSSL SSL object
     SSL* ssl = SSL_new(ctx);
-    if (!ssl) {
-        perror("SSL_new failed");
-        close(client_fd);
+    if( !ssl )
+    {
+        perror( "SSL_new failed" );
+        close( client_fd );
         return NULL;
     }
 
-    SSL_set_fd(ssl, client_fd);
+    SSL_set_fd( ssl, client_fd );
 
     // Perform SSL handshake (blocking mode)
     int ssl_err;
-    while ((ssl_err = SSL_accept(ssl)) <= 0) {
-        int error_code = SSL_get_error(ssl, ssl_err);
-        if (error_code == SSL_ERROR_WANT_READ || error_code == SSL_ERROR_WANT_WRITE) {
+    while( ( ssl_err = SSL_accept( ssl ) ) <= 0 )
+    {
+        int error_code = SSL_get_error( ssl, ssl_err );
+        if( error_code == SSL_ERROR_WANT_READ || error_code == SSL_ERROR_WANT_WRITE )
+        {
             continue;
         }
 
         printf("SSL_accept failed with error code: %d\n", error_code);
-        ERR_print_errors_fp(stderr);
-        SSL_free(ssl);
-        close(client_fd);
+        ERR_print_errors_fp( stderr );
+        SSL_free( ssl );
+        close( client_fd );
         return NULL;
     }
 
-    printf("SSL handshake successful\n");
+    printf( "SSL handshake successful\n" );
 
     // Create socket for backend HTTP server (non-SSL)
-    int http_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (http_fd < 0) {
-        perror("Failed to create socket to backend");
-        SSL_free(ssl);
-        close(client_fd);
+    int http_fd = socket( AF_INET, SOCK_STREAM, 0 );
+    if( http_fd < 0 )
+    {
+        perror( "Failed to create socket to backend" );
+        SSL_free( ssl );
+        close( client_fd );
         return NULL;
     }
 
@@ -254,7 +272,8 @@ void* handleClientConnection(void* arg) {
     printf("Trying to connect to HTTP backend at localhost:11434...\n");
 
     // Attempt to connect to the backend (blocking mode)
-    if (connect(http_fd, (struct sockaddr*)&backend_addr, sizeof(backend_addr)) < 0) {
+    if( connect( http_fd, ( struct sockaddr* )&backend_addr, sizeof( backend_addr ) ) < 0 )
+    {
         perror("Failed to connect to backend server");
         close(http_fd);
         SSL_free(ssl);
@@ -262,17 +281,18 @@ void* handleClientConnection(void* arg) {
         return NULL;
     }
 
-    printf("Connected to backend server, forwarding request\n");
+    printf( "Connected to backend server, forwarding request\n" );
 
     // Buffer for data read from client
     #define BUFLENGTH 18192
-    char buffer[BUFLENGTH];
+    char buffer[ BUFLENGTH ];
     int bytes = 0;
     #define READ_RETRIES 300
 
     // Start forwarding data as it's received
     char *send_buffer = calloc(BUFLENGTH, 1); // Allocate space for the send buffer (adjust the size if needed)
-    if (!send_buffer) {
+    if( !send_buffer )
+    {
         perror("Failed to allocate memory for send buffer");
         return NULL;
     }
@@ -280,7 +300,8 @@ void* handleClientConnection(void* arg) {
     size_t send_buffer_len = 0; // This will track the length of the data in send_buffer
     int retries = READ_RETRIES;
 
-    while (1) {
+    while( 1 )
+    {
         memset( buffer, 0, BUFLENGTH );
         bytes = SSL_read(ssl, buffer, BUFLENGTH);
         if (bytes > 0) {
@@ -499,4 +520,5 @@ void stopProxyServer()
     free( networkRunning );
     printf("Proxy server stopped.\n");
 }
+
 
