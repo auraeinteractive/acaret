@@ -209,6 +209,11 @@ window.toolbar.editor = function() {
 
 function loadFile( str, path, filename )
 {
+    if( !document.getElementById( 'top_toolbar' ).querySelector( '.TopTabs' ) )
+    {
+        document.getElementById( 'tab_editor' ).click();
+    }
+    
     if( path.substr( -1, 1 ) != '/' )
         path += '/';
         
@@ -421,6 +426,11 @@ function removeDocumentFromStack( edName )
 let edName = 1;
 function newEditor( filename = false, path = false )
 {
+    if( !document.getElementById( 'top_toolbar' ).querySelector( '.TopTabs' ) )
+    {
+        document.getElementById( 'tab_editor' ).click();
+    }
+    
     if( path && path.substr( -1, 1 ) != '/' )
         path += '/';
     
@@ -509,6 +519,7 @@ function newEditor( filename = false, path = false )
     // Return reference to editor
     return editor;
 }
+
 
 
 
