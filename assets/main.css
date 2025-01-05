@@ -680,6 +680,17 @@ hr
     resize: none;
 }
 
+.chat-connection-error #chat textarea.prompt
+{
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.chat-connection-error #chat > .chat > .prompt
+{
+    cursor: wait;
+}
+
 .messages .message
 {
     border-radius: 5px;

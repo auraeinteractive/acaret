@@ -51,10 +51,26 @@ void* proxyThreadFunction( void* arg )
         return NULL;
     }
 
+    // Get the executable's directory
+    char exe_path[PATH_MAX];
+    ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
+    if (len == -1) {
+        fprintf(stderr, "Failed to get executable path.\n");
+        return NULL;
+    }
+    exe_path[len] = '\0';  // Null-terminate the string
+    char *dir = dirname(exe_path);  // Get the directory of the executable
+    
+    // Create relative certs path
+    char cert[ strlen( dir ) + strlen( "config/cert.pem" ) + 2 ];
+    char key[ strlen( dir ) + strlen( "config/key.pem" ) + 2 ];
+    snprintf( cert, sizeof( cert ), "%s%s", dir, "/config/cert.pem" );
+    snprintf( key, sizeof( key ), "%s%s", dir, "/config/key.pem" );
+
     // Load SSL certificate and private key for the proxy
     if( 
-        SSL_CTX_use_certificate_file( ctx, "config/cert.pem", SSL_FILETYPE_PEM ) <= 0 ||
-        SSL_CTX_use_PrivateKey_file( ctx, "config/key.pem", SSL_FILETYPE_PEM ) <= 0 
+        SSL_CTX_use_certificate_file( ctx, cert, SSL_FILETYPE_PEM ) <= 0 ||
+        SSL_CTX_use_PrivateKey_file( ctx, key, SSL_FILETYPE_PEM ) <= 0 
     )
     {
         ERR_print_errors_fp( stderr );
@@ -520,5 +536,6 @@ void stopProxyServer()
     free( networkRunning );
     printf("Proxy server stopped.\n");
 }
+
 
 

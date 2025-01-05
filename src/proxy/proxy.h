@@ -2,13 +2,16 @@
 #ifndef PROXY_H
 #define PROXY_H
 
+#include <stdio.h>
 #include <pthread.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <string.h>
-#include <stdio.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <libgen.h>
 #include <stdlib.h>
 #include <pthread.h>
 #include <openssl/ssl.h>
@@ -28,3 +31,4 @@ void stopProxyNetwork();
 void stopProxyServer();
 
 #endif // PROXY_H
+
