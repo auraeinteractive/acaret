@@ -28,7 +28,7 @@ void on_new_file(GtkWidget *widget, gpointer user_data )
 void on_open_project(GtkWidget *widget, gpointer user_data )
 {
     printf( "Tried to execute the open project..\n" );
-    char *path = open_file_dialog( ( GtkWindow *)widget );
+    char *path = open_file_dialog( ( GtkWindow *)widget, 1 );
     if( path != NULL )
     {
         pass_project_to_js( ( WebKitWebView *)user_data, path );
@@ -39,7 +39,7 @@ void on_open_project(GtkWidget *widget, gpointer user_data )
 void on_open_file(GtkWidget *widget, gpointer user_data )
 {
     printf( "Tried to execute the open file..\n" );
-    char *path = open_file_dialog( ( GtkWindow *)widget );
+    char *path = open_file_dialog( ( GtkWindow *)widget, 0 );
     if( path != NULL )
     {
         pass_file_to_js( ( WebKitWebView *)user_data, path );
@@ -312,18 +312,31 @@ void pass_file_to_js(WebKitWebView *webview, const char *file_path) {
 }
 
 // Function to open file manager and get selected file path
-char *open_file_dialog(GtkWindow *parent) {
+char *open_file_dialog(GtkWindow *parent, int type ) {
     GtkWidget *dialog;
     char *filename = NULL;
 
+    char *typeStr = NULL;
+    switch( type )
+    {
+        case 1:
+            typeStr = strdup( "Open Project" );
+            break;
+        default:
+            typeStr = strdup( "Open File" );
+            break;
+    }
+
     // Create a file chooser dialog
-    dialog = gtk_file_chooser_dialog_new("Open File",
+    dialog = gtk_file_chooser_dialog_new( typeStr,
                                          parent,
                                          GTK_FILE_CHOOSER_ACTION_OPEN,
                                          "_Cancel", GTK_RESPONSE_CANCEL,
                                          "_Open", GTK_RESPONSE_ACCEPT,
                                          NULL);
 
+    free( typeStr );
+    
     // Show the dialog and wait for a user response
     if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
         GtkFileChooser *chooser = GTK_FILE_CHOOSER(dialog);
@@ -452,6 +465,7 @@ void refresh_folder_structure( gchar *path, gpointer user_data )
     }
 }
 
+// Tag: Actions like writing to disk
 // Callback to handle messages from JavaScript
 void on_script_message_received(WebKitUserContentManager *manager,
                                         WebKitJavascriptResult *result,
@@ -482,7 +496,7 @@ void on_script_message_received(WebKitUserContentManager *manager,
             // Save the data to the specified path
             FILE *file = fopen(path, "w");
             if (file) {
-                fprintf(file, "%s\n", data);
+                fprintf(file, strlen( data ) > 0 ? "%s" : "\n", data); // Empty files write with newline
                 fclose(file);
                 g_print("Data saved to %s\n", path);
             } else {
@@ -1022,6 +1036,7 @@ char* convertDataURLToLocalPath( const char* cwd, const char* relative_path )
     
     return full_path;
 }
+
 
 
 

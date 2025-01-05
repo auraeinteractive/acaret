@@ -612,4 +612,3 @@ function closeFile( ed = false )
     toolbar.editor();
 }
 
-

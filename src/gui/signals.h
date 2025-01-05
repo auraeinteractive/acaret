@@ -13,7 +13,7 @@
 void doQuit();
 void handle_signal(unsigned int signal, void *user_data);
 char* convertDataURLToLocalPath( const char* cwd, const char* relative_path );
-char *open_file_dialog(GtkWindow *parent);
+char *open_file_dialog(GtkWindow *parent, int type );
 char *read_file_content(const char *file_path);
 void pass_file_to_js(WebKitWebView *webview, const char *file_path);
 void pass_project_to_js(WebKitWebView *webview, const char *file_path);
@@ -35,7 +35,6 @@ void on_resource_failed(WebKitWebResource *resource, GError *error, gpointer use
 char *read_file_content(const char *file_path);
 void pass_project_to_js(WebKitWebView *webview, const char *file_path);
 void pass_file_to_js(WebKitWebView *webview, const char *file_path);
-char *open_file_dialog(GtkWindow *parent);
 GPtrArray *read_directory(const gchar *path);
 void refresh_folder_structure( gchar *path, gpointer user_data );
 void on_script_message_received_folders(

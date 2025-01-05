@@ -438,8 +438,10 @@ mlObject *mlViewCreate(mlObject *parent) {
     gtk_widget_add_accelerator(quit, "activate", accel_group, GDK_KEY_q, GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
     gtk_widget_add_accelerator(new_file, "activate", accel_group, GDK_KEY_n, GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
     gtk_widget_add_accelerator(open_file, "activate", accel_group, GDK_KEY_o, GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
+    gtk_widget_add_accelerator(open_project, "activate", accel_group, GDK_KEY_o, ( GDK_CONTROL_MASK | GDK_SHIFT_MASK ), GTK_ACCEL_VISIBLE);
     gtk_widget_add_accelerator(save_file, "activate", accel_group, GDK_KEY_s, GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
     gtk_widget_add_accelerator(save_file_as, "activate", accel_group, GDK_KEY_s, ( GDK_CONTROL_MASK | GDK_SHIFT_MASK ), GTK_ACCEL_VISIBLE);
+    gtk_widget_add_accelerator(close_file, "activate", accel_group, GDK_KEY_w, GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
     gtk_widget_add_accelerator(close_file_all, "activate", accel_group, GDK_KEY_w, ( GDK_CONTROL_MASK | GDK_SHIFT_MASK ), GTK_ACCEL_VISIBLE);
 
     return (mlObject *)view;
@@ -468,6 +470,7 @@ void mlViewDestroy(mlObject *obj) {
     // Call the base destroy function to clean up common resources
     mlObjectDestroy(obj);
 }
+
 
 
 
