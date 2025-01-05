@@ -25,11 +25,14 @@ window.toolbar.editor = function() {
                 };
             }
         }
-        newEditor();
+        if( !currentEditor )
+        {
+            newEditor();
+        }
     }
     
     let toptabs = topToolbar.querySelector('.TopTabs');
-    if (toptabs)
+    if( toptabs )
     {
         let isScrolling = false; // Prevent multiple animations at the same time
         let currentDelta = 0; // Store the current delta for smooth updates
@@ -168,6 +171,15 @@ window.toolbar.editor = function() {
         // Initial check and attach resize listener
         checkOverflowAndAddEllipsis();
         window.addEventListener('resize', checkOverflowAndAddEllipsis);
+    }
+    
+    // Recreate tabs that were removed
+    if( !toptabs.querySelector( '.TopTab' ) )
+    {
+        for( let a in editorDocuments )
+        {
+            toptabs.appendChild( editorDocuments[ a ].tab );
+        }
     }
 
 
@@ -523,6 +535,9 @@ function newEditor( filename = false, path = false )
     // Return reference to editor
     return editor;
 }
+
+
+
 
 
 
