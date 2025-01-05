@@ -81,7 +81,7 @@ window.toolbar.editor = function() {
         const checkOverflowAndAddEllipsis = () => {
             // Get the last child element under toptabs
             const tabs = Array.from(toptabs.querySelectorAll('div'));
-            if (tabs.length === 0) 
+            if (tabs.length === 0 && toptabs.parentNode ) 
             {
                 let ee = toptabs.parentNode.querySelector( '.TopTabEllipsis' );
                 if( ee ) ee.parentNode.removeChild( ee );
@@ -476,6 +476,7 @@ function newEditor( filename = false, path = false )
     });
     
     editorDocuments[ edName ] = editor;
+    editor.editorId = edName;
     editor.filename = filename ? filename : 'New file';
     editor.path = path ? path : '';
     if( editor.path.substr( -1, 1 ) != '/' )
@@ -505,8 +506,10 @@ function newEditor( filename = false, path = false )
         }
         
         p.removeChild( tab );
-        removeDocumentFromStack( edName );
+        removeDocumentFromStack( editor.editorId );
         editor.destroy();
+        // Remove page
+        editor.container.parentNode.removeChild( editor.container );
         if( activate ) 
         {
             setTimeout( () => { activate.click(); }, 1 );
@@ -535,6 +538,9 @@ function newEditor( filename = false, path = false )
     // Return reference to editor
     return editor;
 }
+
+
+
 
 
 
