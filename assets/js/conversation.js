@@ -3,7 +3,8 @@ let messageContext = { global: [] };
 let promptConnCtrl = false;
 let chatSettings = {
     server: 'localhost',
-    port: 8089
+    port: 8089,
+    protocol: 'https'
 };
 
 let chatShift = false;
@@ -44,6 +45,22 @@ function sendPrompt()
 
 // Check if we can contact chat server
 function checkChatConnection()
+{
+    let x = new XMLHttpRequest();
+    x.open( 'GET', chatSettings.protocol + '://' + chatSettings.server + ':' + chatSettings.port, true );
+    x.onload = function( data )
+    {
+        console.log( 'Result from request: ' + data, this.responseText );
+    }
+    x.onerror = function( err )
+    {
+        document.body.classList.add( 'chat-connection-error' );
+    }
+    x.send();
+}
+
+// Tag: Icon on the left of chat prompt
+function checkChat()
 {
     
 }
@@ -516,7 +533,7 @@ class Conversation
         }
 
         // Tag: Define the API endpoint
-        const API_URL = 'https://' + chatSettings.server + ':' + chatSettings.port + '/v1/chat/completions';
+        const API_URL = chatSettings.protocol + '://' + chatSettings.server + ':' + chatSettings.port + '/v1/chat/completions';
 
         // Tag: Define the system prompt configuration (if needed)
         const systemPrompt = {
@@ -577,4 +594,9 @@ class Conversation
 
 }
 
+// Tag: When the document has loaded
+window.addEventListener( 'load', function()
+{
+    checkChatConnection();
+} );
 

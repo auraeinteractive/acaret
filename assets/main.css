@@ -783,6 +783,11 @@ hr
     background-image: url(feather/aperture.svg);
 }
 
+.chat-connection-error #chat .chat span.chat-aperture
+{
+    background-image: url(feather/alert-circle.svg);
+}
+
 #chat .chat span.chat-send
 {
     background-image: url(feather/send.svg);
@@ -1174,13 +1179,4 @@ hr
 {
     opacity: 1;
 }
-
-
-
-
-
-
-
-
-
 
