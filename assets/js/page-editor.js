@@ -106,7 +106,7 @@ window.toolbar.editor = function() {
                     });
                 }
             }
-            else 
+            else if( toptabs.parentNode )
             {
                 // Remove ellipsis if no overflow
                 const ee = toptabs.parentNode.querySelector( '.TopTabEllipsis' );
@@ -115,6 +115,10 @@ window.toolbar.editor = function() {
                     ee.parentNode.removeChild( ee );
                     console.log( 'REM' );
                 }
+            }
+            else
+            {
+                console.log( 'Uncaught test of toptabs ellipsis.' );
             }
         };
 
@@ -519,6 +523,7 @@ function newEditor( filename = false, path = false )
     // Return reference to editor
     return editor;
 }
+
 
 
 
