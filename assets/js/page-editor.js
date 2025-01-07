@@ -284,8 +284,10 @@ function getSyntaxHighlightingMode( ext )
         switch( ext )
         {
             case 'ini':
-            case 'conf':
                 mode = 'ace/mode/ini';
+                break;
+            case 'conf':
+                mode = 'ace/mode/json';
                 break;
             case 'yml':
             case 'yaml':
