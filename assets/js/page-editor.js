@@ -283,6 +283,10 @@ function getSyntaxHighlightingMode( ext )
         ext = ext.toLowerCase();
         switch( ext )
         {
+            case 'ini':
+            case 'conf':
+                mode = 'ace/mode/ini';
+                break;
             case 'yml':
             case 'yaml':
                 mode = 'ace/mode/yaml';
