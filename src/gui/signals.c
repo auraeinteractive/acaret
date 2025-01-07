@@ -958,7 +958,7 @@ gboolean script_dialog_cb(WebKitWebView *web_view, WebKitScriptDialog *dialog, g
 }
 
 gboolean on_key_press_event(GtkWidget *widget, GdkEventKey *event, gpointer user_data) {
-    if( ( event->state && GDK_CONTROL_MASK ) && event->keyval == GDK_KEY_o ){
+    if( ( event->state & GDK_CONTROL_MASK ) && event->keyval == GDK_KEY_o ){
         on_open_file( widget, user_data );
         return TRUE;
     }
