@@ -37,12 +37,40 @@ get_install_path
 SOURCE_DIR=$(pwd)
 DEST_DIR="$INSTALL_PATH"
 
-# Copy the required files and directories
-cp -r ./docs "$DEST_DIR/"
-cp -r ./assets "$DEST_DIR/"
-cp -r ./config "$DEST_DIR/"
-cp *.png "$DEST_DIR/"
-cp -r ./acaret "$DEST_DIR/"
+# Check if rsync is installed
+if ! command -v rsync &> /dev/null; then
+    echo "Error: rsync could not be found. Please install it first."
+    exit 1
+fi
+
+# Check if pv is installed
+if ! command -v pv &> /dev/null; then
+    echo "Warning: pv (Pipe Viewer) is not installed. No progress bar will be shown."
+fi
+
+# Function to copy files and directories using rsync with verbose output
+copy_files() {
+    local src="$1"
+    local dest="$2"
+
+    # Get the total size of files to copy
+    TOTAL_SIZE=$(du -sb "$src" | awk '{print $1}')
+
+    if [ -z "$TOTAL_SIZE" ]; then
+        echo "Error: Could not determine the total size of files to copy."
+        return 1
+    fi
+
+    # Use rsync with pv for progress bar
+    rsync --progress --info=progress2 "$src/" "$dest/"
+}
+
+# Copy the required files and directories using rsync
+copy_files "./docs" "$DEST_DIR"
+copy_files "./assets" "$DEST_DIR"
+copy_files "./config" "$DEST_DIR"
+rsync -v *.png "$DEST_DIR/"
+copy_files "./acaret" "$DEST_DIR/"
 
 # Summary of what is done
 echo "Installation summary:"
