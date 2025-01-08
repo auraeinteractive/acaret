@@ -74,4 +74,97 @@ function initTabs( element, options = false )
         tabButtons[0].click();
 }
 
+// Check the context menus..
+window.addEventListener( 'contextmenu', function( e = false )
+{
+    if( !e ) return;
+    let tar = e.target;
+    while( tar != document.body )
+    {
+        if( tar.contextMenu )
+        {
+            showContextMenu( tar.contextMenu, e );
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+        tar = tar.parentNode;
+    }
+} );
+window.contextMenu = null;
+function showContextMenu( menu, evt )
+{
+    if( !window.contextMenu )
+    {
+        let c = document.createElement( 'div' );
+        c.className = 'mlContextMenu';
+        document.body.appendChild( c );
+        window.contextMenu = c;
+    }
+    let c = window.contextMenu;
+    let actionList = [];
+    
+    function renderMenu( menu, actions = [], depth = 0, e = false )
+    {
+        let str = '';
+        for( let a = 0; a < menu.length; a++ )
+        {
+            if( menu[a].type == 'menu' )
+            {
+                str += renderMenu( menu[a].items, actions, depth + 1, e );
+            }
+            else
+            {
+                let im = '';
+                if( menu[ a ].icon )
+                {
+                    im = ' class="' + menu[ a ].icon + '"';
+                }
+                str += '<div class="menu-item" itemid="' + actions.length + '"><span' + im + '></span>' + menu[a].name + '</div>';
+                actions.push( menu[a].action );
+            }
+        }
+        return str;
+    }
+    
+    c.innerHTML = renderMenu( menu, actionList, 0, evt );
+    let items = c.querySelectorAll( '.menu-item' );
+    for( let a = 0; a < items.length; a++ )
+    {
+        items[a].addEventListener( 'mouseup', ( o ) => {
+            let index = items[a].getAttribute( 'itemid' );
+            if( actionList[ parseInt( index ) ] )
+            {
+                actionList[ parseInt( index ) ]();
+            }
+            window.contextMenu = null;
+            c.classList.add( 'hidden' );
+            setTimeout( function()
+            {
+                document.body.removeChild( c );
+            }, 250 );
+            o.stopPropagation();
+            o.preventDefault();
+        } );
+    }
+    
+    c.style.top = evt.clientY + 'px';
+    c.style.left = evt.clientX + 'px';
+}
+window.addEventListener( 'mouseup', function( e )
+{
+    if( window.contextMenu )
+    {
+        let c = window.contextMenu;
+        window.contextMenu = null;
+        setTimeout( () => {
+            c.classList.add( 'hidden' );
+            setTimeout( function()
+            {
+                document.body.removeChild( c );
+            }, 250 );
+        }, 25 );
+    }
+} );
+// Done context menus
 

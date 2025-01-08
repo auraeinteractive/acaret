@@ -81,6 +81,7 @@ function receiveFolders( path, data, depth = 0 )
     {
         let d = document.createElement( 'div' );
         d.className = 'folder';
+        d.contextMenu = [ { type: 'item', name: 'Refresh', icon: 'refresh', action: function(){ console.log( 'Refreshing..' ); } } ];
         d.innerHTML = '<span>' + folders[a] + '/</span>';
         targetFolderElements[ path + folders[a] + '/' ] = d;
         d.onclick = ( e ) => { 
