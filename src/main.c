@@ -4,7 +4,7 @@
 #include "proxy/proxy.h"
 
 // Function to quit the application
-mlObject *mainView;
+mlObject *mainView = NULL;
 pthread_mutex_t networkMutex;
 int hasQuit = 0;
 
@@ -48,13 +48,16 @@ void doQuit()
 {
     if( hasQuit == 0 )
     {
+        hasQuit = 1;
         printf( "[doQuit] Handling quit.\n" );
-        if( mainView )
-            mlViewDestroy( mainView );
         stopProxyNetwork();
+        if( mainView )
+        {
+            mlViewDestroy( mainView );
+            mainView = NULL;
+        }
         mlQuit(); // Assuming mlQuit is defined in init.c
         printf( "[doQuit] All operating should now be stopped.\n" );
-        hasQuit = 1;
     }
     else
     {
