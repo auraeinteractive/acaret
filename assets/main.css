@@ -1191,3 +1191,54 @@ hr
     opacity: 1;
 }
 
+/* Context menus */
+
+.mlContextMenu
+{
+    position: fixed;
+    opacity: 1;
+    pointer-events: all;
+    cursor: pointer;
+    transition: opacity 0.25s;
+    min-width: 100px;
+    min-height: 40px;
+    box-sizing: border-box;
+    padding: 10px;
+    color: white;
+    background-color: #00000088;
+    box-shadow: 0px 1px 4px rgba(0,0,0,0.5);
+    z-index: 9999999;
+}
+.mlContextMenu.hidden
+{
+    opacity: 0;
+    pointer-events: none;
+}
+.mlContextMenu div
+{
+    display: block;
+    opacity: 0.7;
+}
+
+.mlContextMenu div:hover
+{
+    opacity: 1;
+}
+
+.mlContextMenu div > span
+{
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center;
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    margin: 0 8px 0 0;
+    filter: invert(1);
+    vertical-align: middle;
+}
+
+.mlContextMenu div > span.refresh
+{
+    background-image: url(feather/refresh-ccw.svg);
+}
