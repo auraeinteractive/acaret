@@ -9,7 +9,7 @@ window.toolbar.folders = function() {
         let tci = tct.getElementsByTagName( 'div' )[1];
         tcd.innerHTML = '<span>' + currentFolder + '</span>';
         tcd.className = 'folders';
-        tci.innerHTML = '<em class="folders-delete" title="Delete"></em><em class="folders-rename" title="Rename"></em><em class="file-new" title="New file"></em><em class="folders-new" title="New folder"></em><em class="folders-back" title="Up"></em>';
+        tci.innerHTML = '<em class="folders-refresh" title="Refresh"></em><em class="file-new" title="New file"></em><em class="folders-new" title="New folder"></em><em class="folders-back" title="Up"></em>';
         
         tci.querySelector( '.folders-back' ).onclick = function()
         {

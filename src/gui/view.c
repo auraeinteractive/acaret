@@ -167,34 +167,38 @@ void on_script_message_received_saveas(WebKitUserContentManager *manager,
 mlObject *mlViewCreate(mlObject *parent) {
     // Dynamically create the derived mlView object
     mlView *view = (mlView *)mlObjectCreateWithSize(sizeof(mlObject), sizeof(mlView), parent);
-    if (!view) {
-        fprintf(stderr, "Failed to create mlView object\n");
+    if( !view )
+    {
+        fprintf( stderr, "Failed to create mlView object\n" );
         return NULL;
     }
 
     // Initialize GTK window
-    view->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    if (!view->window) {
-        fprintf(stderr, "Failed to create GTK window\n");
-        free(view); // Clean up memory
+    view->window = gtk_window_new( GTK_WINDOW_TOPLEVEL );
+    if( !view->window )
+    {
+        fprintf( stderr, "Failed to create GTK window\n" );
+        free( view ); // Clean up memory
         return NULL;
     }
     
     // Get the executable's directory
-    char exe_path[PATH_MAX];
+    char exe_path[ PATH_MAX ];
     ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
-    if (len == -1) {
-        fprintf(stderr, "Failed to get executable path.\n");
-        return 1;
+    if( len == -1 )
+    {
+        fprintf( stderr, "Failed to get executable path.\n" );
+        return NULL;
     }
     exe_path[len] = '\0';  // Null-terminate the string
-    char *dir = dirname(exe_path);  // Get the directory of the executable
+    char *dir = dirname( exe_path );  // Get the directory of the executable
 
     // Construct the path to the icon file
     char *icon_path = malloc(PATH_MAX + strlen(dir) + strlen("/icon_128.png") + 1);
-    if (!icon_path) {
+    if( !icon_path )
+    {
         fprintf(stderr, "Failed to allocate memory for icon path.\n");
-        return 1;
+        return NULL;
     }
 
     snprintf(icon_path, PATH_MAX + strlen(dir) + strlen("/icon_128.png") + 1, "%s/icon_128.png", dir);
@@ -308,10 +312,11 @@ mlObject *mlViewCreate(mlObject *parent) {
     WebKitWebsiteDataManager *data_manager = webkit_website_data_manager_new(NULL);
     webkit_website_data_manager_set_tls_errors_policy(data_manager, WEBKIT_TLS_ERRORS_POLICY_IGNORE);
     view->webview = ( WebKitWebView *)webkit_web_view_new_with_context(webkit_web_context_new_with_website_data_manager(data_manager));
-    if (!view->webview) {
-        fprintf(stderr, "Failed to create WebKit WebView\n");
-        gtk_widget_destroy(view->window); // Destroy the GTK window
-        free(view); // Clean up memory
+    if( !view->webview )
+    {
+        fprintf( stderr, "Failed to create WebKit WebView\n" );
+        gtk_widget_destroy( view->window ); // Destroy the GTK window
+        free( view ); // Clean up memory
         return NULL;
     }
 
