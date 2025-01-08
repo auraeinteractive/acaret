@@ -45,24 +45,26 @@ void mlViewSetHTML(void *instance, void *data) {
 
     printf("[HTML] Parsing file: %s\n", path);
 
-    char *content = malloc(size + 1);
-    if (!content) {
-        fprintf(stderr, "Failed to allocate memory for file content\n");
-        fclose(file);
-        free(path);
+    char *content = calloc( 1, size + 1 );
+    if( !content )
+    {
+        fprintf( stderr, "Failed to allocate memory for file content\n" );
+        fclose( file );
+        free( path );
         return;
     }
     
     printf(" > Now parsing markup.\n");
-    fread(content, 1, size, file);
+    fread( content, 1, size, file );
     content[size] = '\0';
 
-    char *modified_content = strdup(content);
-    if (!modified_content) {
-        fprintf(stderr, "Failed to allocate memory for modified content\n");
-        free(content);
-        fclose(file);
-        free(path);
+    char *modified_content = strdup( content );
+    if( !modified_content )
+    {
+        fprintf( stderr, "Failed to allocate memory for modified content\n" );
+        free( content );
+        fclose( file );
+        free( path );
         return;
     }
 
@@ -133,9 +135,9 @@ void mlViewSetHTML(void *instance, void *data) {
         free(modified_content);
     }
 
-    free(content);
-    fclose(file);
-    free(path);
+    free( content );
+    fclose( file );
+    free( path );
 }
 
 // Method to set the size of the view
@@ -293,14 +295,14 @@ mlObject *mlViewCreate(mlObject *parent) {
 
     // Settings menu
     GtkWidget *settings_menu = gtk_menu_new();
-    GtkWidget *settings_menu_item = gtk_menu_item_new_with_label("Settings");
-    gtk_menu_item_set_submenu(GTK_MENU_ITEM(settings_menu_item), settings_menu);
+    GtkWidget *settings_menu_item = gtk_menu_item_new_with_label( "Settings" );
+    gtk_menu_item_set_submenu( GTK_MENU_ITEM( settings_menu_item ), settings_menu );
 
-    GtkWidget *edit_settings = gtk_menu_item_new_with_label("Edit Settings");
-    GtkWidget *load_settings = gtk_menu_item_new_with_label("Load Settings");
-    GtkWidget *save_settings = gtk_menu_item_new_with_label("Save Settings");
+    GtkWidget *edit_settings = gtk_menu_item_new_with_label( "Edit Settings" );
+    GtkWidget *load_settings = gtk_menu_item_new_with_label( "Load Settings" );
+    GtkWidget *save_settings = gtk_menu_item_new_with_label( "Save Settings" );
     GtkWidget *separator_settings = gtk_separator_menu_item_new();
-    GtkWidget *about_acaret = gtk_menu_item_new_with_label("About Acaret v0.1a");
+    GtkWidget *about_acaret = gtk_menu_item_new_with_label( "About Acaret v0.1a" );
 
     gtk_menu_shell_append(GTK_MENU_SHELL(settings_menu), edit_settings);
     gtk_menu_shell_append(GTK_MENU_SHELL(settings_menu), load_settings);
@@ -338,6 +340,7 @@ mlObject *mlViewCreate(mlObject *parent) {
     g_signal_connect( save_file_as, "activate", G_CALLBACK(on_save_file_as), ( gpointer )view->webview);
     g_signal_connect( close_file, "activate", G_CALLBACK(on_close_file), ( gpointer )view->webview);
     g_signal_connect( close_file_all, "activate", G_CALLBACK(on_close_file_all), ( gpointer )view->webview);
+    g_signal_connect( quit, "activate", G_CALLBACK(doQuit), ( gpointer )view->webview);
 
     // Set up settings for file access if not already done
     WebKitSettings *settings = webkit_web_view_get_settings( view->webview );
@@ -356,11 +359,8 @@ mlObject *mlViewCreate(mlObject *parent) {
     webkit_web_view_load_html(view->webview, "<html><head><title>Acursor</title></head><body></body></html>", NULL);
     gtk_box_pack_end(GTK_BOX(vbox), GTK_WIDGET(view->webview), TRUE, TRUE, 0);
 
-    // Add event listeners (e.g., window close event)
-    mlAddEvent((mlObject *)view, "closed", mlViewOnWindowClosed);
-
     // Automatically connect the "destroy" signal for the window
-    g_signal_connect(G_OBJECT(view->window), "destroy", G_CALLBACK(mlViewOnWindowClosed), (gpointer)view);
+    g_signal_connect(G_OBJECT(view->window), "destroy", G_CALLBACK(doQuit), (gpointer)view);
 
     // Connect the key-press-event signal to the WebView
     g_signal_connect( G_OBJECT( view->window ), "key-press-event", G_CALLBACK( on_key_press_event ), ( gpointer )view->webview );
@@ -475,20 +475,12 @@ void mlViewDestroy( mlObject *obj )
     if (!obj) return;
 
     mlView *view = ( mlView * )obj;
+    if( !view ) return;
 
     // Destroy the GTK window if it exists
     if( view->window )
     {
         gtk_widget_destroy( view->window );
-        view->window = NULL;
-    }
-
-    // WebView cleanup (if needed)
-    if( view->webview )
-    {
-        // No explicit destroy function is needed for WebKitGTK web views, as
-        // GTK widget destruction will handle it. Nullify the pointer for safety.
-        view->webview = NULL;
     }
 
     // Call the base destroy function to clean up common resources

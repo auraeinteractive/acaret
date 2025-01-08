@@ -217,6 +217,7 @@ void* proxyThreadFunction( void* arg )
     EVP_cleanup();
     ERR_free_strings();
     CRYPTO_cleanup_all_ex_data();
+    printf( "[proxyThreadFunction] Exiting proxy thread.\n" );
 
     return NULL;
 }
@@ -254,6 +255,14 @@ void* handleClientConnection( void* arg )
     int ssl_err;
     while( ( ssl_err = SSL_accept( ssl ) ) <= 0 )
     {
+        // Abortable
+        if( *networkRunning == 0 )
+        {
+            pthread_mutex_unlock( &networkMutex );
+            break;
+        }
+        pthread_mutex_unlock( &networkMutex );
+        
         int error_code = SSL_get_error( ssl, ssl_err );
         if( error_code == SSL_ERROR_WANT_READ || error_code == SSL_ERROR_WANT_WRITE )
         {
@@ -318,6 +327,14 @@ void* handleClientConnection( void* arg )
 
     while( 1 )
     {
+        // Abortable
+        if( *networkRunning == 0 )
+        {
+            pthread_mutex_unlock( &networkMutex );
+            break;
+        }
+        pthread_mutex_unlock( &networkMutex );
+        
         memset( buffer, 0, BUFLENGTH );
         bytes = SSL_read(ssl, buffer, BUFLENGTH);
         if (bytes > 0) {
@@ -410,6 +427,13 @@ void* handleClientConnection( void* arg )
     // Process headers line by line
     while( ( line_end = strstr( current_pos, "\r\n" ) ) != NULL && line_end != current_pos )
     {
+        // Abortable
+        if( *networkRunning == 0 )
+        {
+            pthread_mutex_unlock( &networkMutex );
+            break;
+        }
+        pthread_mutex_unlock( &networkMutex );
         line_len = line_end - current_pos;
         for( size_t i = 0; i < allowed_headers_count; i++ )
         {
@@ -479,6 +503,13 @@ void* handleClientConnection( void* arg )
     // Forward the response from the backend to the client
     while( 1 )
     {
+        // Abortable
+        if( *networkRunning == 0 )
+        {
+            pthread_mutex_unlock( &networkMutex );
+            break;
+        }
+        pthread_mutex_unlock( &networkMutex );
         memset( buffer, 0, sizeof( buffer ) ); // Clear the buffer before reading
         bytes = recv( http_fd, buffer, sizeof( buffer ), 0 );
         
@@ -547,6 +578,7 @@ void stopProxyNetwork()
     pthread_mutex_lock( &networkMutex );
     printf( "[stopProxyNetwork] Setting network running to zero!\n" );
     *networkRunning = 0;
+    printf( "[stopProxyNetwork] Network running = %d\n", *networkRunning );
     pthread_mutex_unlock( &networkMutex );
 }
 
