@@ -67,12 +67,14 @@ void mlViewSetHTML(void *instance, void *data) {
     }
 
     char *start = modified_content;
-    while (start && *start) {
+    while( start && *start )
+    {
         char *data_start = strstr(start, "data://");
         if (!data_start) break;
 
         char *end = strchr(data_start, '"');
-        if (!end) {
+        if( !end )
+        {
             fprintf(stderr, "Malformed data URL: missing closing quote.\n");
             break;
         }
@@ -80,7 +82,8 @@ void mlViewSetHTML(void *instance, void *data) {
         *end = '\0';  // Null-terminate the string to get the relative path
         char *relative_path = data_start + strlen("data://");
         char *full_path = convertDataURLToLocalPath(dir, relative_path);
-        if (!full_path) {
+        if( !full_path )
+        {
             fprintf(stderr, "Failed to convert data URL to local path.\n");
             break;
         }
@@ -89,7 +92,8 @@ void mlViewSetHTML(void *instance, void *data) {
         size_t prefix_length = data_start - modified_content;
         size_t new_length = prefix_length + strlen("file://") + strlen(full_path) + 2 + strlen(end + 1); // +2 for closing quote and null terminator
         char *new_content = malloc(new_length);
-        if (!new_content) {
+        if( !new_content )
+        {
             fprintf(stderr, "Failed to allocate memory for new content.\n");
             free(full_path);
             break;
@@ -121,7 +125,8 @@ void mlViewSetHTML(void *instance, void *data) {
 
         // Check if there's any error loading the content
         WebKitWebResource *resource = webkit_web_view_get_main_resource(view->webview);
-        if (resource) {
+        if( resource )
+        {
             g_signal_connect(resource, "failed", G_CALLBACK(on_resource_failed), NULL);
         }
 
@@ -134,7 +139,8 @@ void mlViewSetHTML(void *instance, void *data) {
 }
 
 // Method to set the size of the view
-void mlViewSetSize(void *instance, void *data) {
+void mlViewSetSize( void *instance, void *data )
+{
     mlView *view = (mlView *)instance;
     int *size = (int *)data;
     printf("Setting view size to %dx%d\n", size[0], size[1]);
@@ -142,14 +148,16 @@ void mlViewSetSize(void *instance, void *data) {
 }
 
 // Show the view (make it visible)
-void mlViewShow(void *instance, void *data) {
+void mlViewShow( void *instance, void *data )
+{
     mlView *view = (mlView *)instance;
     printf("Showing view\n");
     gtk_widget_show_all(view->window);
 }
 
 // Handle the window close event
-void mlViewOnWindowClosed(void *instance, void *data) {
+void mlViewOnWindowClosed( void *instance, void *data )
+{
     printf("Window closed.\n");
     if( instance )
     {  // Check if the instance is still valid
