@@ -20,6 +20,10 @@ window.toolbar.folders = function() {
             refreshFolderStructure( currentFolder );
             tcd.innerHTML = currentFolder;
         }
+        tci.querySelector( '.folders-refresh' ).onclick = function()
+        {
+            refreshFolderStructure( currentFolder );
+        }
     }
 }
 
