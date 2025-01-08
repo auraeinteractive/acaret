@@ -328,32 +328,46 @@ void* handleClientConnection( void* arg )
             // Aggregate the received data into send_buffer
             //print_green( "MORE DATA:\n");
             printf( "%s\n", buffer );
-            if (send_buffer_len + bytes > BUFLENGTH) { // Check if we have enough space in the buffer
+            // Check if we have enough space in the buffer
+            if( send_buffer_len + bytes > BUFLENGTH )
+            {
                 size_t new_len = send_buffer_len + bytes;
-                send_buffer = realloc(send_buffer, new_len);
-                if (!send_buffer) {
+                send_buffer = realloc( send_buffer, new_len );
+                if( !send_buffer )
+                {
                     perror("Failed to realloc memory for send buffer");
                     break;
+                }
+                else
+                {
+                    printf("Reallocated buffer.\n");
                 }
             }
 
             memcpy(send_buffer + send_buffer_len, buffer, bytes); // Append received data to send_buffer
             send_buffer_len += bytes;
 
-        } else if (bytes == 0) {
+        } 
+        else if( bytes == 0 )
+        {
             // End of data from client, close the connection
             printf("Client closed connection\n");
             break;
-        } else {
+        }
+        else
+        {
             int ssl_error = SSL_get_error(ssl, bytes);
-            if (ssl_error == SSL_ERROR_WANT_READ || ssl_error == SSL_ERROR_WANT_WRITE) {
+            if (ssl_error == SSL_ERROR_WANT_READ || ssl_error == SSL_ERROR_WANT_WRITE)
+            {
                 if (retries-- == 0) {
                     printf("--\nRead retries exhausted\n");
                     break;
                 }
                 usleep( 250 );
                 continue;
-            } else {
+            }
+            else
+            {
                 perror("Error reading from client");
                 break;
             }
