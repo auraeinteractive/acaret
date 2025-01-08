@@ -14,7 +14,8 @@ mlObject *mlObjectCreate(void *parent) {
 }
 
 // Generic inheritance function
-void *mlObjectCreateWithSize(size_t base_size, size_t derived_size, void *parent) {
+void *mlObjectCreateWithSize( size_t base_size, size_t derived_size, void *parent )
+{
     // Allocate memory for the derived object
     if( derived_size < base_size )
     {
