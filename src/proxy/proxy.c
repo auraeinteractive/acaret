@@ -408,15 +408,18 @@ void* handleClientConnection( void* arg )
     current_pos += line_len;
 
     // Process headers line by line
-    while ((line_end = strstr(current_pos, "\r\n")) != NULL && line_end != current_pos) {
+    while( ( line_end = strstr( current_pos, "\r\n" ) ) != NULL && line_end != current_pos )
+    {
         line_len = line_end - current_pos;
-        for (size_t i = 0; i < allowed_headers_count; i++) {
-            size_t key_len = strlen(allowed_headers[i]);
-            if (strncmp(current_pos, allowed_headers[i], key_len) == 0 && current_pos[key_len] == ':') {
+        for( size_t i = 0; i < allowed_headers_count; i++ )
+        {
+            size_t key_len = strlen( allowed_headers[ i ] );
+            if( strncmp( current_pos, allowed_headers[ i ], key_len ) == 0 && current_pos[ key_len ] == ':' )
+            {
                 // Copy matching header
-                memcpy(filtered_headers + filtered_len, current_pos, line_len);
+                memcpy( filtered_headers + filtered_len, current_pos, line_len );
                 filtered_len += line_len;
-                memcpy(filtered_headers + filtered_len, "\r\n", 2); // Add CRLF
+                memcpy( filtered_headers + filtered_len, "\r\n", 2 ); // Add CRLF
                 filtered_len += 2;
                 break;
             }
@@ -425,27 +428,28 @@ void* handleClientConnection( void* arg )
     }
 
     // Add the empty line separating headers and POST data
-    if (current_pos[0] == '\r' && current_pos[1] == '\n') {
-        memcpy(filtered_headers + filtered_len, "\r\n", 2);
+    if( current_pos[ 0 ] == '\r' && current_pos[ 1 ] == '\n' )
+    {
+        memcpy( filtered_headers + filtered_len, "\r\n", 2 );
         filtered_len += 2;
         current_pos += 2;
     }
 
     // Copy the remaining POST data
-    size_t remaining_len = send_buffer_len - (current_pos - send_buffer);
-    memcpy(filtered_headers + filtered_len, current_pos, remaining_len);
+    size_t remaining_len = send_buffer_len - ( current_pos - send_buffer );
+    memcpy( filtered_headers + filtered_len, current_pos, remaining_len );
     filtered_len += remaining_len;
 
     // Null-terminate and replace send_buffer with the filtered version
-    memcpy(send_buffer, filtered_headers, filtered_len);
+    memcpy( send_buffer, filtered_headers, filtered_len );
     send_buffer_len = filtered_len;
-    send_buffer[send_buffer_len] = '\0';
+    send_buffer[ send_buffer_len ] = '\0';
 
     // Clean up
-    free(filtered_headers);
+    free( filtered_headers );
 
     // Optional: Print filtered request for debugging
-    printf("Filtered Request:\n%s", send_buffer);
+    printf( "Filtered Request:\n%s", send_buffer );
 
 
 
@@ -453,27 +457,30 @@ void* handleClientConnection( void* arg )
     if( send_buffer )
     {
         printf( "Sending buffer: %s\n", send_buffer );
-        if (send(http_fd, send_buffer, send_buffer_len, 0) < 0) {
-            perror("Failed to send data to backend server");
+        if( send( http_fd, send_buffer, send_buffer_len, 0 ) < 0 )
+        {
+            perror( "Failed to send data to backend server" );
         }
 
         // Free the allocated memory for send_buffer
-        free(send_buffer);
+        free( send_buffer );
     }
 
     // Set a 1-second timeout on the socket
     struct timeval timeout;
     timeout.tv_sec = 30; // 0 seconds
     timeout.tv_usec = 0; // 0 microseconds
-    if (setsockopt(http_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
-        perror("Failed to set socket timeout");
+    if( setsockopt( http_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof( timeout ) ) < 0 )
+    {
+        perror( "Failed to set socket timeout" );
         // Handle error if needed
     }
     
     // Forward the response from the backend to the client
-    while (1) {
-        memset(buffer, 0, sizeof(buffer)); // Clear the buffer before reading
-        bytes = recv(http_fd, buffer, sizeof(buffer), 0);
+    while( 1 )
+    {
+        memset( buffer, 0, sizeof( buffer ) ); // Clear the buffer before reading
+        bytes = recv( http_fd, buffer, sizeof( buffer ), 0 );
         
         if( bytes > 0 )
         {
@@ -490,10 +497,10 @@ void* handleClientConnection( void* arg )
                 break;
             }
         }
-        else if (bytes == 0)
+        else if( bytes == 0 )
         {
             // End of data from backend, close the connection
-            printf("Backend server closed connection\n");
+            printf( "Backend server closed connection\n" );
             break;
         }
         else
@@ -513,11 +520,11 @@ void* handleClientConnection( void* arg )
     }
 
     // Cleanup
-    printf("Cleaning up connections...\n");
-    close(http_fd);
-    SSL_free(ssl);
-    close(client_fd);
-    printf("Connection closed for client\n");
+    printf( "Cleaning up connections...\n" );
+    close( http_fd );
+    SSL_free( ssl );
+    close( client_fd );
+    printf( "Connection closed for client\n" );
 
     return NULL;
 }
