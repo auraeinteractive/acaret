@@ -302,7 +302,7 @@ mlObject *mlViewCreate(mlObject *parent) {
     GtkWidget *load_settings = gtk_menu_item_new_with_label( "Load Settings" );
     GtkWidget *save_settings = gtk_menu_item_new_with_label( "Save Settings" );
     GtkWidget *separator_settings = gtk_separator_menu_item_new();
-    GtkWidget *about_acaret = gtk_menu_item_new_with_label( "About Acaret v0.1a" );
+    GtkWidget *about_acaret = gtk_menu_item_new_with_label( "About Acaret v0.1b" );
 
     gtk_menu_shell_append(GTK_MENU_SHELL(settings_menu), edit_settings);
     gtk_menu_shell_append(GTK_MENU_SHELL(settings_menu), load_settings);
