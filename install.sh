@@ -65,12 +65,35 @@ copy_files() {
     rsync --progress --info=progress2 "$src/" "$dest/"
 }
 
-# Copy the required files and directories using rsync
-copy_files "./docs" "$DEST_DIR"
-copy_files "./assets" "$DEST_DIR"
-copy_files "./config" "$DEST_DIR"
-rsync -v *.png "$DEST_DIR/"
-copy_files "./acaret" "$DEST_DIR/"
+# Function to log copied files and update their modification dates
+log_and_update_files() {
+    local src="$1"
+    local dest="$2"
+
+    echo "Copying files from $src to $dest:"
+    find "$src" -type f | while read file; do
+        relative_path="${file#$SOURCE_DIR/}"
+        dest_file="$DEST_DIR/$relative_path"
+        
+        # Copy the file and update its modification date
+        cp --preserve=all "$file" "$dest_file"
+        echo "Copied $file to $dest_file"
+    done
+}
+
+# Log and copy the required files and directories using rsync
+log_and_update_files "./docs" "$DEST_DIR"
+log_and_update_files "./assets" "$DEST_DIR"
+log_and_update_files "./config" "$DEST_DIR"
+cp -v *.png "$DEST_DIR/"
+log_and_update_files "./acaret" "$DEST_DIR"
+
+# Check for context menu feature and copy it if present
+if [ -d "context_menu" ]; then
+    log_and_update_files "./context_menu" "$DEST_DIR"
+else
+    echo "Warning: Context menu feature not found. Skipping installation."
+fi
 
 # Summary of what is done
 echo "Installation summary:"
@@ -82,5 +105,9 @@ echo "- assets"
 echo "- config"
 echo "*.png"
 echo "- acaret"
+
+if [ -d "context_menu" ]; then
+    echo "- context_menu"
+fi
 
 echo "Good luck with your installation!"
