@@ -1,8 +1,9 @@
 #include "base.h"
 
 // In base.c
-mlObject *mlObjectCreate(void *parent) {
-    mlObject *obj = (mlObject *)malloc(sizeof(mlObject));
+mlObject *mlObjectCreate( void *parent )
+{
+    mlObject *obj = (mlObject *)malloc( sizeof( mlObject ) );
     obj->parent = parent;
     obj->method_table = NULL;
     obj->method_count = 0;
