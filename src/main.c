@@ -24,8 +24,8 @@ int main(int argc, char *argv[]) {
     mainView = mlViewCreate(NULL);
 
     // Set size of the view
-    int size[2] = {1280, 800};
-    mlDoMethod(mainView, "setSize", size);  // Call the setSize method
+    int size[ 2 ] = { 1280, 800 };
+    mlDoMethod( mainView, "setSize", size );  // Call the setSize method
 
     // Set HTML file
     mlDoMethod( mainView, "setHTML", "main.html" );
@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
     mlDoMethod( mainView, "show", NULL );  // Call the show method
 
     // Register doQuit function to be called when the view is closed
-    mlAddEvent(mainView, "closed", ( mlEventCallback )doQuit);
+    mlAddEvent( mainView, "closed", ( mlEventCallback )doQuit );
 
     // Run the main loop
     mlMain();
@@ -48,16 +48,17 @@ void doQuit()
 {
     if( hasQuit == 0 )
     {
-        printf( "Handling quit.\n" );
-        mlViewDestroy( mainView );
+        printf( "[doQuit] Handling quit.\n" );
+        if( mainView )
+            mlViewDestroy( mainView );
         stopProxyNetwork();
         mlQuit(); // Assuming mlQuit is defined in init.c
-        printf( "All operating should now be stopped.\n" );
+        printf( "[doQuit] All operating should now be stopped.\n" );
         hasQuit = 1;
     }
     else
     {
-        printf( "Already quit.\n" );
+        printf( "[doQuit] Already quit.\n" );
     }
 }
 

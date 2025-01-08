@@ -158,12 +158,12 @@ void mlViewShow( void *instance, void *data )
 // Handle the window close event
 void mlViewOnWindowClosed( void *instance, void *data )
 {
-    printf("Window closed.\n");
-    if( instance )
+    printf("[mlViewOnWindowClosed] Window closed.\n");
+    if( instance != NULL )
     {  // Check if the instance is still valid
-        printf( "Triggering \"closed\" event\n" );
+        printf( "[mlViewOnWindowClosed] Triggering \"closed\" event\n" );
         mlTriggerEvent( (mlObject *)instance, "closed", NULL );
-        printf( "Event triggered.\n" );
+        printf( "[mlViewOnWindowClosed] Event triggered.\n" );
     }
 }
 
@@ -174,7 +174,7 @@ void on_script_message_received_saveas(WebKitUserContentManager *manager,
 // Create a new view (this function should be called from the main program)
 mlObject *mlViewCreate(mlObject *parent) {
     // Dynamically create the derived mlView object
-    mlView *view = (mlView *)mlObjectCreateWithSize(sizeof(mlObject), sizeof(mlView), parent);
+    mlView *view = (mlView *)mlObjectCreateWithSize( sizeof( mlObject ), sizeof( mlView ), parent );
     if( !view )
     {
         fprintf( stderr, "Failed to create mlView object\n" );
@@ -202,10 +202,10 @@ mlObject *mlViewCreate(mlObject *parent) {
     char *dir = dirname( exe_path );  // Get the directory of the executable
 
     // Construct the path to the icon file
-    char *icon_path = malloc(PATH_MAX + strlen(dir) + strlen("/icon_128.png") + 1);
+    char *icon_path = malloc( PATH_MAX + strlen( dir ) + strlen( "/icon_128.png" ) + 1 );
     if( !icon_path )
     {
-        fprintf(stderr, "Failed to allocate memory for icon path.\n");
+        fprintf( stderr, "Failed to allocate memory for icon path.\n" );
         return NULL;
     }
 
@@ -223,7 +223,7 @@ mlObject *mlViewCreate(mlObject *parent) {
     // Clean up
     free(icon_path);
     
-    gtk_window_set_title(GTK_WINDOW(view->window), "Acaret");
+    gtk_window_set_title( GTK_WINDOW( view->window ), "Acaret" );
     gtk_window_set_default_size(GTK_WINDOW(view->window), 1280, 800);
 
     // Create a vertical box layout
@@ -328,19 +328,19 @@ mlObject *mlViewCreate(mlObject *parent) {
         return NULL;
     }
 
-    g_signal_connect(open_project, "activate", G_CALLBACK(on_open_project), ( gpointer )view->webview);
-    g_signal_connect(save_project, "activate", G_CALLBACK(on_save_project), ( gpointer )view->webview);
-    g_signal_connect(save_project_as, "activate", G_CALLBACK(on_save_project_as), ( gpointer )view->webview);
+    g_signal_connect( open_project, "activate", G_CALLBACK(on_open_project), ( gpointer )view->webview);
+    g_signal_connect( save_project, "activate", G_CALLBACK(on_save_project), ( gpointer )view->webview);
+    g_signal_connect( save_project_as, "activate", G_CALLBACK(on_save_project_as), ( gpointer )view->webview);
     
-    g_signal_connect(new_file, "activate", G_CALLBACK(on_new_file), ( gpointer )view->webview);
-    g_signal_connect(open_file, "activate", G_CALLBACK(on_open_file), ( gpointer )view->webview);
-    g_signal_connect(save_file, "activate", G_CALLBACK(on_save_file), ( gpointer )view->webview);
-    g_signal_connect(save_file_as, "activate", G_CALLBACK(on_save_file_as), ( gpointer )view->webview);
-    g_signal_connect(close_file, "activate", G_CALLBACK(on_close_file), ( gpointer )view->webview);
-    g_signal_connect(close_file_all, "activate", G_CALLBACK(on_close_file_all), ( gpointer )view->webview);
+    g_signal_connect( new_file, "activate", G_CALLBACK(on_new_file), ( gpointer )view->webview);
+    g_signal_connect( open_file, "activate", G_CALLBACK(on_open_file), ( gpointer )view->webview);
+    g_signal_connect( save_file, "activate", G_CALLBACK(on_save_file), ( gpointer )view->webview);
+    g_signal_connect( save_file_as, "activate", G_CALLBACK(on_save_file_as), ( gpointer )view->webview);
+    g_signal_connect( close_file, "activate", G_CALLBACK(on_close_file), ( gpointer )view->webview);
+    g_signal_connect( close_file_all, "activate", G_CALLBACK(on_close_file_all), ( gpointer )view->webview);
 
     // Set up settings for file access if not already done
-    WebKitSettings *settings = webkit_web_view_get_settings(view->webview);
+    WebKitSettings *settings = webkit_web_view_get_settings( view->webview );
     webkit_settings_set_allow_file_access_from_file_urls(settings, TRUE);
     webkit_settings_set_auto_load_images(settings, TRUE);
     webkit_settings_set_enable_javascript(settings, TRUE);
@@ -366,7 +366,7 @@ mlObject *mlViewCreate(mlObject *parent) {
     g_signal_connect( G_OBJECT( view->window ), "key-press-event", G_CALLBACK( on_key_press_event ), ( gpointer )view->webview );
 
     // Create a WebKitUserContentManager
-    WebKitUserContentManager *content_manager = webkit_web_view_get_user_content_manager(view->webview);
+    WebKitUserContentManager *content_manager = webkit_web_view_get_user_content_manager( view->webview );
 
     // Connect for saving
     webkit_user_content_manager_register_script_message_handler( content_manager, "saveData" );
@@ -430,70 +430,68 @@ mlObject *mlViewCreate(mlObject *parent) {
                      G_CALLBACK( on_load_file_by_path ), view->webview);
     
     // Connect to the script-dialog signal to handle alert, confirm, etc.
-    g_signal_connect(view->webview, "script-dialog", G_CALLBACK(script_dialog_cb), NULL);
+    g_signal_connect( view->webview, "script-dialog", G_CALLBACK(script_dialog_cb), NULL );
     
     // Set the method table for the view
-    mlMethodEntry *method_table = malloc(sizeof(mlMethodEntry) * 3);
-    if (method_table) {
-        method_table[0] = (mlMethodEntry){"setSize", mlViewSetSize};
-        method_table[1] = (mlMethodEntry){"show", mlViewShow};
-        method_table[2] = (mlMethodEntry){"setHTML", mlViewSetHTML};
+    // TODO: Make this prettier
+    mlMethodEntry *method_table = malloc( sizeof( mlMethodEntry ) * 3 );
+    if( method_table )
+    {
+        method_table[ 0 ] = ( mlMethodEntry ){ "setSize", mlViewSetSize };
+        method_table[ 1 ] = ( mlMethodEntry ){ "show", mlViewShow };
+        method_table[ 2 ] = ( mlMethodEntry ){ "setHTML", mlViewSetHTML };
         view->base.method_table = method_table;
         view->base.method_count = 3;
-    } else {
-        fprintf(stderr, "Failed to allocate memory for method table\n");
-        gtk_widget_destroy(view->window);
-        free(view);
+    }
+    else
+    {
+        fprintf( stderr, "Failed to allocate memory for method table\n" );
+        gtk_widget_destroy( view->window );
+        free( view );
         return NULL;
     }
 
     // Add accelerators (keyboard shortcuts)
     GtkAccelGroup *accel_group = gtk_accel_group_new();
-    gtk_window_add_accel_group(GTK_WINDOW(view->window), accel_group);
+    gtk_window_add_accel_group( GTK_WINDOW( view->window ), accel_group );
 
     // Tag: Menu keyboard shortcuts
-    gtk_widget_add_accelerator(quit, "activate", accel_group, GDK_KEY_q, GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
-    gtk_widget_add_accelerator(new_file, "activate", accel_group, GDK_KEY_n, GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
-    gtk_widget_add_accelerator(open_file, "activate", accel_group, GDK_KEY_o, GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
-    gtk_widget_add_accelerator(open_project, "activate", accel_group, GDK_KEY_o, ( GDK_CONTROL_MASK | GDK_SHIFT_MASK ), GTK_ACCEL_VISIBLE);
-    gtk_widget_add_accelerator(save_file, "activate", accel_group, GDK_KEY_s, GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
-    gtk_widget_add_accelerator(save_file_as, "activate", accel_group, GDK_KEY_s, ( GDK_CONTROL_MASK | GDK_SHIFT_MASK ), GTK_ACCEL_VISIBLE);
-    gtk_widget_add_accelerator(close_file, "activate", accel_group, GDK_KEY_w, GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
-    gtk_widget_add_accelerator(close_file_all, "activate", accel_group, GDK_KEY_w, ( GDK_CONTROL_MASK | GDK_SHIFT_MASK ), GTK_ACCEL_VISIBLE);
+    gtk_widget_add_accelerator( quit, "activate", accel_group, GDK_KEY_q, GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
+    gtk_widget_add_accelerator( new_file, "activate", accel_group, GDK_KEY_n, GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
+    gtk_widget_add_accelerator( open_file, "activate", accel_group, GDK_KEY_o, GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
+    gtk_widget_add_accelerator( open_project, "activate", accel_group, GDK_KEY_o, ( GDK_CONTROL_MASK | GDK_SHIFT_MASK ), GTK_ACCEL_VISIBLE);
+    gtk_widget_add_accelerator( save_file, "activate", accel_group, GDK_KEY_s, GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
+    gtk_widget_add_accelerator( save_file_as, "activate", accel_group, GDK_KEY_s, ( GDK_CONTROL_MASK | GDK_SHIFT_MASK ), GTK_ACCEL_VISIBLE);
+    gtk_widget_add_accelerator( close_file, "activate", accel_group, GDK_KEY_w, GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
+    gtk_widget_add_accelerator( close_file_all, "activate", accel_group, GDK_KEY_w, ( GDK_CONTROL_MASK | GDK_SHIFT_MASK ), GTK_ACCEL_VISIBLE);
 
     return (mlObject *)view;
 }
 
 
 // Destroy a view object and free resources
-void mlViewDestroy(mlObject *obj) {
+void mlViewDestroy( mlObject *obj )
+{
     if (!obj) return;
 
-    mlView *view = (mlView *)obj;
+    mlView *view = ( mlView * )obj;
 
     // Destroy the GTK window if it exists
-    if (view->window) {
-        gtk_widget_destroy(view->window);
+    if( view->window )
+    {
+        gtk_widget_destroy( view->window );
         view->window = NULL;
     }
 
     // WebView cleanup (if needed)
-    if (view->webview) {
+    if( view->webview )
+    {
         // No explicit destroy function is needed for WebKitGTK web views, as
         // GTK widget destruction will handle it. Nullify the pointer for safety.
         view->webview = NULL;
     }
 
     // Call the base destroy function to clean up common resources
-    mlObjectDestroy(obj);
+    mlObjectDestroy( obj );
 }
-
-
-
-
-
-
-
-
-
 

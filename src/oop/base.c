@@ -16,20 +16,22 @@ mlObject *mlObjectCreate(void *parent) {
 // Generic inheritance function
 void *mlObjectCreateWithSize(size_t base_size, size_t derived_size, void *parent) {
     // Allocate memory for the derived object
-    if (derived_size < base_size) {
-        fprintf(stderr, "Derived size cannot be smaller than base size\n");
+    if( derived_size < base_size )
+    {
+        fprintf( stderr, "Derived size cannot be smaller than base size\n" );
         return NULL;
     }
 
-    void *object = malloc(derived_size);
-    if (!object) {
+    void *object = malloc( derived_size );
+    if( !object )
+    {
         fprintf(stderr, "Failed to allocate memory for object\n");
         return NULL;
     }
 
     // Initialize the base portion
-    memset(object, 0, base_size); // Zero out the base part
-    mlObject *base = (mlObject *)object;
+    memset( object, 0, base_size ); // Zero out the base part
+    mlObject *base = ( mlObject * )object;
     base->parent = parent;
     base->method_table = NULL;
     base->method_count = 0;
@@ -42,7 +44,8 @@ void *mlObjectCreateWithSize(size_t base_size, size_t derived_size, void *parent
 }
 
 // Destroy an object and free resources
-void mlObjectDestroy(mlObject *obj) {
+void mlObjectDestroy( mlObject *obj )
+{
     if( !obj ) return;
 
     // Free methods (if dynamically allocated)
@@ -54,18 +57,18 @@ void mlObjectDestroy(mlObject *obj) {
     // Free attributes
     for( int i = 0; i < obj->attribute_count; i++ )
     {
-        free( obj->attributes[i].key );
+        free( obj->attributes[ i ].key );
         
         // Assuming values are pointers to dynamically allocated memory
-        free( obj->attributes[i].value );
+        free( obj->attributes[ i ].value );
     }
     free(obj->attributes);
 
     // Free events
     for( int i = 0; i < obj->event_count; i++ )
     {
-        free( obj->events[i].event_name );
-        obj->events[i].event_name = NULL;
+        free( obj->events[ i ].event_name );
+        obj->events[ i ].event_name = NULL;
     }
     obj->event_count = 0;
     free( obj->events );
@@ -76,7 +79,8 @@ void mlObjectDestroy(mlObject *obj) {
 }
 
 // Dispatch a method
-void mlDoMethod(mlObject *obj, char *method, void *data) {
+void mlDoMethod(mlObject *obj, char *method, void *data)
+{
     if( obj == NULL || obj->method_table == NULL )
     {
         printf( "Object or method table is NULL\n" );
@@ -114,83 +118,102 @@ void mlDoSuperMethod(mlObject *obj, char *method, void *data )
 }
 
 // Set an attribute
-void mlSetAttribute(mlObject *obj, char *key, void *value) {
-    for (int i = 0; i < obj->attribute_count; i++) {
-        if (strcmp(obj->attributes[i].key, key) == 0) {
-            obj->attributes[i].value = value;  // Update attribute value
+void mlSetAttribute( mlObject *obj, char *key, void *value )
+{
+    for( int i = 0; i < obj->attribute_count; i++ )
+    {
+        if( strcmp( obj->attributes[ i ].key, key ) == 0)
+        {
+            obj->attributes[ i ].value = value;  // Update attribute value
             return;
         }
     }
     // If attribute not found, add it
     obj->attribute_count++;
-    obj->attributes = (mlAttributeEntry *)realloc(
-        obj->attributes, obj->attribute_count * sizeof(mlAttributeEntry));  // Reallocate memory
-    obj->attributes[obj->attribute_count - 1].key = strdup(key);  // Duplicate the key
-    obj->attributes[obj->attribute_count - 1].value = value;  // Set value
+    obj->attributes = ( mlAttributeEntry * )realloc(
+        obj->attributes, obj->attribute_count * sizeof( mlAttributeEntry ) );  // Reallocate memory
+    obj->attributes[ obj->attribute_count - 1 ].key = strdup( key );  // Duplicate the key
+    obj->attributes[ obj->attribute_count - 1 ].value = value;  // Set value
 }
 
 // Get an attribute
-void *myGetAttribute(mlObject *obj, char *key) {
-    for (int i = 0; i < obj->attribute_count; i++) {
-        if (strcmp(obj->attributes[i].key, key) == 0) {
-            return obj->attributes[i].value;  // Return attribute value
+void *myGetAttribute( mlObject *obj, char *key )
+{
+    for( int i = 0; i < obj->attribute_count; i++ )
+    {
+        if( strcmp( obj->attributes[ i ].key, key ) == 0)
+        {
+            return obj->attributes[ i ].value;  // Return attribute value
         }
     }
     // If attribute not found, check the parent object
-    if (obj->parent) {
-        return myGetAttribute(obj->parent, key);
+    if( obj->parent )
+    {
+        return myGetAttribute( obj->parent, key );
     }
     return NULL;  // Return NULL if attribute not found
 }
 
 // Add an event to the object
-void mlAddEvent(mlObject *obj, char *event_name, mlEventCallback callback) {
-    obj->events = (mlEvent *)realloc(obj->events, ( obj->event_count + 1 ) * sizeof(mlEvent));
-    if (obj->events == NULL) {
-        fprintf(stderr, "Reallocation failed for events\n");
+void mlAddEvent( mlObject *obj, char *event_name, mlEventCallback callback )
+{
+    obj->events = ( mlEvent * )realloc( obj->events, ( obj->event_count + 1 ) * sizeof( mlEvent ) );
+    if( obj->events == NULL )
+    {
+        fprintf(stderr, "[mlAddEvent] Reallocation failed for events\n");
         return;
     }
     
-    printf( "Adding event: %s\n", event_name );
-    obj->events[obj->event_count].event_name = strdup(event_name);
-    obj->events[obj->event_count].callback = callback;
-    if (obj->events[obj->event_count].event_name == NULL) {
-        fprintf(stderr, "String duplication failed for event name.\n");
+    printf( "[mlAddEvent] Adding event: %s\n", event_name );
+    obj->events[ obj->event_count].event_name = strdup( event_name );
+    obj->events[ obj->event_count].callback = callback;
+    if( obj->events[obj->event_count].event_name == NULL )
+    {
+        fprintf( stderr, "[mlAddEvent] String duplication failed for event name.\n" );
         return;
     }
-    obj->event_count++;
-    printf( "Added event \"%s\" (new event count %d)\n", event_name, obj->event_count );
+    obj->event_count = obj->event_count + 1;
+    
+    printf( "[mlAddEvent] Added event \"%s\" (new event count %d)\n", event_name, obj->event_count );
 }
 
 // Trigger an event
 void mlTriggerEvent(mlObject *obj, const char *event_name, void *data)
 {
-    printf( "Trying to find event \"%s\".\n", event_name );
+    if( !obj )
+    {
+        printf( "[mlTriggerEvent] Skipping null object\n" );
+        return;
+    }
+    printf( "[mlTriggerEvent] Trying to find event \"%s\".\n", event_name );
     if( obj->event_count > 0 )
     {
-        printf( "Found events. %d events total.\n", obj->event_count );
+        printf( "[mlTriggerEvent] Found events. %d events total.\n", obj->event_count );
         for( int i = 0; i < obj->event_count; i++ ) 
         {
-            printf( "Looking at event %d\n", (i+1));
+            printf( "[mlTriggerEvent] Looking at event %d\n", (i+1));
             // Find the event
             if( strcmp(obj->events[i].event_name, event_name) == 0 )
             {  
                 //
-                printf( "Found event %s\n", event_name );
+                printf( "[mlTriggerEvent] Found event %s\n", event_name );
                 obj->events[i].callback(obj, data);  // Trigger the event callback
                 return;  // Exit after triggering the event
             }
         }
         // If event not found, check the parent object
-        if (obj->parent) {
+        if( obj->parent )
+        {
             mlTriggerEvent(obj->parent, event_name, data);
-        } else {
-            printf("Event '%s' not found.\n", event_name);  // Print error if event not found
+        }
+        else
+        {
+            printf("[mlTriggerEvent] Event '%s' not found.\n", event_name);  // Print error if event not found
         }
     }
     else
     {
-        printf( "Could not find any events.\n" );
+        printf( "[mlTriggerEvent] Could not find any events.\n" );
     }
 }
 
