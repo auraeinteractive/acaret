@@ -1,13 +1,19 @@
 // Sends signals with callbacks using our microserver
 window.callbackIds = 0;
-window.sendSignal = function( signal, callback )
+window.sendSignal = function( command, data = false, callback = false )
 {
     let callbackId = window.callbackIds++;
-    window.callbacks[ callbackId ] = function( data )
+    if( data )
     {
-        if( callback ) callback( base64DecodeUtf8( data ) );
+        if( typeof( data ) == 'object' )
+            data = JSON.stringify( data );
+        command += "\n" + base64EncodeUtf8( data );
     }
-    window.webkit.messageHandlers.receiveSignal.postMessage( callbackId + "\n" + signal );
+    window.callbacks[ callbackId ] = function( response = false )
+    {
+        if( callback ) callback( response ?? base64DecodeUtf8( response ) );
+    }
+    window.webkit.messageHandlers.receiveSignal.postMessage( callbackId + "\n" + command );
 }
 window.callbacks = {};
 window.executeSignalCallback = function( callbackId, data = '' )
