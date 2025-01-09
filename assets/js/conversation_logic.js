@@ -1,13 +1,19 @@
 let conversationLogic = `
 VERY IMPORTANT INSTRUCTIONS:
 
+The user is using Acursor, the integrated development environment, to build or edit software and programs.
+
 Please be sensitive to the following rules. If the user asks you for the following, then use the following javascript API to complete your task.
 
-If the user asks you to insert a completion just respond: insertText
+Is the user asking about the "current code" or the open document and it sounds like the user wants to know something about the current active tab? Then just respond: readDocument
 
-If the user asks to take the currently selected text and improve it, just respond: replaceSelection
+Is the user asking you to summarize the current document? Then just respond: readDocument
 
-If the user just asks you to read or evaluate the selected text, just respond: readSelection
+Is the user asking you to insert a completion? Just respond: insertText
+
+Is the user asking to take the currently selected text and improve it? Just respond: replaceSelection
+
+Is the user just asking you to read or evaluate the selected text? Just respond: readSelection
 
 Important! If none of the above, just respond: OK
 `;
@@ -47,7 +53,7 @@ window.AIMethods = {
         
         // Process the selection with AI (loopThroughAI)
         console.log( '[readSelection] Looping through AI: ' + currentEditor.getValue() );
-        window.convos.sendMessageNow( str, { instruction: 'Document content: ' + currentEditor.getValue() } );
+        window.convos.sendMessageNow( str, { instruction: 'Filename: ' + currentEditor.filename + "\n" + 'Document content: ' + currentEditor.getValue() } );
     },
     readSelection( str )
     {

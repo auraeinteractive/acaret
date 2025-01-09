@@ -518,13 +518,29 @@ class Conversation
         history.push( { role: 'user', content: messageStr } ); // Remember this (permanent context)
         ctx.push( { role: 'user', content: messageStr } ); // To message request
         
+        let extraInfo = '';
         // In regular calls, consult current file
         if( !options || !options.skipStoringResponse )
         {
-            ctx.push( {
-                role: 'assistant',
-                content: 'I know you are currently looking at this file in the editor: ' + currentEditor.filename + "\n\nPath: " + currentEditor.path + "\n\nContent:\n\n" + currentEditor.getValue() + "\n\nI will keep this in mind as background information."
-            } );
+            /*ctx.push( {
+                role: 'system',
+                content: ''
+            } );*/
+            
+            extraInfo += "\n" + 
+                'You are the AI assistant for the Acursor programming environment. If you\'re asked who you are, say you are the Acursor assistant. ' +
+                'Right now the time and date is ' + ( new Date() + '.' ) + ' Just report what the user is asking for. If asking about the time, just give the time and time zone. Date? Just report the day, month and year. The user may ask about all details, but don\'t give them if the user isn\'t asking.';
+            // Add where required
+            if( options && options.instruction )
+            {
+                options.instruction += extraInfo;
+            }
+            else
+            {
+                if( options )
+                    options.instruction = extraInfo;
+                else options = { instruction: extraInfo };
+            }
         }
         
         if( options.instruction )
@@ -537,7 +553,7 @@ class Conversation
 
         // Tag: Define the system prompt configuration (if needed)
         const systemPrompt = {
-            prompt: 'You are the AI assistant of the editor Aide.',
+            prompt: 'You are the AI assistant of the code editor Acursor.',
             anti_prompt: 'User:',
             assistant_name: 'Assistant:'
         };
