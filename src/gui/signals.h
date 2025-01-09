@@ -43,6 +43,10 @@ void on_script_message_received_folders(
     gpointer user_data
 );
 void refresh_folder_structure( gchar *path, gpointer user_data );
+// General one!
+void on_script_message(WebKitUserContentManager *manager,
+                                        WebKitJavascriptResult *result,
+                                        gpointer user_data);
 void on_script_message_received(WebKitUserContentManager *manager,
                                         WebKitJavascriptResult *result,
                                         gpointer user_data);

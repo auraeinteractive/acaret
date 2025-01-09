@@ -356,6 +356,9 @@ mlObject *mlViewCreate(mlObject *parent) {
     WebKitWebContext *context = webkit_web_context_get_default();
     webkit_web_context_register_uri_scheme(context, "ihttp", on_uri_scheme_request, view->webview, NULL);
 
+    // Create a WebKitUserContentManager
+    WebKitUserContentManager *content_manager = webkit_web_view_get_user_content_manager( view->webview );
+
     webkit_web_view_load_html(view->webview, "<html><head><title>Acursor</title></head><body></body></html>", NULL);
     gtk_box_pack_end(GTK_BOX(vbox), GTK_WIDGET(view->webview), TRUE, TRUE, 0);
 
@@ -364,10 +367,15 @@ mlObject *mlViewCreate(mlObject *parent) {
 
     // Connect the key-press-event signal to the WebView
     g_signal_connect( G_OBJECT( view->window ), "key-press-event", G_CALLBACK( on_key_press_event ), ( gpointer )view->webview );
-
-    // Create a WebKitUserContentManager
-    WebKitUserContentManager *content_manager = webkit_web_view_get_user_content_manager( view->webview );
-
+    
+    // General messages
+    webkit_user_content_manager_register_script_message_handler( content_manager, "receiveSignal" );
+    g_signal_connect(
+        content_manager, "script-message-received::receiveSignal", 
+        G_CALLBACK(on_script_message), 
+        ( gpointer )view->webview 
+    );
+    
     // Connect for saving
     webkit_user_content_manager_register_script_message_handler( content_manager, "saveData" );
     webkit_user_content_manager_register_script_message_handler( content_manager, "saveAsData" );
@@ -377,8 +385,10 @@ mlObject *mlViewCreate(mlObject *parent) {
     // Connect for sacving project
     webkit_user_content_manager_register_script_message_handler( content_manager, "saveProject" );
     webkit_user_content_manager_register_script_message_handler( content_manager, "saveProjectAs" );
-    g_signal_connect(content_manager, "script-message-received::saveProject", G_CALLBACK(on_script_message_received_project), ( gpointer )view->webview );
-    g_signal_connect(content_manager, "script-message-received::saveProjectAs", G_CALLBACK(on_script_message_received_saveas_project), ( gpointer )view->webview );
+    g_signal_connect( 
+        content_manager, "script-message-received::saveProject", G_CALLBACK( on_script_message_received_project ), ( gpointer )view->webview );
+    g_signal_connect( 
+        content_manager, "script-message-received::saveProjectAs", G_CALLBACK( on_script_message_received_saveas_project ), ( gpointer )view->webview );
 
     // Inject JavaScript to send messages
     const gchar *script = 

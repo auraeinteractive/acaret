@@ -403,7 +403,7 @@ void on_script_message_received_folders(
 )
 {
     GError *error = NULL;
-    JSCValue *value = webkit_javascript_result_get_js_value(result);
+    JSCValue *value = webkit_javascript_result_get_js_value( result );
     if (error != NULL) {
         g_printerr("JavaScript error: %s\n", error->message);
         g_error_free(error);
@@ -465,7 +465,70 @@ void refresh_folder_structure( gchar *path, gpointer user_data )
     }
 }
 
+// Tag: General messages
+
+// Callback to handle messages from JavaScript
+void on_script_message(
+    WebKitUserContentManager *manager,
+    WebKitJavascriptResult *result,
+    gpointer user_data
+)
+{
+    // Extract the message as a string
+    JSCValue *value = webkit_javascript_result_get_js_value(result);
+    if( jsc_value_is_string( value ) )
+    {
+        gchar *message = jsc_value_to_string( value );
+        gchar *js_command = NULL;
+
+        // Find the position of the first occurrence of '\n'
+        char *newline = strchr( message, '\n' );
+        if( newline != NULL )
+        {
+            // Extract callbackId
+            *newline = '\0'; // Null-terminate the string at the newline character
+            
+            char *callbackId = message;
+
+            // Extract data
+            char *data = newline + 1;
+            
+            js_command = g_strdup_printf(
+                "window.executeSignalCallback( %s, \"%s\" );", 
+                callbackId, 
+                g_base64_encode( ( const guchar * )data, strlen( data ) )
+            );
+        } else {
+            g_printerr("Invalid message format: missing newline character\n");
+        }
+        
+        if( js_command != NULL )
+        {
+            // Evaluate JavaScript in the WebView
+            webkit_web_view_evaluate_javascript(
+                (WebKitWebView *)user_data, 
+                js_command, 
+                -1,  // -1 means the length is determined automatically
+                NULL, // world_name (NULL for default)
+                NULL, // source_uri (NULL for no source)
+                NULL, // cancellable (no cancelation)
+                NULL, // callback (no callback needed)
+                NULL  // user_data (no user data)
+            );
+    
+            // Free allocated memory
+            g_free(js_command);
+        }
+
+        // Clean up
+        g_free(message);
+    } else {
+        g_print("Unexpected message type\n");
+    }
+}
+
 // Tag: Actions like writing to disk
+
 // Callback to handle messages from JavaScript
 void on_script_message_received(WebKitUserContentManager *manager,
                                         WebKitJavascriptResult *result,
