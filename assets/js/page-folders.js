@@ -24,6 +24,28 @@ window.toolbar.folders = function() {
         {
             refreshFolderStructure( currentFolder );
         }
+        tci.querySelector( '.file-new' ).onclick = function()
+        {
+            let data = {
+                path: currentFolder,
+                file: 'empty file.txt'
+            }
+            sendSignal( 'file-new', data, function( response )
+            {
+                console.log( 'Response from file-new: ' + response );
+            } );
+        }
+        tci.querySelector( '.folders-new' ).onclick = function()
+        {
+            let data = {
+                path: currentFolder,
+                file: 'folder'
+            }
+            sendSignal( 'folder-new', data, function( response )
+            {
+                console.log( 'Response from folders-new: ' + response );
+            } );
+        }
     }
 }
 

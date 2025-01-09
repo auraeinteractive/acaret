@@ -8,6 +8,9 @@
 #include <webkit2/webkit2.h>
 #include <gtk/gtk.h>
 #include <sys/stat.h>
+#include <string.h>
+#include <unistd.h>
+#include <pthread.h>
 #include "../oop/base.h"
 
 void doQuit();

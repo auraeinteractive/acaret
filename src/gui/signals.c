@@ -493,12 +493,45 @@ void on_script_message(
             // Extract data
             char *data = newline + 1;
             
+            // Extract instruction command from the input string
+            char *instructionCommand = strtok( data, "\n" );
+            if( instructionCommand == NULL )
+            {
+                fprintf(stderr, "Invalid input format.\n");
+            }
+            else
+            {
+                if( strcmp( instructionCommand, "help" ) == 0 )
+                {
+                    printf( "Executing command (soon): %s with %s\n", instructionCommand, data + ( strlen( instructionCommand ) + 1 )  );
+                }
+                else if( strcmp( instructionCommand, "file-new" ) == 0 )
+                {
+                    printf( "Executing command (soon): %s with %s\n", instructionCommand, data + ( strlen( instructionCommand ) + 1 )  );
+                }
+                else if( strcmp( instructionCommand, "folder-new" ) == 0 )
+                {
+                    printf( "Executing command (soon): %s with %s\n", instructionCommand, data + ( strlen( instructionCommand ) + 1 )  );
+                }
+                else
+                {
+                    printf( "Unsupported command: %s\n", instructionCommand );
+                }
+            }
+            
             js_command = g_strdup_printf(
+                "window.executeSignalCallback( %s, false );", 
+                callbackId
+            );
+            // When we get data!:
+            /*js_command = g_strdup_printf(
                 "window.executeSignalCallback( %s, \"%s\" );", 
                 callbackId, 
                 g_base64_encode( ( const guchar * )data, strlen( data ) )
-            );
-        } else {
+            );*/
+        }
+        else 
+        {
             g_printerr("Invalid message format: missing newline character\n");
         }
         
@@ -521,8 +554,10 @@ void on_script_message(
         }
 
         // Clean up
-        g_free(message);
-    } else {
+        g_free( message );
+    }
+    else
+    {
         g_print("Unexpected message type\n");
     }
 }

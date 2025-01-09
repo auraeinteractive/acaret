@@ -522,8 +522,8 @@ class Conversation
         if( !options || !options.skipStoringResponse )
         {
             ctx.push( {
-                role: 'system',
-                content: 'The user is currently looking at this file in the editor: ' + currentEditor.filename + "\n\nPath: " + currentEditor.path + "\n\nContent:\n\n" + currentEditor.getValue()
+                role: 'assistant',
+                content: 'I know you are currently looking at this file in the editor: ' + currentEditor.filename + "\n\nPath: " + currentEditor.path + "\n\nContent:\n\n" + currentEditor.getValue() + "\n\nI will keep this in mind as background information."
             } );
         }
         
