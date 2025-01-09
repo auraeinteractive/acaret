@@ -508,12 +508,15 @@ hr
     max-height: 80%;
     border: 2px solid #003355;
     box-sizing: border-box;
+    z-index: 11111;
+    overflow: visible !important;
 }
 
 #page_codehelp pre
 {
     min-height: 100%;
     margin: 0;
+    overflow: auto;
 }
 
 #page_codehelp .close
