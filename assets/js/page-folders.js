@@ -133,6 +133,11 @@ function receiveFolders( path, data, depth = 0 )
         let d = document.createElement( 'div' );
         d.className = 'file';
         d.innerHTML = '<span>' + files[a] + '</span>';
+        d.contextMenu = [ { type: 'file', name: 'Delete', icon: 'trash', action: function(){ 
+            
+            console.log( 'Deleting ' + files[a] ); 
+            
+        } } ];
         d.onclick = ( e ) => { 
             if( d.classList.contains( 'active' ) )
             {
