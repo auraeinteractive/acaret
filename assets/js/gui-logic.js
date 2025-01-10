@@ -24,15 +24,21 @@ function initializeGUI()
     {
         if( e.which == 16 )
             window.chatShift = false;
-        if( e.which == 17 )
+        else if( e.which == 17 )
             window.chatCtrl = false;
     } );
     document.body.addEventListener( 'keydown', function( e )
     {
         if( e.which == 16 )
             window.chatShift = true;
-        if( e.which == 17 )
+        else if( e.which == 17 )
             window.chatCtrl = true;
+    } );
+    
+    // Prepare to get the startup screen
+    sendSignal( 'startup', false, function( data )
+    {
+        console.log( 'We got the startup check.' );
     } );
 }
 
