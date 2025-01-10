@@ -14,7 +14,6 @@ function initializeGUI()
     for( let a = 0; a < closers.length; a++ )
     {
         closers[a].onclick = () => {
-            console.log( 'fop' );
             for( let b = 0; b < closerp.length; b++ )
                 closerp[b].classList.remove( 'active' );
         };
