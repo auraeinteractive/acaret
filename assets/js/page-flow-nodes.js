@@ -17,6 +17,17 @@ window.toolbar[ 'flow-nodes' ] = function() {
     }
 }
 
+window.addEventListener( 'mousemove', function( e ) {
+    if( flowNodes.currentObject )
+    {
+        let node = flowNodes.currentObject;
+        node.style.top = ( e.clientY - node.oy ) + 'px';
+        node.style.left = ( e.clientX - node.ox ) + 'px';
+    }
+} );
+window.addEventListener( 'mouseup', function() {
+    flowNodes.currentObject = false;
+} );
 
 class FlowNode
 {
@@ -29,8 +40,13 @@ class FlowNode
         }
         this.div = document.createElement( 'div' );
         this.div.className = 'FlowNode';
-        this.div.innerHTML = '<div><div class="top"></div><div class="area"></div></div>';
+        this.div.innerHTML = '<div><div class="top">Unnamed node</div><div class="area"></div></div>';
         this.container.appendChild( this.div );
+        this.div.onmousedown = ( e ) => { 
+            this.div.ox = e.clientX - this.div.offsetLeft; 
+            this.div.oy = e.clientY - this.div.offsetTop; 
+            flowNodes.currentObject = this.div; 
+        };
     }
 }
 
