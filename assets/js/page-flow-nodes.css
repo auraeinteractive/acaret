@@ -8,6 +8,7 @@
     background-color: #202020;
     border-radius: 5px;
     overflow: hidden;
+    will-change: transform;
 }
 
 .div-canvas .FlowNode, .div-canvas .FlowNode > div
@@ -20,6 +21,10 @@
     min-width: 200px;
     min-height: 150px;
     color: white;
+    will-change: transform;
+    transform: rotate3d(0,0,0,0deg);
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .div-canvas .FlowNode > div
@@ -31,6 +36,7 @@
     left: 0;
     border-radius: 4px;
     background: #404040;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 
 .div-canvas .FlowNode > div > .top

@@ -1,7 +1,8 @@
 // Flow nodes
 
 let flowNodes = {
-    nodes: []
+    nodes: [],
+    z: 0
 }
 
 window.toolbar = window.toolbar ? window.toolbar : {};
@@ -14,6 +15,8 @@ window.toolbar[ 'flow-nodes' ] = function() {
     if( flowNodes.nodes.length == 0 )
     {
         flowNodes.nodes.push( new FlowNode( { container: document.getElementById( 'page_flow-nodes' ).querySelector( '.div-canvas' ) } ) );
+        flowNodes.nodes.push( new FlowNode( { container: document.getElementById( 'page_flow-nodes' ).querySelector( '.div-canvas' ) } ) );
+        flowNodes.nodes.push( new FlowNode( { container: document.getElementById( 'page_flow-nodes' ).querySelector( '.div-canvas' ) } ) );
     }
 }
 
@@ -21,8 +24,15 @@ window.addEventListener( 'mousemove', function( e ) {
     if( flowNodes.currentObject )
     {
         let node = flowNodes.currentObject;
-        node.style.top = ( e.clientY - node.oy ) + 'px';
-        node.style.left = ( e.clientX - node.ox ) + 'px';
+        
+        let grid = 10;
+        let x = ( e.clientX - node.ox );
+        let y = ( e.clientY - node.oy );
+        x = Math.floor( x / grid ) * grid;
+        y = Math.floor( y / grid ) * grid;
+        
+        node.style.top = y + 'px';
+        node.style.left =  x + 'px';
     }
 } );
 window.addEventListener( 'mouseup', function() {
@@ -38,13 +48,15 @@ class FlowNode
         {
             this.container = options.container;
         }
+        let num = flowNodes.nodes.length + 1;
         this.div = document.createElement( 'div' );
         this.div.className = 'FlowNode';
-        this.div.innerHTML = '<div><div class="top">Unnamed node</div><div class="area"></div></div>';
+        this.div.innerHTML = '<div><div class="top">Unnamed node ' + num + '</div><div class="area"></div></div>';
         this.container.appendChild( this.div );
         this.div.onmousedown = ( e ) => { 
             this.div.ox = e.clientX - this.div.offsetLeft; 
             this.div.oy = e.clientY - this.div.offsetTop; 
+            this.div.style.zIndex = ++flowNodes.z;
             flowNodes.currentObject = this.div; 
         };
     }
