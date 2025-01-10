@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include "../oop/base.h"
+#include "../system/session.h"
 
 void doQuit();
 void handle_signal(unsigned int signal, void *user_data);

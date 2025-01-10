@@ -501,6 +501,8 @@ void on_script_message(
             }
             else
             {
+                char *response = NULL;
+                
                 if( strcmp( instructionCommand, "help" ) == 0 )
                 {
                     printf( "Executing command (soon): %s with %s\n", instructionCommand, data + ( strlen( instructionCommand ) + 1 )  );
@@ -513,16 +515,39 @@ void on_script_message(
                 {
                     printf( "Executing command (soon): %s with %s\n", instructionCommand, data + ( strlen( instructionCommand ) + 1 )  );
                 }
+                else if( strcmp( instructionCommand, "startup" ) == 0 )
+                {
+                    char *projects = readFromSession( "projects" );
+                    if( projects )
+                    {
+                        response = malloc( strlen( projects ) + 1 );
+                        response[ sizeof( response ) ] = 0;
+                        sprintf( response, "%s", projects );
+                    }
+                    else
+                    {
+                        response = malloc( strlen( "fail" ) + 1 );
+                        response[ sizeof( response ) ] = 0;
+                        sprintf( response, "fail" );
+                    }
+                    js_command = g_strdup_printf(
+                        "window.executeSignalCallback( %s, \"%s\" );", 
+                        callbackId, 
+                        g_base64_encode( ( const guchar * )response, strlen( response ) )
+                    );
+                }
                 else
                 {
                     printf( "Unsupported command: %s\n", instructionCommand );
                 }
             }
-            
-            js_command = g_strdup_printf(
-                "window.executeSignalCallback( %s, false );", 
-                callbackId
-            );
+            if( js_command == NULL )
+            {
+                js_command = g_strdup_printf(
+                    "window.executeSignalCallback( %s, false );", 
+                    callbackId
+                );
+            }
             // When we get data!:
             /*js_command = g_strdup_printf(
                 "window.executeSignalCallback( %s, \"%s\" );", 
