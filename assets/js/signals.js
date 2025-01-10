@@ -21,6 +21,7 @@ window.executeSignalCallback = function( callbackId, data = '' )
     // Execute and clean up
     if( window.callbacks[ callbackId ] )
     {
+        data = base64DecodeUtf8( data );
         window.callbacks[ callbackId ]( data );
         let o = {};
         for( let a in window.callbacks )

@@ -38,7 +38,12 @@ function initializeGUI()
     // Prepare to get the startup screen
     sendSignal( 'startup', false, function( data )
     {
-        console.log( 'We got the startup check.' );
+        if( data == 'fail' )
+        {
+            console.log( 'Nothing in startup' );
+            return;
+        }
+        console.log( 'We got the startup check: ' + data );
     } );
 }
 
