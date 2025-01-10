@@ -236,7 +236,6 @@ function loadFile( str, path, filename )
     // Don't open the same one!
     for( let a in editorDocuments )
     {
-        console.log( 'Current matrix: ' + editorDocuments[ a ].path + ' // ' + editorDocuments[ a ].filename );
         if( editorDocuments[ a ].path == path && editorDocuments[ a ].filename == filename )
         {
             editorDocuments[ a ].tab.click();
@@ -244,7 +243,6 @@ function loadFile( str, path, filename )
         }
     }
     
-    console.log( 'Loading file: ' + filename, path, editorDocuments );
     let editor = newEditor( filename, path );
     
     const binaryArray = Uint8Array.from( atob( str ), char => char.charCodeAt( 0 ) );
