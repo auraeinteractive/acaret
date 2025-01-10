@@ -7,5 +7,7 @@
 #include <time.h>
 
 void sessionInit();
+char* readFromSession( const char *key );
+void writeToSession( const char *key, const char *value );
 
 #endif
