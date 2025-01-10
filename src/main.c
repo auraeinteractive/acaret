@@ -2,6 +2,7 @@
 #include "gui/init.h"  // Include the new abstracted init functions
 #include "gui/signals.h"
 #include "proxy/proxy.h"
+#include "system/session.h"
 
 // Function to quit the application
 mlObject *mainView = NULL;
@@ -9,7 +10,11 @@ pthread_mutex_t networkMutex;
 int hasQuit = 0;
 
 // Initiates the program
-int main(int argc, char *argv[]) {
+int main( int argc, char *argv[] ) 
+{
+    // Initialize session
+    sessionInit();
+    
     // Start the proxy server
     printf( "Starting proxy.\n" );
     if( startProxyServer() != 0 )
