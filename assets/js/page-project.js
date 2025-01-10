@@ -59,4 +59,10 @@ function setCurrentProject( obj )
     currentFolder = obj.path.substr( -1, 1 ) == '/' ? obj.path : ( obj.path + '/' );
     refreshFolderStructure( currentFolder );
     updateBottomBar();
+    
+    // Add the current project to session profile
+    sendSignal( 'add-current-project', base64EncodeUtf8( JSON.stringify( window.currentProject ) ), function( d )
+    {
+        console.log( 'Result: ', d );
+    } );
 }

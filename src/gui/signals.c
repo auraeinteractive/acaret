@@ -536,6 +536,48 @@ void on_script_message(
                         g_base64_encode( ( const guchar * )response, strlen( response ) )
                     );
                 }
+                // Add a project
+                else if( strcmp( instructionCommand, "add-current-project" ) == 0 )
+                {
+                    char *currentProjects = readFromSession( "projects" );
+                    
+                    // Add
+                    if( currentProjects != NULL )
+                    {
+                        // Only if not exists!
+                        if( strtok( currentProjects, data ) != NULL )
+                        {
+                            char *allProjects = malloc( strlen( currentProjects ) + 1 + strlen( data ) );
+                            sprintf( allProjects, "%s,%s", currentProjects, data );
+                            writeToSession( "projects", data );
+                            js_command = g_strdup_printf(
+                                "window.executeSignalCallback( %s, \"%s\" );", 
+                                callbackId, 
+                                g_base64_encode( ( const guchar * )"added", strlen( "written" ) )
+                            );
+                        }
+                        // Already saved
+                        else
+                        {
+                            writeToSession( "projects", data );
+                            js_command = g_strdup_printf(
+                                "window.executeSignalCallback( %s, \"%s\" );", 
+                                callbackId, 
+                                g_base64_encode( ( const guchar * )"fail", strlen( "written" ) )
+                            );
+                        }
+                    }
+                    // Just write first one
+                    else
+                    {
+                        writeToSession( "projects", data );
+                        js_command = g_strdup_printf(
+                            "window.executeSignalCallback( %s, \"%s\" );", 
+                            callbackId, 
+                            g_base64_encode( ( const guchar * )"written", strlen( "written" ) )
+                        );
+                    }
+                }
                 else
                 {
                     printf( "Unsupported command: %s\n", instructionCommand );
@@ -548,12 +590,6 @@ void on_script_message(
                     callbackId
                 );
             }
-            // When we get data!:
-            /*js_command = g_strdup_printf(
-                "window.executeSignalCallback( %s, \"%s\" );", 
-                callbackId, 
-                g_base64_encode( ( const guchar * )data, strlen( data ) )
-            );*/
         }
         else 
         {
