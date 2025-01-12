@@ -12,6 +12,21 @@ class FlowNodeConnector
 {
     constructor( options )
     {
+        if( options && options.parent )
+        {
+            // Owner of relationship
+            this.parent = options.parent;
+            
+            let d = document.createElement( 'div' );
+            d.className = 'FlowNodeConnector';
+            options.from.connectFrom.appendChild( d );
+            this.connectorFrom = d;
+            
+            let t = document.createElement( 'div' );
+            t.className = 'FlowNodeConnector';
+            options.to.connectTo.appendChild( d );
+            this.connectorTo = t;
+        }
     }
 }
 
@@ -34,8 +49,17 @@ class FlowNode
         this.div = document.createElement( 'div' );
         this.div.id = 'id-' + this.id;
         this.div.className = 'FlowNode';
-        this.div.innerHTML = '<div><div class="top">' + this.type + '</div><div class="area"></div></div>';
+        this.div.innerHTML = `
+            <div>
+                <div class="connectors connectorTo"></div>
+                <div class="top">${this.type}</div>
+                <div class="area"></div>
+                <div class="connectors connectorFrom"></div>
+            </div>`;
         this.connectors = [];
+        
+        this.connectTo = this.div.querySelector( '.connectorTo' );
+        this.connectFrom = this.div.querySelector( '.connectorFrom' );
         
         flowNodes.container.appendChild( this.div );
         
@@ -47,10 +71,10 @@ class FlowNode
         };
     }
     // Tag: Connect node to another node
-    drawConnectTo( node )
+    connectTo( node )
     {
-        node.source = this;
-        this.destination = node;
+        let conn = new FlowNodeConnector( { from: this, to: node, parent: this } );
+        this.connectors.push( conn );
     }
     // Tag: Drawing a node connector
     drawConnector( conn )
@@ -59,7 +83,10 @@ class FlowNode
     }
     refresh()
     {
-        
+        for( let a = 0; a < this.connectors.length; a++ )
+        {
+            this.drawConnector( this.connectors[ a ] );
+        }
     }
 }
 
@@ -100,6 +127,7 @@ window.toolbar[ 'flow-nodes' ] = function() {
         let destination = new FlowNode( { type: 'output', name: 'Destination' } );
         let middle = new FlowNode( { type: 'processor', name: 'Processor' } );
         
+        console.log( middle );
         source.connectTo( middle );
         middle.connectTo( destination );
         

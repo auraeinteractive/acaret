@@ -58,11 +58,51 @@
 {
     position: absolute;
     top: 32px;
-    left: 0;
-    width: 100%;
+    left: 24px;
+    width: calc(100% - 48px);
     height: calc(100% - 32px);
     padding: 5px
     color: white;
     font-weight: bold;
     box-sizing: border-box;
 }
+
+.div-canvas .FlowNode > div > .connectorTo
+{
+    position: absolute;
+    top: 32px;
+    left: 0;
+    width: 24px;
+    height: calc(100% - 64px);
+    padding: 5px
+    color: white;
+    font-weight: bold;
+    box-sizing: border-box;
+    background-color: #18181833;
+}
+
+.div-canvas .FlowNode > div > .connectorFrom
+{
+    position: absolute;
+    top: 32px;
+    left: calc(100% - 24px);
+    width: 24px;
+    height: calc(100% - 64px);
+    padding: 5px
+    color: white;
+    font-weight: bold;
+    box-sizing: border-box;
+    background-color: #18181833;
+}
+
+.div-canvas .FlowNode .connectors > div
+{
+    display: block;
+    border-radius: 100%;
+    border: 2px solid rgba(255,255,255,0.5);
+    background-color: #00000044;
+    width: 16px;
+    height: 16px;
+    margin: 4px;
+}
+
