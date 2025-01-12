@@ -7,6 +7,14 @@ let flowNodes = {
     z: 0
 }
 
+// Tag: A flow node connector class
+class FlowNodeConnector
+{
+    constructor( options )
+    {
+    }
+}
+
 // Tag: Flow node class
 class FlowNode
 {
@@ -27,6 +35,7 @@ class FlowNode
         this.div.id = 'id-' + this.id;
         this.div.className = 'FlowNode';
         this.div.innerHTML = '<div><div class="top">' + this.type + '</div><div class="area"></div></div>';
+        this.connectors = [];
         
         flowNodes.container.appendChild( this.div );
         
@@ -36,6 +45,21 @@ class FlowNode
             this.div.style.zIndex = ++flowNodes.z;
             flowNodes.currentObject = this; 
         };
+    }
+    // Tag: Connect node to another node
+    drawConnectTo( node )
+    {
+        node.source = this;
+        this.destination = node;
+    }
+    // Tag: Drawing a node connector
+    drawConnector( conn )
+    {
+        
+    }
+    refresh()
+    {
+        
     }
 }
 
@@ -72,9 +96,16 @@ window.toolbar[ 'flow-nodes' ] = function() {
     // Tag: First nodes, remove this when we refactor
     if( flowNodes.nodes.length == 0 )
     {
-        flowNodes.nodes.push( new FlowNode( { type: 'input', id: 'root' } ) );
-        flowNodes.nodes.push( new FlowNode( { type: 'output', id: 'out' } ) );
-        flowNodes.nodes.push( new FlowNode( { type: 'processor', source: 'root', destination: 'out' } ) );
+        let source = new FlowNode( { type: 'input', name: 'Source' } );
+        let destination = new FlowNode( { type: 'output', name: 'Destination' } );
+        let middle = new FlowNode( { type: 'processor', name: 'Processor' } );
+        
+        source.connectTo( middle );
+        middle.connectTo( destination );
+        
+        flowNodes.nodes.push( source );
+        flowNodes.nodes.push( destination );
+        flowNodes.nodes.push( middle );
     }
     refreshFlowNodes();
 }
@@ -102,6 +133,6 @@ function refreshFlowNodes()
 {
     for( let a = 0; a < flowNodes.nodes.length; a++ )
     {
-        
+        flowNodes.nodes[a].refresh();
     }
 }
