@@ -10,12 +10,16 @@ Acaret is an Artificial Intelligence development environment that offers develop
 
 ## Granular features
 
-* **Search**:
+  * **Editor**:
+    * ACE Editor; syntax highlingting, code folding and much more [Ace Editor](https://ace.c9.io/)
+    * Tabs: Easy tab navigation, tab groups, split view (2 way, 4 ways)
+    * Tags: Navigate in your code using tagged positions or tagged blocks
+  * **Search**:
     * Find your code or assets quickly via an easy to use search interface
-* **Tags**:
+  * **Tags**:
     * Navigate your project via tags, either per file or globally
     * Edit code traversing multiple files per tag
-* **Code navigator**:
+  * **Code navigator**:
     * See all function names in a list
     * See all methods in a list
 

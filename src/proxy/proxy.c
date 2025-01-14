@@ -159,7 +159,7 @@ void* proxyThreadFunction( void* arg )
            
         struct epoll_event events[ 10 ];  // max 10 connections at once
         //printf("Waiting for connections (running %d)\n", *networkRunning);
-        int num_events = epoll_wait( epoll_fd, events, 10, 0 );
+        int num_events = epoll_wait( epoll_fd, events, 10, 250 );
         if( num_events == -1 )
         {
             perror( "Epoll wait failed" );
