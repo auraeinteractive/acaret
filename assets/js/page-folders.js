@@ -94,12 +94,13 @@ function receiveFolders( path, data, depth = 0 )
     }
     
     let folders = [];
+    
     for( let a = 0; a < data.length; a++ )
     {
         if( data[a].type.trim() == 'dir' )
         {
             if( data[a].name.substr( 0, 1 ) == '.' ) continue;
-            folders.push( data[a].name );
+            folders.push( data[a].name.toLowerCase() + '/' + data[a].name );
         }
     }
     folders = folders.sort();
@@ -108,8 +109,9 @@ function receiveFolders( path, data, depth = 0 )
         let d = document.createElement( 'div' );
         d.className = 'folder';
         d.contextMenu = [ { type: 'item', name: 'Refresh', icon: 'refresh', action: function(){ console.log( 'Refreshing..' ); } } ];
-        d.innerHTML = '<span>' + folders[a] + '/</span>';
-        targetFolderElements[ path + folders[a] + '/' ] = d;
+        let realfldName = folders[a].split( '/' )[1];
+        d.innerHTML = '<span>' + realfldName + '/</span>';
+        targetFolderElements[ path + realfldName + '/' ] = d;
         d.onclick = ( e ) => { 
             if( d.classList.contains( 'active' ) )
             {
@@ -132,7 +134,7 @@ function receiveFolders( path, data, depth = 0 )
             } 
             else 
             { 
-                refreshFolderStructure( path + folders[a] + '/' ); 
+                refreshFolderStructure( path + realfldName + '/' ); 
             }
             e.stopPropagation();
             e.preventDefault();
