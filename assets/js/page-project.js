@@ -11,7 +11,7 @@ window.currentProject = {
     },
     languageKeys: {
         'namespace': {
-            'hello'
+            'hello': {}
         }
     }
 };
