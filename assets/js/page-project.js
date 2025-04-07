@@ -6,7 +6,12 @@ window.currentProject = {
     path: '',
     languages: {
         default: {
-            'hello': 'world'
+            'namespace.hello': 'world'
+        }
+    },
+    languageKeys: {
+        'namespace': {
+            'hello'
         }
     }
 };
