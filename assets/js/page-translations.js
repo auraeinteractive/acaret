@@ -50,7 +50,8 @@ window.toolbar.translations = function() {
                 </tr>
             </table>
         </div>
-        <table class="Grid">`;
+        <div class="GridTableRows">
+            <table class="Grid">`;
         
         for( let a in l )
         {
@@ -58,7 +59,9 @@ window.toolbar.translations = function() {
             for( let b in l[a] ) cnt++;
             str += '<tr><td>' + a + '</td><td>' + cnt + '</td></tr>';
         }
-        str += `</table>
+        str += `
+            </table>
+        </div>
         <div class="GridTableBottomBar">
             <button type="button" class="tbutton add-language">
                 Add language
@@ -68,7 +71,7 @@ window.toolbar.translations = function() {
         cont.innerHTML = str;
         
         let btn = cont.querySelector( '.add-language' ).onclick = () => {
-            window.currentProject.languages.test = {};
+            window.currentProject.languages.norsk = {};
             self.renderLanguages();
         }
         

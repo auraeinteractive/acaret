@@ -1274,26 +1274,72 @@ hr
     background-image: url(feather/refresh-ccw.svg);
 }
 
-table.Grid
+/* Translations */
+
+#page_translations .GridTableBottomBar
+{
+    position: absolute;
+    bottom: 0;
+    height: 50px;
+    left: 0;
+    width: 100%;
+    background: inherit;
+    box-sizing: border-box;
+    padding: 8px;
+}
+
+#page_translations .GridTableRows
+{
+    position: absolute;
+    overflow: auto;
+    left: 0;
+    top: 30px;
+    width: 100%;
+    height: calc(100% - 80px);
+}
+
+#page_translations .GridTableHeader
+{
+    position: absolute;
+    top: 0;
+    height: 30px;
+    left: 0;
+    width: 100%;
+    background: inherit;
+    box-sizing: border-box;
+}
+#page_translations .GridTableHeader table
+{
+    width: 100%;
+    height: 100%;
+}
+
+#page_translations .GridTableHeader table th
+{
+    padding: 2px 8px;
+    color: white;
+    text-align: left;
+    font-weight: normal;
+    width: 50%;
+}
+
+#page_translations table.Grid
 {
     border-collapse: collapse;
     color: white;
     width: 100%;
 }
-table.Grid tr > th
-{
-    text-align: left;
-    font-weight: normal;
-    padding: 8px;
-}
-table.Grid tr > td
+
+#page_translations table.Grid tr > td
 {
     padding: 8px;
+    width: 50%;
     border-bottom: 1px solid #ffffff17;
     border-right: 1px solid #ffffff17;
     background: black;
 }
-table.Grid tr > td:last-child
+
+#page_translations table.Grid tr > td:last-child
 {
     border-right: 0;
 }
