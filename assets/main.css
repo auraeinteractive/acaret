@@ -138,6 +138,10 @@ hr
 {
     background-image: url(feather/folder.svg);
 }
+#topbar #top_chat_title > div.translations:before
+{
+    background-image: url(feather/globe.svg);
+}
 #topbar #top_chat_title > div.tags:before
 {
     background-image: url(feather/tag.svg);
@@ -235,6 +239,15 @@ hr
     background-image: url(feather/corner-left-up.svg);
 }
 
+
+#topbar #top_chat_title .language-add
+{
+    background-image: url(feather/flag.svg);
+}
+#topbar #top_chat_title .language-key
+{
+    background-image: url(feather/edit-3.svg);
+}
 
 #topbar #top_toolbar
 {
@@ -338,6 +351,7 @@ hr
 
 #rightbar .button.btn-chat:before { background-image: url(feather/message-circle.svg); }
 #rightbar .button.btn-folders:before { background-image: url(feather/folder.svg); }
+#rightbar .button.btn-translations:before { background-image: url(feather/globe.svg); }
 #rightbar .button.btn-tags:before { background-image: url(feather/tag.svg); }
 #rightbar .button.btn-navigator:before { background-image: url(feather/navigation.svg); }
 
@@ -1258,5 +1272,75 @@ hr
 .mlContextMenu div > span.refresh
 {
     background-image: url(feather/refresh-ccw.svg);
+}
+
+/* Translations */
+
+#page_translations .GridTableBottomBar
+{
+    position: absolute;
+    bottom: 0;
+    height: 50px;
+    left: 0;
+    width: 100%;
+    background: inherit;
+    box-sizing: border-box;
+    padding: 8px;
+}
+
+#page_translations .GridTableRows
+{
+    position: absolute;
+    overflow: auto;
+    left: 0;
+    top: 30px;
+    width: 100%;
+    height: calc(100% - 80px);
+}
+
+#page_translations .GridTableHeader
+{
+    position: absolute;
+    top: 0;
+    height: 30px;
+    left: 0;
+    width: 100%;
+    background: inherit;
+    box-sizing: border-box;
+}
+#page_translations .GridTableHeader table
+{
+    width: 100%;
+    height: 100%;
+}
+
+#page_translations .GridTableHeader table th
+{
+    padding: 2px 8px;
+    color: white;
+    text-align: left;
+    font-weight: normal;
+    width: 50%;
+}
+
+#page_translations table.Grid
+{
+    border-collapse: collapse;
+    color: white;
+    width: 100%;
+}
+
+#page_translations table.Grid tr > td
+{
+    padding: 8px;
+    width: 50%;
+    border-bottom: 1px solid #ffffff17;
+    border-right: 1px solid #ffffff17;
+    background: black;
+}
+
+#page_translations table.Grid tr > td:last-child
+{
+    border-right: 0;
 }
 

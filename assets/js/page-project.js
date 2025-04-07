@@ -3,7 +3,17 @@
 window.currentProject = {
     name: '',
     filename: '',
-    path: ''
+    path: '',
+    languages: {
+        default: {
+            'namespace.hello': 'world'
+        }
+    },
+    languageKeys: {
+        'namespace': {
+            'hello': {}
+        }
+    }
 };
 
 window.toolbar = window.toolbar ? window.toolbar : {};
