@@ -240,6 +240,15 @@ hr
 }
 
 
+#topbar #top_chat_title .language-add
+{
+    background-image: url(feather/flag.svg);
+}
+#topbar #top_chat_title .language-key
+{
+    background-image: url(feather/edit-3.svg);
+}
+
 #topbar #top_toolbar
 {
     position: absolute;
@@ -1263,5 +1272,29 @@ hr
 .mlContextMenu div > span.refresh
 {
     background-image: url(feather/refresh-ccw.svg);
+}
+
+table.Grid
+{
+    border-collapse: collapse;
+    color: white;
+    width: 100%;
+}
+table.Grid tr > th
+{
+    text-align: left;
+    font-weight: normal;
+    padding: 8px;
+}
+table.Grid tr > td
+{
+    padding: 8px;
+    border-bottom: 1px solid #ffffff17;
+    border-right: 1px solid #ffffff17;
+    background: black;
+}
+table.Grid tr > td:last-child
+{
+    border-right: 0;
 }
 
