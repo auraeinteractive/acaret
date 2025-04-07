@@ -42,16 +42,35 @@ window.toolbar.translations = function() {
     this.renderLanguages = function()
     {
         let l = window.currentProject.languages;
-        let str = '<table class="Grid"><tr><th>Language</th><th>Translations</th></tr>';
+        let str = `<div class="GridTableHeader">
+            <table>
+                <tr>
+                    <th>Language</th>
+                    <th>Translations</th>
+                </tr>
+            </table>
+        </div>
+        <table class="Grid">`;
+        
         for( let a in l )
         {
             let cnt = 0;
             for( let b in l[a] ) cnt++;
             str += '<tr><td>' + a + '</td><td>' + cnt + '</td></tr>';
         }
-        str += '</table>';
+        str += `</table>
+        <div class="GridTableBottomBar">
+            <button type="button" class="tbutton add-language">
+                Add language
+            </button>
+        </div>`;
         
         cont.innerHTML = str;
+        
+        let btn = cont.querySelector( '.add-language' ).onclick = () => {
+            window.currentProject.languages.test = {};
+            self.renderLanguages();
+        }
         
     }
     this.renderTranslations = function()
