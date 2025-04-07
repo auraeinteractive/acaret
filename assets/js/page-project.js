@@ -33,8 +33,6 @@ function loadProject( str, path, filename )
         if( o.path.substr( -1, 1 ) != '/' )
             o.path += '/';
         
-        console.log( 'Loaded project: ', o );
-        
         document.getElementById( 'p-name' ).value = o.name ?? 'unnamed';
         document.getElementById( 'p-git-url' ).value = o.gitUrl ?? '';
         document.getElementById( 'p-git-username' ).value = o.gitUsername ?? '';
