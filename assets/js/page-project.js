@@ -3,7 +3,12 @@
 window.currentProject = {
     name: '',
     filename: '',
-    path: ''
+    path: '',
+    languages: {
+        default: {
+            'hello': 'world'
+        }
+    }
 };
 
 window.toolbar = window.toolbar ? window.toolbar : {};
