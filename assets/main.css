@@ -138,6 +138,10 @@ hr
 {
     background-image: url(feather/folder.svg);
 }
+#topbar #top_chat_title > div.translations:before
+{
+    background-image: url(feather/globe.svg);
+}
 #topbar #top_chat_title > div.tags:before
 {
     background-image: url(feather/tag.svg);
@@ -338,6 +342,7 @@ hr
 
 #rightbar .button.btn-chat:before { background-image: url(feather/message-circle.svg); }
 #rightbar .button.btn-folders:before { background-image: url(feather/folder.svg); }
+#rightbar .button.btn-translations:before { background-image: url(feather/globe.svg); }
 #rightbar .button.btn-tags:before { background-image: url(feather/tag.svg); }
 #rightbar .button.btn-navigator:before { background-image: url(feather/navigation.svg); }
 
