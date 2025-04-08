@@ -152,7 +152,10 @@ window.toolbar.translations = function() {
     }
     this.renderTranslations = function()
     {
+        // Language keywords
         let l = window.currentProject.languages[ window.currentProject.currentLanguage ];
+        // Namespace keywords (transcends language)
+        let ll = window.currentProject.languageKeys[ window.currentProject.currentNamespace ];
         let keywords = null;
         
         let str = `<div class="GridTableHeader">
@@ -165,13 +168,10 @@ window.toolbar.translations = function() {
         </div>
         <div class="GridTableRows">
             <table class="Grid">`;
-        for( let a in l )
+        for( let a in ll )
         {
-            let d = a.indexOf( '.' );
-            let namespace = a.substr( 0, d );
-            if( namespace != window.currentProject.currentNamespace ) continue;
-            let keyword = a.substr( d + 1, a.length - d + 1 );
-            str += '<tr><td>' + keyword + '</td><td>' + l[a] + '</td></tr>';
+            let val = l[window.currentProject.currentNamespace + '.' + a] ?? '';
+            str += '<tr><td>' + a + '</td><td>' + val + '</td></tr>';
         }
         
         let namespaces = '';
@@ -243,6 +243,8 @@ window.toolbar.translations = function() {
             v.onchange = () => {
                 valueData = v.value.trim();
                 l[ window.currentProject.currentNamespace + '.' + keyData ] = valueData;
+                if( !window.currentProject.languageKeys[ window.currentProject.currentNamespace ][ keyData ] )
+                    window.currentProject.languageKeys[ window.currentProject.currentNamespace ][ keyData ] = {};
                 activeKeyword = false;
                 self.renderTranslations();
             }

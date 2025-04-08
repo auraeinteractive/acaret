@@ -6,13 +6,18 @@ window.currentProject = {
     path: '',
     languages: {
         english: {
-            'global.about': 'About this translation...'
+            'global.about': 'About this translation...',
+            'scratchpad.an_idea': 'Just an idea...'
         }
     },
     // Each namespace with metadata
     languageKeys: {
-        'global': {},
-        'scratchpad' : {}
+        'global': {
+            'about': {}
+        },
+        'scratchpad' : {
+            'an_idea' : {}
+        }
     }
 };
 
