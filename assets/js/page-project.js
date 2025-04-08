@@ -5,14 +5,14 @@ window.currentProject = {
     filename: '',
     path: '',
     languages: {
-        default: {
-            'namespace.hello': 'world'
+        english: {
+            'global.about': 'About this translation...'
         }
     },
+    // Each namespace with metadata
     languageKeys: {
-        'namespace': {
-            'hello': {}
-        }
+        'global': {},
+        'scratchpad' : {}
     }
 };
 

@@ -36,7 +36,19 @@ window.toolbar.translations = function() {
     
     if( !window.currentProject.currentLanguage )
     {
-        window.currentProject.currentLanguage = 'default'; // TODO: Pick this from an existing language in the project
+        for( let a in window.currentProject.languages )
+        {
+            window.currentProject.currentLanguage = a;
+            break;
+        }
+    }
+    if( !window.currentProject.currentNamespace )
+    {
+        for( let a in window.currentProject.languageKeys )
+        {
+            window.currentProject.currentNamespace = a;
+            break;
+        }
     }
     
     this.renderLanguages = function()
@@ -47,6 +59,7 @@ window.toolbar.translations = function() {
                 <tr>
                     <th>Language</th>
                     <th>Translations</th>
+                    <th>#</th>
                 </tr>
             </table>
         </div>
@@ -57,7 +70,8 @@ window.toolbar.translations = function() {
         {
             let cnt = 0;
             for( let b in l[a] ) cnt++;
-            str += '<tr><td>' + a + '</td><td>' + cnt + '</td></tr>';
+            let cr = window.currentProject.currentLanguage == a ? 'current' : '&nbsp;';
+            str += '<tr><td class="prop" index="' + a + '">' + a + '</td><td>' + cnt + '</td><td class="set">' + cr + '</td></tr>';
         }
         str += `
             </table>
@@ -70,8 +84,68 @@ window.toolbar.translations = function() {
         
         cont.innerHTML = str;
         
+        let sets = cont.getElementsByClassName( 'set' );
+        for( let a = 0; a < sets.length; a++ )
+        {
+            sets[a].onclick = ( e ) => {
+                let ind = sets[a].parentNode.firstChild.getAttribute( 'index' );
+                if( !ind ) return;
+                window.currentProject.currentLanguage = ind;
+                self.renderLanguages();
+            }
+        }
+        
+        let tds = cont.getElementsByClassName( 'prop' );
+        for( let a = 0; a < tds.length; a++ )
+        {
+            tds[a].onclick = ( e ) => {
+                let el = e.target;
+                if( !el || el.tagName != 'TD' ) return;
+                let data = el.textContent;
+                el.innerHTML = '<input type="text" class="editTd"/>';
+                let inp = el.querySelector( '.editTd' );
+                inp.value = data;
+                inp.focus();
+                inp.onblur = () => { el.innerHTML = data; }
+                inp.onchange = () => { 
+                    // First check if the language does not already exist
+                    for( let b in window.currentProject.languages )
+                    {
+                        // Abort, we already have the name
+                        if( b == inp.value )
+                        {
+                            self.renderLanguages();
+                            return;
+                        }
+                    }
+                                        
+                    // Rename language
+                    let out = {};
+                    for( let b in window.currentProject.languages )
+                    {
+                        if( b == data )
+                        {
+                            out[ inp.value ] = window.currentProject.languages[ b ];
+                        }
+                        else
+                        {
+                            out[ b ] = window.currentProject.languages[ b ];
+                        }
+                    }
+                    window.currentProject.languages = out;
+                    self.renderLanguages();
+                }
+            }
+        }
+        
+        
         let btn = cont.querySelector( '.add-language' ).onclick = () => {
-            window.currentProject.languages.norsk = {};
+            let okey = 'new language';
+            let key = okey;
+            let counter = 1;
+            while( window.currentProject.languages[ key ] )
+                key = okey + ' ' + counter++;
+            window.currentProject.languages[ key ] = {};
             self.renderLanguages();
         }
         
@@ -79,14 +153,100 @@ window.toolbar.translations = function() {
     this.renderTranslations = function()
     {
         let l = window.currentProject.languages[ window.currentProject.currentLanguage ];
-        let str = '<table class="Grid">';
+        let keywords = null;
+        
+        let str = `<div class="GridTableHeader">
+            <table>
+                <tr>
+                    <th>Keyword</th>
+                    <th>Translation</th>
+                </tr>
+            </table>
+        </div>
+        <div class="GridTableRows">
+            <table class="Grid">`;
         for( let a in l )
         {
-            str += '<tr><td>' + a + '</td><td>' + l[a] + '</td></tr>';
+            let d = a.indexOf( '.' );
+            let namespace = a.substr( 0, d );
+            if( namespace != window.currentProject.currentNamespace ) continue;
+            let keyword = a.substr( d + 1, a.length - d + 1 );
+            str += '<tr><td>' + keyword + '</td><td>' + l[a] + '</td></tr>';
         }
-        str += '</table>';
+        
+        let namespaces = '';
+        for( let c in window.currentProject.languageKeys )
+        {
+            let sel = '';
+            if( c == window.currentProject.currentNamespace )
+                sel = ' selected="selected"';
+            namespaces += '<option' + sel + ' value="' + c + '">' + c + '</option>';
+        }
+        
+        str += `
+            </table>
+        </div>
+        <div class="GridTableBottomBar">
+            <tr>
+                <td>
+                    <button type="button" class="tbutton add-keyword">
+                        Add keyword
+                    </button>
+                </td>
+                <td>
+                    <select class="namespace">
+                        ${namespaces}
+                    </select>
+                </td>
+            </tr>
+        </div>`;
         
         cont.innerHTML = str;
+        
+        let namSelect = cont.querySelector( '.namespace' );
+        namSelect.onchange = ( e ) => {
+            let opts = namSelect.options;
+            for( let b in opts )
+            {
+                if( opts[ b ].selected )
+                    window.currentProject.currentNamespace = opts[ b ].value;
+            }
+            self.renderTranslations();
+        }
+        
+        
+        let activeKeyword = false;
+        
+        let btn = cont.querySelector( '.add-keyword' ).onclick = () => {
+            if( activeKeyword ) return;
+            activeKeyword = true;
+            let tr = document.createElement( 'tr' );
+            tr.innerHTML = `<td><input type="text" class="new_key"/></td><td><input type="text" class="new_value"/></td>`;
+            cont.querySelector( '.Grid' ).appendChild( tr );
+            let k = tr.querySelector( '.new_key' );
+            k.focus();
+            let keyData = '';
+            k.onchange = () => {
+                keyData = k.value.trim().split( ' ' ).join( '_' );
+                k.parentNode.innerHTML = keyData;
+            }
+            // Abort
+            k.onblur = () => {
+                if( !keyData )
+                {
+                    tr.parentNode.removeChild( tr );
+                    activeKeyword = false;
+                }
+            }
+            let valueData = '';
+            let v = tr.querySelector( '.new_value' );
+            v.onchange = () => {
+                valueData = v.value.trim();
+                l[ window.currentProject.currentNamespace + '.' + keyData ] = valueData;
+                activeKeyword = false;
+                self.renderTranslations();
+            }
+        }
     }
     
     this.renderLanguages();
