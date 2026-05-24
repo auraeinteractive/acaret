@@ -12,6 +12,10 @@
     --leftbar-offset: 51px;
     --app-font: "Maven Pro", sans-serif;
     --app-font-size: 14px;
+    --scrollbar-size: 6px;
+    --scrollbar-thumb: rgba(255, 255, 255, 0.22);
+    --scrollbar-thumb-hover: rgba(255, 255, 255, 0.36);
+    --scrollbar-track: transparent;
 }
 
 html, body
@@ -30,6 +34,42 @@ body
     font-family: var(--app-font);
     font-size: var(--app-font-size);
     position: relative;
+}
+
+/* Thin scrollbars app-wide (.TopTabs hides its own) */
+*:not(.TopTabs)
+{
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+*:not(.TopTabs)::-webkit-scrollbar
+{
+    width: var(--scrollbar-size);
+    height: var(--scrollbar-size);
+}
+
+*:not(.TopTabs)::-webkit-scrollbar-track
+{
+    background: var(--scrollbar-track);
+}
+
+*:not(.TopTabs)::-webkit-scrollbar-thumb
+{
+    background-color: var(--scrollbar-thumb);
+    border-radius: 999px;
+    border: 1px solid transparent;
+    background-clip: padding-box;
+}
+
+*:not(.TopTabs)::-webkit-scrollbar-thumb:hover
+{
+    background-color: var(--scrollbar-thumb-hover);
+}
+
+*:not(.TopTabs)::-webkit-scrollbar-corner
+{
+    background: transparent;
 }
 
 button
@@ -917,6 +957,30 @@ body.right-panel-collapsed
     display: none;
 }
 .ace_editor { min-height: 100%; margin: 0; }
+
+.ace_editor > .ace_sb-v
+{
+    width: var(--scrollbar-size) !important;
+}
+
+.ace_editor > .ace_sb-h
+{
+    height: var(--scrollbar-size) !important;
+}
+
+.ace_editor > .ace_sb-v div,
+.ace_editor > .ace_sb-h div
+{
+    background: var(--scrollbar-thumb) !important;
+    border: none !important;
+    border-radius: 999px !important;
+}
+
+.ace_editor > .ace_sb-v.ace_sb_grabbed div,
+.ace_editor > .ace_sb-h.ace_sb_grabbed div
+{
+    background: var(--scrollbar-thumb-hover) !important;
+}
 
 .ace_editor *
 {
