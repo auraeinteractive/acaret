@@ -1,0 +1,9 @@
+install.ini
+acaret
+obj/
+tmp/
+config/*.crt
+config/*.key
+config/*.pem
+*.o
+*.zip

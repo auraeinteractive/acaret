@@ -1,0 +1,9 @@
+{
+  "id": "acaret",
+  "displayName": "Acaret",
+  "version": "1.0.0",
+  "entry": "index.html",
+  "category": "Development",
+  "published": true,
+  "icon": "app.png"
+}
