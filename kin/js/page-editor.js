@@ -184,7 +184,7 @@ window.toolbar.editor = function() {
 
 
     let allTabs = topToolbar.getElementsByClassName( 'TopTab' );
-    let pages = document.getElementById( 'page_editor' ).getElementsByTagName( 'pre' );
+    let pages = document.getElementById( 'page_editor' ).querySelectorAll( '[editor]' );
     if( allTabs && pages )
     {
         let active = false;
@@ -258,9 +258,21 @@ function loadFile( str, path, filename )
     // These needs to be here
     editor.path = path;
     editor.filename = filename;
+    updateEditorTabLabel( editor );
     
     updateBottomBar();
 }
+
+function updateEditorTabLabel( editor )
+{
+    if( !editor || !editor.tab ) return;
+    let close = editor.tab.querySelector( '.close' );
+    if( !close ) return;
+    while( close.nextSibling )
+        editor.tab.removeChild( close.nextSibling );
+    editor.tab.appendChild( document.createTextNode( editor.filename || 'New file' ) );
+}
+window.updateEditorTabLabel = updateEditorTabLabel;
 
 function setCurrentEditor( data )
 {
@@ -268,7 +280,7 @@ function setCurrentEditor( data )
     if( currentEditor.path.substr( -1, 1 ) != '/' )
         currentEditor.path += '/';
     currentEditor.filename = data.filename;
-    currentEditor.tab.innerHTML = '<span class="close"></span>' + currentEditor.filename;
+    updateEditorTabLabel( currentEditor );
     updateBottomBar();
 }
 
@@ -471,13 +483,15 @@ function newEditor( filename = false, path = false )
     document.getElementById( 'page_editor' ).appendChild( p );
     
     let editor = ace.edit( p );
+    p.classList.add( 'active' );
     editor.setTheme("ace/theme/twilight");
     editor.session.setMode("ace/mode/javascript");
     editor.setOptions({
         fontFamily: "Ubuntu Mono, Monospace",
-        fontSize: "15px",
+        fontSize: "14px",
         wrap: true
     });
+    editor.resize();
     
     editorDocuments[ edName ] = editor;
     editor.editorId = edName;
@@ -531,6 +545,7 @@ function newEditor( filename = false, path = false )
     
     editor.focus();
     tab.click();
+    editor.resize();
     
     editor.on( 'change', function( e ){
         editor.document_saved = false;
@@ -615,4 +630,28 @@ function closeFile( ed = false )
     }
     toolbar.editor();
 }
+
+function resizeAllEditors()
+{
+    for( let a in editorDocuments )
+    {
+        let ed = editorDocuments[ a ];
+        if( ed && typeof ed.resize === 'function' )
+            ed.resize();
+    }
+}
+window.resizeAllEditors = resizeAllEditors;
+window.addEventListener( 'resize', resizeAllEditors );
+
+function resizeAllEditors()
+{
+    for( let a in editorDocuments )
+    {
+        let ed = editorDocuments[ a ];
+        if( ed && typeof ed.resize === 'function' )
+            ed.resize();
+    }
+}
+window.resizeAllEditors = resizeAllEditors;
+window.addEventListener( 'resize', resizeAllEditors );
 

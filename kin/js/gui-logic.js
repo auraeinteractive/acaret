@@ -2,11 +2,13 @@
 
 window.toolbar = {};
 window.chatShift = false;
+window.rightPanelVisible = true;
 
 function initializeGUI()
 {
     initTabs( 'leftbar' );
-    initTabs( 'rightbar' );
+    initRightPanel();
+    initTabs( 'rightbar', { defaultTabId: 'tab_folders' } );
     initTabs( 'bottombar', { state: 'inactive' } );
     
     let closers = document.getElementById( 'debug' ).getElementsByClassName( 'close-page' );
@@ -44,44 +46,161 @@ function initializeGUI()
         }
         console.log( 'We got the startup check: ' + data );
     } );
+
+    if( typeof refreshFolderStructure === 'function' )
+        refreshFolderStructure( typeof currentFolder !== 'undefined' ? currentFolder : 'Home:' );
+}
+
+function getToolbarKeyForTab( tabButton )
+{
+    return tabButton.id.replace( /^tab_/, '' );
+}
+
+function setRightPanelWidth( width )
+{
+    const min = 220;
+    const max = Math.max( min, Math.floor( window.innerWidth * 0.65 ) );
+    const w = Math.max( min, Math.min( max, Math.round( width ) ) );
+    document.documentElement.style.setProperty( '--right-panel-width', w + 'px' );
+    if( typeof resizeAllEditors === 'function' )
+        resizeAllEditors();
+}
+
+function showRightPanel()
+{
+    if( window.rightPanelVisible )
+        return;
+    window.rightPanelVisible = true;
+    document.body.classList.remove( 'right-panel-collapsed' );
+    const saved = parseInt( localStorage.getItem( 'acaret-right-panel-width' ) || '449', 10 );
+    setRightPanelWidth( isNaN( saved ) ? 449 : saved );
+}
+
+function hideRightPanel()
+{
+    if( !window.rightPanelVisible )
+        return;
+    window.rightPanelVisible = false;
+    document.body.classList.add( 'right-panel-collapsed' );
+    if( typeof resizeAllEditors === 'function' )
+        resizeAllEditors();
+}
+
+function toggleRightPanel()
+{
+    if( window.rightPanelVisible )
+        hideRightPanel();
+    else
+        showRightPanel();
+}
+
+function initRightPanel()
+{
+    let resizer = document.getElementById( 'right-panel-resizer' );
+    if( !resizer )
+    {
+        resizer = document.createElement( 'div' );
+        resizer.id = 'right-panel-resizer';
+        resizer.title = 'Drag to resize';
+        document.body.appendChild( resizer );
+    }
+
+    const saved = parseInt( localStorage.getItem( 'acaret-right-panel-width' ) || '449', 10 );
+    setRightPanelWidth( isNaN( saved ) ? 449 : saved );
+
+    let dragging = false;
+    let startX = 0;
+    let startWidth = 0;
+
+    resizer.addEventListener( 'mousedown', function( e ) {
+        if( !window.rightPanelVisible )
+            return;
+        dragging = true;
+        startX = e.clientX;
+        startWidth = parseInt( getComputedStyle( document.documentElement ).getPropertyValue( '--right-panel-width' ), 10 ) || 449;
+        document.body.classList.add( 'right-panel-resizing' );
+        e.preventDefault();
+    } );
+
+    document.addEventListener( 'mousemove', function( e ) {
+        if( !dragging )
+            return;
+        setRightPanelWidth( startWidth + ( startX - e.clientX ) );
+    } );
+
+    document.addEventListener( 'mouseup', function() {
+        if( !dragging )
+            return;
+        dragging = false;
+        document.body.classList.remove( 'right-panel-resizing' );
+        const w = parseInt( getComputedStyle( document.documentElement ).getPropertyValue( '--right-panel-width' ), 10 );
+        if( !isNaN( w ) && w > 0 )
+            localStorage.setItem( 'acaret-right-panel-width', String( w ) );
+    } );
 }
 
 function initTabs( element, options = false )
 {
     let tabButtons = document.querySelector( '#' + element ).getElementsByTagName( 'button' );
+    const isRightBar = element === 'rightbar';
     for( let a = 0; a < tabButtons.length; a++ )
     {
         tabButtons[a].onclick = () => {
+            let pageId = tabButtons[a].id.split( 'tab_' ).join( 'page_' );
+            let page = document.getElementById( pageId );
+            let tabKey = getToolbarKeyForTab( tabButtons[a] );
+
+            if( isRightBar )
+            {
+                let wasActive = tabButtons[a].classList.contains( 'active' );
+                if( wasActive )
+                {
+                    toggleRightPanel();
+                    return;
+                }
+                showRightPanel();
+            }
+
             if( tabButtons.length == 1 )
             {
                 if( tabButtons[a].classList.contains( 'active' ) )
                 {
                     tabButtons[a].classList.remove( 'active' );
-                    document.getElementById( tabButtons[a].id.split( 'tab_' ).join( 'page_' ) ).classList.remove( 'active' );
+                    page.classList.remove( 'active' );
                 }
                 else
                 {
                     tabButtons[a].classList.add( 'active' );
-                    document.getElementById( tabButtons[a].id.split( 'tab_' ).join( 'page_' ) ).classList.add( 'active' );
+                    page.classList.add( 'active' );
                 }
                 return;
             }
             tabButtons[a].classList.add( 'active' );
-            document.getElementById( tabButtons[a].id.split( 'tab_' ).join( 'page_' ) ).classList.add( 'active' );
+            page.classList.add( 'active' );
             for( let b = 0; b < tabButtons.length; b++ )
             {
                 if( b == a ) continue;
                 tabButtons[b].classList.remove( 'active' );
                 document.getElementById( tabButtons[b].id.split( 'tab_' ).join( 'page_' ) ).classList.remove( 'active' );
             }
-            if( window.toolbar[ tabButtons[a].id.split( '_' )[1] ] )
+            if( window.toolbar[ tabKey ] )
             {
-                window.toolbar[ tabButtons[a].id.split( '_' )[1] ]();
+                window.toolbar[ tabKey ]();
             }
         }
     }
     if( !options || options.state != 'inactive' )
-        tabButtons[0].click();
+    {
+        let defaultId = ( options && options.defaultTabId ) ? options.defaultTabId : tabButtons[0].id;
+        for( let a = 0; a < tabButtons.length; a++ )
+        {
+            if( tabButtons[a].id === defaultId )
+            {
+                tabButtons[a].click();
+                break;
+            }
+        }
+    }
 }
 
 // Check the context menus..

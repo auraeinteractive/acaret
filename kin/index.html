@@ -3,10 +3,15 @@
     <head>
         <title>Acaret</title>
         <link rel="icon" href="app.png" type="image/png" />
+        <link rel="preconnect" href="https://fonts.googleapis.com"/>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+        <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400..900&display=swap" rel="stylesheet"/>
         <link rel="stylesheet" href="styles/main.css"/>
         <link rel="stylesheet" href="styles/page-flow-nodes.css"/>
         <link rel="stylesheet" href="../kin_ui/theme/kin-ui.css"/>
         <script type="text/javascript" src="libs/ace/src-noconflict/ace.js" charset="utf-8"></script>
+        <script type="text/javascript" src="libs/ace/src-noconflict/mode-javascript.js" charset="utf-8"></script>
+        <script type="text/javascript" src="libs/ace/src-noconflict/theme-twilight.js" charset="utf-8"></script>
         <script type="text/javascript" src="js/showdown.min.js"></script>
         <script type="text/javascript" src="js/signals.js"></script>
         <script type="text/javascript" src="js/conversation_logic.js"></script>
@@ -46,14 +51,15 @@
             <button class="button btn-document" id="tab_document">Document settings</button>
         </div>
         <div id="rightbar">
-            <button class="button btn-chat active" id="tab_chat"><span>Chat</span></button>
-            <button class="button btn-folders" id="tab_folders"><span>Folders</span></button>
+            <button class="button btn-chat" id="tab_chat"><span>Chat</span></button>
+            <button class="button btn-folders active" id="tab_folders"><span>Folders</span></button>
             <button class="button btn-translations" id="tab_translations"><span>Translations</span></button>
             <button class="button btn-tags" id="tab_tags"><span>Tags</span></button>
             <button class="button btn-navigator" id="tab_navigator"><span>Navigator</span></button>
         </div>
+        <div id="right-panel-resizer" title="Drag to resize"></div>
         <div id="rightpages">
-            <div class="page active" id="page_chat">
+            <div class="page" id="page_chat">
                 <div id="chat">
                     <div class="messages">
                     </div>
@@ -66,7 +72,7 @@
                     </div>
                 </div>
             </div>
-            <div class="page" id="page_folders">
+            <div class="page active" id="page_folders">
             </div>
             <div class="page" id="page_translations">
             </div>
@@ -205,8 +211,15 @@
         </div>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            window.convos = new Conversation({ messageContainer: document.querySelector('.messages') });
-            initializeGUI();
+            requestAnimationFrame(function() {
+                requestAnimationFrame(function() {
+                    window.convos = new Conversation({ messageContainer: document.querySelector('.messages') });
+                    initializeGUI();
+                    if (typeof resizeAllEditors === 'function') {
+                        resizeAllEditors();
+                    }
+                });
+            });
         });
     </script>
     </body>

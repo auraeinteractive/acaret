@@ -5,6 +5,19 @@
     --background-border: 1px solid #30303088;
     --tab-background: #262626;
     --tab-background-active: #303030;
+    --right-panel-width: 449px;
+    --rightbar-width: 51px;
+    --leftbar-offset: 51px;
+    --app-font: "Maven Pro", sans-serif;
+    --app-font-size: 14px;
+}
+
+html, body
+{
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
 }
 
 body 
@@ -12,7 +25,9 @@ body
     background-color: #303030;
     color: white;
     overflow: hidden;
-    font-size: 15px;
+    font-family: var(--app-font);
+    font-size: var(--app-font-size);
+    position: relative;
 }
 
 button
@@ -24,6 +39,8 @@ button
     padding: 5px 8px;
     cursor: pointer;
     opacity: 0.7;
+    font-family: inherit;
+    font-size: inherit;
 }
 button:hover
 {
@@ -35,6 +52,8 @@ input, textarea
     padding: 4px 8px;
     border: 0;
     border-radius: 3px;
+    font-family: inherit;
+    font-size: inherit;
 }
 
 hr
@@ -103,8 +122,8 @@ hr
 #topbar #top_chat_title
 {
     position: absolute;
-    left: calc(100% - 501px);
-    width: 450px;
+    left: calc(100% - var(--rightbar-width) - var(--right-panel-width));
+    width: var(--right-panel-width);
     height: 100%;
     top: 0;
     padding: 0 10px 0 10px;
@@ -112,6 +131,7 @@ hr
     border-left: 1px solid #00000055;
     color: white;
     box-sizing: border-box;
+    transition: opacity 0.15s ease;
 }
 
 #topbar #top_chat_title > div:first-child:before
@@ -253,7 +273,7 @@ hr
 {
     position: absolute;
     left: 0;
-    width: calc(100% - 501px);
+    width: calc(100% - var(--rightbar-width) - var(--right-panel-width));
     height: 100%;
     top: 0;
     padding: 0;
@@ -339,7 +359,7 @@ hr
 {
     left: auto;
     right: 0;
-    width: 51px;
+    width: var(--rightbar-width);
     border-left: var(--background-border);
 }
 
@@ -568,8 +588,8 @@ hr
     position: absolute;
     top: 35px;
     bottom: 35px;
-    left: 51px;
-    width: calc(100% - 551px);
+    left: var(--leftbar-offset);
+    width: calc(100% - var(--leftbar-offset) - var(--rightbar-width) - var(--right-panel-width));
     overflow: hidden;
     pointer-events: none;
 }
@@ -600,7 +620,7 @@ hr
 #page_preview > div p
 {
     margin: 0 0 20px 0;
-    font-size: 15px;
+    font-size: var(--app-font-size);
 }
 
 #page_preview > div h2
@@ -645,13 +665,60 @@ hr
     margin: 0;
     position: absolute;
     top: 35px;
-    left: calc(100% - 501px);
-    width: 449px;
+    left: calc(100% - var(--rightbar-width) - var(--right-panel-width));
+    width: var(--right-panel-width);
     bottom: 35px;
     background: var(--panel-background);
     color: white;
-    color: black;
     box-sizing: border-box;
+    z-index: 2;
+    transition: opacity 0.15s ease;
+    overflow: hidden;
+}
+
+#right-panel-resizer
+{
+    position: absolute;
+    top: 35px;
+    bottom: 35px;
+    left: calc(100% - var(--rightbar-width) - var(--right-panel-width) - 2px);
+    width: 5px;
+    cursor: col-resize;
+    z-index: 4;
+    touch-action: none;
+}
+
+#right-panel-resizer::before
+{
+    content: " ";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 2px;
+    width: 1px;
+    background: #ffffff22;
+    transition: background 0.15s ease, width 0.15s ease, left 0.15s ease;
+}
+
+#right-panel-resizer:hover::before,
+body.right-panel-resizing #right-panel-resizer::before
+{
+    left: 1px;
+    width: 3px;
+    background: #ffffff55;
+}
+
+body.right-panel-collapsed #rightpages,
+body.right-panel-collapsed #topbar #top_chat_title,
+body.right-panel-collapsed #right-panel-resizer
+{
+    opacity: 0;
+    pointer-events: none;
+}
+
+body.right-panel-collapsed
+{
+    --right-panel-width: 0px;
 }
 
 #chat
@@ -776,7 +843,7 @@ hr
     height: 70px;
     padding: 10px;
     box-sizing: border-box;
-    font-size: 13px;
+    font-size: var(--app-font-size);
     display: flex;
     gap: 10px;
     align-items: center;

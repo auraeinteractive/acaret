@@ -222,11 +222,9 @@ function receiveFolders( path, data, depth = 0 )
 }
 
 
-// Tag: Refreshing the folder structure the first time
-window.addEventListener( 'load', () => {
-    refreshFolderStructure( currentFolder );
-} );
-window.addEventListener('message', function(event) 
+// Folders are refreshed from initializeGUI() at startup.
+
+window.addEventListener('message', function(event)
 {
     if (event.data && event.data.type === "folderStructure") {
         console.log("Received folder structure:", event.data.files);

@@ -169,6 +169,8 @@ async function handleMenuCommand(cmd) {
                             currentEditor.filename = kinPath;
                         }
                     }
+                    if (typeof updateEditorTabLabel === 'function')
+                        updateEditorTabLabel(currentEditor);
                     await saveFileToPath(savePath, currentEditor.getValue());
                 }
             }
@@ -217,6 +219,8 @@ async function saveFileToPath(path, content) {
             console.log('File saved:', path);
             if (typeof currentEditor !== 'undefined' && currentEditor) {
                 currentEditor.document_saved = true;
+                if (typeof updateEditorTabLabel === 'function')
+                    updateEditorTabLabel(currentEditor);
                 if (typeof updateBottomBar === 'function') updateBottomBar();
             }
         } else {
