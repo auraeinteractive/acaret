@@ -4,43 +4,110 @@
         catch (_e) { return ''; }
     }
 
-    function loadBootstrapEntry() {
+    async function init() {
         var pkg = qp('kin_repo_package') || 'kin_acaret';
-        var s = document.createElement('script');
-        s.src = '/repository/' + encodeURIComponent(pkg) + '/app-content.js';
-        s.charset = 'utf-8';
-        document.head.appendChild(s);
-    }
+        var base = '/repository/' + encodeURIComponent(pkg) + '/';
 
-    function run() {
-        if (!window.kin || !kin.classes || !kin.classes.Window) {
-            console.warn('kin_acaret: kin.classes.Window unavailable, loading app inline');
-            loadBootstrapEntry();
-            return;
+        if (!document.querySelector('base')) {
+            var baseEl = document.createElement('base');
+            baseEl.href = base;
+            document.head.insertBefore(baseEl, document.head.firstChild);
         }
 
-        var pkg = qp('kin_repo_package') || 'kin_acaret';
-        var query = {};
-        var openPath = qp('kin_open_path') || qp('path');
-        if (openPath) {
-            query.kin_open_path = openPath;
+        var resp = await fetch(base + 'index.html');
+        if (!resp.ok) {
+            throw new Error('Failed to load index.html: ' + resp.status);
+        }
+        var html = await resp.text();
+
+        html = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+
+        var headMatch = html.match(/<head>([\s\S]*?)<\/head>/i);
+        if (headMatch) {
+            var headTemp = document.createElement('div');
+            headTemp.innerHTML = headMatch[1];
+            for (var hi = 0; hi < headTemp.children.length; hi++) {
+                var tag = headTemp.children[hi].tagName;
+                if (tag === 'LINK' || tag === 'TITLE' || tag === 'META') {
+                    document.head.appendChild(headTemp.children[hi].cloneNode(true));
+                }
+            }
         }
 
-        new kin.classes.Window({
-            entry: 'app-content.js',
-            packageId: pkg,
-            title: 'Acaret — Code Editor',
-            width: 1280,
-            height: 800,
-            quitOnClose: true,
-            query: query,
-            assets: [
-                { type: 'css', href: 'styles/main.css' },
-                { type: 'css', href: 'styles/page-flow-nodes.css' },
-                { type: 'css', href: '../kin_ui/theme/kin-ui.css' }
-            ]
+        var bodyMatch = html.match(/<body>([\s\S]*?)<\/body>/i);
+        if (bodyMatch) {
+            document.body.innerHTML = bodyMatch[1];
+        } else {
+            document.body.innerHTML = html;
+        }
+
+        var jsFiles = [
+            'libs/ace/src-noconflict/ace.js',
+            'libs/ace/src-noconflict/mode-javascript.js',
+            'libs/ace/src-noconflict/theme-twilight.js',
+            'js/showdown.min.js',
+            'js/signals.js',
+            'js/conversation_logic.js',
+            'js/conversation.js',
+            'js/gui-logic.js',
+            'js/page-editor.js',
+            'js/page-shop.js',
+            'js/page-flow-nodes.js',
+            'js/page-ai-tools.js',
+            'js/page-version-control.js',
+            'js/page-project.js',
+            'js/page-chat.js',
+            'js/page-folders.js',
+            'js/page-translations.js',
+            'js/page-tags.js',
+            'js/page-navigator.js'
+        ];
+
+        for (var i = 0; i < jsFiles.length; i++) {
+            await loadScript(base + jsFiles[i]);
+        }
+
+        function startApp() {
+            window.convos = new Conversation({ messageContainer: document.querySelector('.messages') });
+            initializeGUI();
+
+            if (typeof resizeAllEditors === 'function') {
+                resizeAllEditors();
+            }
+
+            var openPath = qp('kin_open_path') || qp('path');
+            if (openPath && typeof loadFileFromPath === 'function') {
+                loadFileFromPath(openPath);
+            }
+
+            try {
+                parent.postMessage({ kinRepositoryAppLoaded: true }, window.location.origin);
+            } catch (_e) { /* ignore */ }
+        }
+
+        requestAnimationFrame(function() {
+            requestAnimationFrame(startApp);
         });
     }
 
-    run();
+    function loadScript(src) {
+        return new Promise(function(resolve) {
+            var s = document.createElement('script');
+            s.src = src;
+            s.charset = 'utf-8';
+            s.onload = resolve;
+            s.onerror = function() {
+                console.error('Failed to load:', src);
+                resolve();
+            };
+            document.head.appendChild(s);
+        });
+    }
+
+    init().catch(function(e) {
+        console.error('kin_acaret init error:', e);
+        try {
+            parent.postMessage({ kinRepositoryAppLoaded: true }, window.location.origin);
+        } catch (_e) { /* ignore */ }
+    });
 })();

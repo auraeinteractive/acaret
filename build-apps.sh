@@ -1,5 +1,5 @@
 #!/bin/bash
-# Install Acaret Kin app to Kin build directory
+# Install Acaret Kin app into the Kin source repository and sync to build/
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_DIR="$SCRIPT_DIR/kin"
 BUILD_DIR="$SCRIPT_DIR/build/repository/Applications/Development"
@@ -40,19 +40,23 @@ prompt_kin_path() {
 install_to_kin() {
     if [ -z "$KIN_BUILD_PATH" ]; then return; fi
 
-    KIN_REPO_DIR="$KIN_BUILD_PATH/repository/Applications"
-    if [ ! -d "$KIN_REPO_DIR" ]; then
-        KIN_REPO_DIR="$KIN_BUILD_PATH/applications"
-    fi
-    if [ ! -d "$KIN_REPO_DIR" ]; then
-        echo "Error: Kin repository directory not found"
-        return
+    # Kin source tree: sibling of build/ (e.g. .../kin/repository)
+    KIN_SOURCE_PATH="${KIN_BUILD_PATH%/build}"
+    if [ ! -d "$KIN_SOURCE_PATH/repository" ]; then
+        echo "Error: Kin source repository not found at $KIN_SOURCE_PATH/repository"
+        echo "       Expected layout: <kin>/repository and <kin>/build"
+        return 1
     fi
 
-    echo "Installing Acaret to Kin build..."
-    mkdir -p "$KIN_REPO_DIR/Development"
-    rsync -av --delete "$SOURCE_DIR/" "$KIN_REPO_DIR/Development/kin_acaret/"
-    echo "Acaret installed to Kin build."
+    KIN_APP_SRC="$KIN_SOURCE_PATH/repository/Applications/Development/kin_acaret"
+    echo "Installing Acaret to Kin source: $KIN_APP_SRC"
+    mkdir -p "$(dirname "$KIN_APP_SRC")"
+    rsync -av --delete "$SOURCE_DIR/" "$KIN_APP_SRC/"
+
+    echo "Syncing repository/ to build/repository/..."
+    rsync -av --delete "$KIN_SOURCE_PATH/repository/" "$KIN_BUILD_PATH/repository/"
+
+    echo "Acaret installed. Restart Kin to pick up changes."
 }
 
 load_config
@@ -81,7 +85,7 @@ else
 fi
 
 echo ""
-echo "=== Installing to Kin build ==="
+echo "=== Installing to Kin ==="
 if [ -n "$KIN_BUILD_PATH" ]; then
     install_to_kin
 fi
