@@ -548,63 +548,112 @@ class Conversation
             ctx.push( { role: 'system', content: options.instruction } );
         }
 
-        // Tag: Define the API endpoint
+        // Try Kin messaging service first, fall back to direct Ollama
+        try {
+            if (window.kin && kin.api && typeof kin.api.sendPeerMessage === 'function') {
+                await this.sendViaKinMessaging(ctx, options);
+            } else {
+                await this.sendViaDirectAPI(ctx, options);
+            }
+        } catch (error) {
+            console.error('AI chat error:', error);
+            // Fallback to direct API if Kin messaging fails
+            if (error.message !== 'fallback_to_direct') throw error;
+            await this.sendViaDirectAPI(ctx, options);
+        }
+    }
+
+    // Send message via Kin messaging service
+    async sendViaKinMessaging(ctx, options) {
+        let self = this;
+        let streamId = streamIdSeed++;
+        let fullContent = '';
+
+        const peerMsg = {
+            type: 'chat',
+            messages: ctx,
+            model: 'qwen2.5-coder',
+            stream: true,
+            temperature: 0.1
+        };
+
+        try {
+            const response = await kin.api.sendPeerMessage('kin_messaging', peerMsg);
+
+            if (response && response.stream) {
+                const reader = response.stream.getReader();
+                const decoder = new TextDecoder();
+                let done = false;
+
+                while (!done) {
+                    const { value, done: chunkDone } = await reader.read();
+                    done = chunkDone;
+                    if (value) {
+                        const text = decoder.decode(value, { stream: true });
+                        fullContent += text;
+                        handleStreamData(streamId, text, options);
+                    }
+                }
+            } else if (response && response.content) {
+                handleStreamData(streamId, 'data: ' + JSON.stringify({
+                    choices: [{ delta: { content: response.content }, finish_reason: 'stop' }]
+                }), options);
+            }
+        } catch (e) {
+            console.warn('Kin messaging failed, falling back to direct API:', e);
+            throw new Error('fallback_to_direct');
+        }
+    }
+
+    // Send message directly to Ollama-compatible API
+    async sendViaDirectAPI(ctx, options) {
         const API_URL = chatSettings.protocol + '://' + chatSettings.server + ':' + chatSettings.port + '/v1/chat/completions';
 
-        // Tag: Define the system prompt configuration (if needed)
         const systemPrompt = {
             prompt: 'You are the AI assistant of the code editor Acursor.',
             anti_prompt: 'User:',
             assistant_name: 'Assistant:'
         };
 
-        // Prepare the request body
         const body = JSON.stringify({
-            model: 'qwen2.5-coder',       // The model you want to use
+            model: 'qwen2.5-coder',
             messages: ctx,
-            system_prompt: systemPrompt,  // System context
-            repeat_penalty: 1.2,          // Penalty for repeated tokens
-            repeat_last_n: 1024,          // Scope of token repetition to penalize
-            temperature: 0.1,             // Sampling temperature
-            cache_prompt: true,           // Whether to cache the prompt
-            stream: true                  // Enable streaming
+            system_prompt: systemPrompt,
+            repeat_penalty: 1.2,
+            repeat_last_n: 1024,
+            temperature: 0.1,
+            cache_prompt: true,
+            stream: true
         });
 
-        try {
-            promptConnCtrl = new AbortController();
-            const signal = promptConnCtrl.signal;
-            
-            // Send the request using fetch
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer no-key',
-                    'Accept': '*/*'
-                },
-                body: body,
-                signal
-            });
+        promptConnCtrl = new AbortController();
+        const signal = promptConnCtrl.signal;
 
-            if (!response.ok) {
-                throw new Error(`Error: ${response.statusText}`);
-            }
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer no-key',
+                'Accept': '*/*'
+            },
+            body: body,
+            signal
+        });
 
-            // Process the streamed response
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let done = false;
-            let streamId = streamIdSeed++;
+        if (!response.ok) {
+            throw new Error(`Error: ${response.statusText}`);
+        }
 
-            // Handle the streamed data
-            while (!done) {
-                const { value, done: chunkDone } = await reader.read();
-                done = chunkDone;
-                const chunkText = decoder.decode(value, { stream: true });
-                handleStreamData(streamId, chunkText, options );
-            }
-        } catch (error) {
-            console.error("Error occurred:", error);
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let done = false;
+        let streamId = streamIdSeed++;
+
+        while (!done) {
+            const { value, done: chunkDone } = await reader.read();
+            done = chunkDone;
+            const chunkText = decoder.decode(value, { stream: true });
+            handleStreamData(streamId, chunkText, options);
         }
     }
 

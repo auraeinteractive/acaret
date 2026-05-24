@@ -1,113 +1,74 @@
-# Agent Development Guide for Acaret
+# Acaret — Kin Code Editor
 
 ## Project Overview
 
-Acaret is an AI development environment - a GTK/WebKit desktop application built in C with JavaScript frontend.
+Acaret is **Kin's code editor** — a pure JavaScript Kin repository app running in Kin's WebKit iframe system. It uses ACE Editor for code editing, Kin APIs for file I/O, menus, and dialogs, and Kin's messaging service for AI chat.
 
 ## Technology Stack
 
-- **Backend**: C with custom OOP framework (`src/oop/`)
-- **Frontend**: JavaScript with ACE Editor
-- **GUI**: GTK 4.1 + WebKitGTK
-- **Build**: Makefile with gcc
+- **Runtime**: Kin workspace WebKit iframe (no C backend)
+- **Editor**: ACE Editor (ajaxorg/ace-builds)
+- **Frontend**: Plain JavaScript with custom HTML/CSS layout
+- **Kin APIs**: `kin.classes.Window`, postMessage bridges, Kin HTTP APIs
+- **AI**: Kin messaging service (via `ai.library`)
+
+## Architecture
+
+```
+kin_acaret/
+  manifest.json    # App descriptor (id: kin_acaret, entry: main.js)
+  main.js           # IIFE entry → kin.classes.Window
+  index.html        # HTML UI template
+  js/
+    signals.js      # Kin bridge (menus, file dialogs, file I/O)
+    conversation.js  # AI chat client
+    page-editor.js   # ACE Editor integration
+    page-folders.js  # Kin file browser
+    page-*.js        # Other panels
+  styles/
+    main.css        # App styling
+    feather/        # Icon SVGs
+  libs/ace/         # ACE editor
+```
+
+## Specs
+
+See [specs/README.md](specs/README.md) for architecture and WBS documentation.
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `kin/main.js` | IIFE entry — creates `kin.classes.Window` |
+| `kin/js/signals.js` | Kin API bridge: menus, file dialogs, Dormant Drive I/O |
+| `kin/js/page-editor.js` | ACE Editor management (tabs, file ops) |
+| `kin/manifest.json` | App registration |
+
+## Kin Integration Points
+
+### Menus
+Registered via `postMessage({ kinAppRegisterMenus: true, instanceId, menus })` in `signals.js:registerKinMenus()`. Commands dispatched via `kinMenuCommand`.
+
+### File Dialogs
+Opened via `postMessage({ kinOpenFileDialog: true, mode: 'load'|'save', ... })`. Responses handled via `kinFileDialogResult`.
+
+### File I/O
+Uses Kin HTTP APIs: `POST /api/file/read`, `POST /api/file/write`, `POST /api/dir`.
+
+### AI Chat
+Currently uses direct Ollama HTTP calls (`conversation.js:sendMessageNow`). Target: route through Kin messaging service via `kin.api.sendPeerMessage()`.
 
 ## Building
 
 ```bash
-make        # Full build (executable, certs, ace editor)
-make clean  # Clean build artifacts
+./build-apps.sh              # Install to Kin build
+make                         # Build acaret.cmd
+./make-debian.sh             # Build .deb package
 ```
 
-## Key Directories
+## Conventions
 
-- `src/` - C source code
-  - `gui/` - GTK/WebKit GUI components
-  - `oop/` - Custom OOP object system
-  - `proxy/` - Local proxy server
-  - `system/` - Session and system utilities
-- `assets/` - JS, CSS, and frontend assets
-- `config/` - SSL certificates (auto-generated)
-- `docs/` - Documentation
-
-## OOP System (src/oop/)
-
-The codebase uses a custom `mlObject` OOP system:
-
-```c
-typedef struct mlObject {
-    struct mlObject *parent;           // Parent class for inheritance
-    mlMethodEntry *method_table;       // Method table
-    int method_count;                  
-    mlAttributeEntry *attributes;      // Attribute table
-    int attribute_count;               
-    mlEvent *events;                   // Event handlers
-    int event_count;                   
-} mlObject;
-```
-
-Key functions:
-- `mlDoMethod(obj, "methodName", data)` - Call a method
-- `mlDoSuperMethod(obj, "methodName", data)` - Call parent method
-- `mlAddEvent(obj, "eventName", callback)` - Register event handler
-- `mlSetAttribute(obj, "key", value)` - Set attribute
-- `myGetAttribute(obj, "key")` - Get attribute
-
-## Creating New Objects
-
-Example from `src/gui/view.c`:
-
-```c
-mlObject *mlViewCreate(mlObject *parent) {
-    mlView *view = mlObjectCreateWithSize(sizeof(mlObject), sizeof(mlView), parent);
-    // Initialize GTK window, WebView, etc.
-    // Add methods to method table
-    return (mlObject *)view;
-}
-```
-
-## Code Conventions
-
-- C code uses custom `mlObject` OOP system with `mlDoMethod()` for method calls
-- GTK signals via `mlAddEvent()`
-- Proxy server handles HTTP/HTTPS traffic with mutex-protected network operations
-- JavaScript frontend communicates via signals to C backend
-
-## Building
-
-```bash
-make        # Full build (executable, certs, ace editor)
-make clean  # Clean build artifacts
-make release  # Create release zip for Kin repository
-```
-
-## Release
-
-```bash
-make release  # Creates releases/acaret_{version}.zip
-```
-
-The release contains:
-- `acaret/` executable, assets, config (standalone desktop app)
-- `acaret/repository/Applications/Development/acaret/` (Kin app)
-- `acaret/commands/acaret.cmd/` (System command)
-
-Extract the zip into the Kin repository:
-```bash
-# Extract app
-unzip releases/acaret_*.zip 'acaret/repository/*' -d ~/kin/
-
-# Extract command (build it in Kin context)
-cp -r acaret/commands/acaret.cmd ~/kin/commands/
-cd ~/kin/commands/acaret.cmd && make
-```
-
-## Testing
-
-Run `make && ./acaret` or use test scripts in project root.
-
-## Conventions for Changes
-
-1. C changes: Follow existing signal/callback patterns
-2. GUI changes: Use WebKit HTML/JS approach
-3. Build system changes: Update Makefile
-4. Test after changes to verify proxy and GUI still work
+1. All Kin interactions go through `signals.js` (the bridge module)
+2. Keep the custom HTML/CSS layout — don't convert to Kin UI declarative widgets
+3. New features should use Kin APIs (not C backend or direct HTTP to external services)
+4. AI features should eventually use Kin messaging service

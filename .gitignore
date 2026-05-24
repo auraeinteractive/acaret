@@ -2,8 +2,8 @@ install.ini
 acaret
 obj/
 tmp/
-config/*.crt
-config/*.key
-config/*.pem
+config/
+build/
+dist/
 *.o
 *.zip

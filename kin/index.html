@@ -5,6 +5,7 @@
         <link rel="icon" href="app.png" type="image/png" />
         <link rel="stylesheet" href="styles/main.css"/>
         <link rel="stylesheet" href="styles/page-flow-nodes.css"/>
+        <link rel="stylesheet" href="../kin_ui/theme/kin-ui.css"/>
         <script type="text/javascript" src="libs/ace/src-noconflict/ace.js" charset="utf-8"></script>
         <script type="text/javascript" src="js/showdown.min.js"></script>
         <script type="text/javascript" src="js/signals.js"></script>
@@ -23,7 +24,7 @@
         <script type="text/javascript" src="js/page-tags.js"></script>
         <script type="text/javascript" src="js/page-navigator.js"></script>
     </head>
-    <body onload="window.convos = new Conversation( { messageContainer: document.querySelector( '.messages' ) } ); initializeGUI()">
+    <body>
         <div id="overlay"></div>
         <div id="leftbar">
             <button class="button btn-editor active" id="tab_editor"><span>Editor</span></button>
@@ -202,5 +203,11 @@
                 </div>
             </div>
         </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            window.convos = new Conversation({ messageContainer: document.querySelector('.messages') });
+            initializeGUI();
+        });
+    </script>
     </body>
 </html>

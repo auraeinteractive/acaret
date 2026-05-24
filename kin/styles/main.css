@@ -132,23 +132,23 @@ hr
 }
 #topbar #top_chat_title > div.chat:before
 {
-    background-image: url(/repository/Applications/Development/acaret/styles/feather/message-circle.svg);
+    background-image: url(feather/message-circle.svg);
 }
 #topbar #top_chat_title > div.folders:before
 {
-    background-image: url(/repository/Applications/Development/acaret/styles/feather/folder.svg);
+    background-image: url(feather/folder.svg);
 }
 #topbar #top_chat_title > div.translations:before
 {
-    background-image: url(/repository/Applications/Development/acaret/styles/feather/globe.svg);
+    background-image: url(feather/globe.svg);
 }
 #topbar #top_chat_title > div.tags:before
 {
-    background-image: url(/repository/Applications/Development/acaret/styles/feather/tag.svg);
+    background-image: url(feather/tag.svg);
 }
 #topbar #top_chat_title > div.navigator:before
 {
-    background-image: url(/repository/Applications/Development/acaret/styles/feather/navigation.svg);
+    background-image: url(feather/navigation.svg);
 }
 
 #topbar #top_chat_title > div
@@ -205,48 +205,48 @@ hr
 
 #topbar #top_chat_title .chat-more
 {
-    background-image: url(/repository/Applications/Development/acaret/styles/feather/more-vertical.svg);
+    background-image: url(feather/more-vertical.svg);
 }
 
 #topbar #top_chat_title .chat-reset
 {
-    background-image: url(/repository/Applications/Development/acaret/styles/feather/trash.svg);
+    background-image: url(feather/trash.svg);
 }
 
 #topbar #top_chat_title .chat-save
 {
-    background-image: url(/repository/Applications/Development/acaret/styles/feather/archive.svg);
+    background-image: url(feather/archive.svg);
 }
 
 #topbar #top_chat_title .folders-rename
 {
-    background-image: url(/repository/Applications/Development/acaret/styles/feather/edit-3.svg);
+    background-image: url(feather/edit-3.svg);
 }
 #topbar #top_chat_title .folders-refresh
 {
-    background-image: url(/repository/Applications/Development/acaret/styles/feather/refresh-ccw.svg);
+    background-image: url(feather/refresh-ccw.svg);
 }
 #topbar #top_chat_title .folders-new
 {
-    background-image: url(/repository/Applications/Development/acaret/styles/feather/folder-plus.svg);
+    background-image: url(feather/folder-plus.svg);
 }
 #topbar #top_chat_title .file-new
 {
-    background-image: url(/repository/Applications/Development/acaret/styles/feather/file-plus.svg);
+    background-image: url(feather/file-plus.svg);
 }
 #topbar #top_chat_title .folders-back
 {
-    background-image: url(/repository/Applications/Development/acaret/styles/feather/corner-left-up.svg);
+    background-image: url(feather/corner-left-up.svg);
 }
 
 
 #topbar #top_chat_title .language-add
 {
-    background-image: url(/repository/Applications/Development/acaret/styles/feather/flag.svg);
+    background-image: url(feather/flag.svg);
 }
 #topbar #top_chat_title .language-key
 {
-    background-image: url(/repository/Applications/Development/acaret/styles/feather/edit-3.svg);
+    background-image: url(feather/edit-3.svg);
 }
 
 #topbar #top_toolbar
@@ -328,12 +328,12 @@ hr
     margin: 10px 0 10px 0;
 }
 
-#leftbar .button.btn-editor:before { background-image: url(/repository/Applications/Development/acaret/styles/feather/code.svg); }
-#leftbar .button.btn-shop:before { background-image: url(/repository/Applications/Development/acaret/styles/feather/shopping-cart.svg); }
-#leftbar .button.btn-flow-nodes:before { background-image: url(/repository/Applications/Development/acaret/styles/feather/hexagon.svg); }
-#leftbar .button.btn-ai-tools:before { background-image: url(/repository/Applications/Development/acaret/styles/feather/user.svg); }
-#leftbar .button.btn-version-control:before { background-image: url(/repository/Applications/Development/acaret/styles/feather/git-branch.svg); }
-#leftbar .button.btn-project:before { background-image: url(/repository/Applications/Development/acaret/styles/feather/briefcase.svg); }
+#leftbar .button.btn-editor:before { background-image: url(feather/code.svg); }
+#leftbar .button.btn-shop:before { background-image: url(feather/shopping-cart.svg); }
+#leftbar .button.btn-flow-nodes:before { background-image: url(feather/hexagon.svg); }
+#leftbar .button.btn-ai-tools:before { background-image: url(feather/user.svg); }
+#leftbar .button.btn-version-control:before { background-image: url(feather/git-branch.svg); }
+#leftbar .button.btn-project:before { background-image: url(feather/briefcase.svg); }
 
 #rightbar
 {
@@ -349,11 +349,11 @@ hr
     transform: rotate(0deg);
 }
 
-#rightbar .button.btn-chat:before { background-image: url(/repository/Applications/Development/acaret/styles/feather/message-circle.svg); }
-#rightbar .button.btn-folders:before { background-image: url(/repository/Applications/Development/acaret/styles/feather/folder.svg); }
-#rightbar .button.btn-translations:before { background-image: url(/repository/Applications/Development/acaret/styles/feather/globe.svg); }
-#rightbar .button.btn-tags:before { background-image: url(/repository/Applications/Development/acaret/styles/feather/tag.svg); }
-#rightbar .button.btn-navigator:before { background-image: url(/repository/Applications/Development/acaret/styles/feather/navigation.svg); }
+#rightbar .button.btn-chat:before { background-image: url(feather/message-circle.svg); }
+#rightbar .button.btn-folders:before { background-image: url(feather/folder.svg); }
+#rightbar .button.btn-translations:before { background-image: url(feather/globe.svg); }
+#rightbar .button.btn-tags:before { background-image: url(feather/tag.svg); }
+#rightbar .button.btn-navigator:before { background-image: url(feather/navigation.svg); }
 
 #bottombar
 {
@@ -415,7 +415,7 @@ hr
     height: 34px;
     display: inline-block;
     margin: 0 10px 0 10px;
-    background-image: url('/repository/Applications/Development/acaret/styles/feather/alert-triangle.svg');
+    background-image: url('feather/alert-triangle.svg');
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
@@ -433,7 +433,7 @@ hr
     height: 34px;
     display: inline-block;
     margin: 0 10px 0 10px;
-    background-image: url('/repository/Applications/Development/acaret/styles/feather/file-text.svg');
+    background-image: url('feather/file-text.svg');
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
@@ -478,7 +478,7 @@ hr
     height: 16px;
     right: 10px;
     top: 10px;
-    background-image: url(/repository/Applications/Development/acaret/styles/feather/x.svg);
+    background-image: url(feather/x.svg);
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
@@ -555,7 +555,7 @@ hr
     width: 20px;
     height: 20px;
     filter: invert(1);
-    background-image: url(/repository/Applications/Development/acaret/styles/feather/x-circle.svg);
+    background-image: url(feather/x-circle.svg);
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
@@ -822,22 +822,22 @@ hr
 
 #chat .chat span.chat-aperture
 {
-    background-image: url(/repository/Applications/Development/acaret/styles/feather/aperture.svg);
+    background-image: url(feather/aperture.svg);
 }
 
 .chat-connection-error #chat .chat span.chat-aperture
 {
-    background-image: url(/repository/Applications/Development/acaret/styles/feather/alert-circle.svg);
+    background-image: url(feather/alert-circle.svg);
 }
 
 #chat .chat span.chat-send
 {
-    background-image: url(/repository/Applications/Development/acaret/styles/feather/send.svg);
+    background-image: url(feather/send.svg);
 }
 
 .chat-generating #chat .chat span.chat-send
 {
-    background-image: url(/repository/Applications/Development/acaret/styles/feather/stop-circle.svg);
+    background-image: url(feather/stop-circle.svg);
 }
 
 /* Top tabs */
@@ -873,7 +873,7 @@ hr
     width: 16px;
     height: 12px;
     filter: invert(1);
-    background-image: url(/repository/Applications/Development/acaret/styles/feather/more-vertical.svg);
+    background-image: url(feather/more-vertical.svg);
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
@@ -921,7 +921,7 @@ hr
     float: right;
     width: 16px;
     height: 16px;
-    background-image: url(/repository/Applications/Development/acaret/styles/feather/x.svg);
+    background-image: url(feather/x.svg);
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
@@ -966,7 +966,7 @@ hr
     content: " ";
     width: 16px;
     height: 16px;
-    background-image: url('/repository/Applications/Development/acaret/styles/feather/file-plus.svg');
+    background-image: url('feather/file-plus.svg');
     background-size: contain;
     background-repeat: no-repeat;
     display: inline-block;
@@ -989,7 +989,7 @@ hr
     content: " ";
     width: 16px;
     height: 16px;
-    background-image: url('/repository/Applications/Development/acaret/styles/feather/eye.svg');
+    background-image: url('feather/eye.svg');
     background-size: contain;
     background-repeat: no-repeat;
     display: inline-block;
@@ -1153,7 +1153,7 @@ hr
     top: 2px;
     width: 16px;
     height: 16px;
-    background-image: url(/repository/Applications/Development/acaret/styles/feather/folder.svg);
+    background-image: url(feather/folder.svg);
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
@@ -1169,7 +1169,7 @@ hr
     top: 2px;
     width: 16px;
     height: 16px;
-    background-image: url(/repository/Applications/Development/acaret/styles/feather/file.svg);
+    background-image: url(feather/file.svg);
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
@@ -1271,7 +1271,7 @@ hr
 
 .mlContextMenu div > span.refresh
 {
-    background-image: url(/repository/Applications/Development/acaret/styles/feather/refresh-ccw.svg);
+    background-image: url(feather/refresh-ccw.svg);
 }
 
 /* Translations */
