@@ -137,8 +137,6 @@ window.toolbar[ 'flow-nodes' ] = function() {
     */
     refreshFlowNodes();
 }
-    refreshFlowNodes();
-}
 
 window.addEventListener( 'mousemove', function( e ) {
     if( flowNodes.currentObject )
