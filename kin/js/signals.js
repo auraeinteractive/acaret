@@ -92,10 +92,10 @@ function registerKinMenus() {
                 { name: 'Save Project', command: 'acaret.save_project' },
                 { name: 'Save Project As…', command: 'acaret.save_project_as' },
                 { type: 'separator' },
-                { name: 'New File', command: 'acaret.new_file' },
-                { name: 'Open File…', command: 'acaret.open_file' },
-                { name: 'Save File', command: 'acaret.save_file' },
-                { name: 'Save File As…', command: 'acaret.save_file_as' },
+                { name: 'New File', command: 'file.new' },
+                { name: 'Open File…', command: 'file.open' },
+                { name: 'Save File', command: 'file.save' },
+                { name: 'Save File As…', command: 'file.saveAs' },
                 { type: 'separator' },
                 { name: 'Close File', command: 'acaret.close_file' },
                 { name: 'Close All Files', command: 'acaret.close_all_files' }
@@ -120,36 +120,43 @@ function registerKinMenus() {
     });
 }
 
-// Handle menu commands
+// Whether the current editor tab has a path on disk (not a new unsaved buffer)
+function editorHasSavePath(editor) {
+    if (!editor || !editor.filename) return false;
+    if (editor.filename === 'New file' || editor.filename === 'untitled.txt') return false;
+    if (!editor.path || editor.path === '/') return false;
+    return true;
+}
+
+// Handle menu commands (Kin workspace uses file.save / file.saveAs / file.open for shortcuts)
 async function handleMenuCommand(cmd) {
     console.log('[signal] Handling menu command:', cmd);
     
     try {
-        if (cmd === 'acaret.new_file') {
+        if (cmd === 'acaret.new_file' || cmd === 'file.new') {
             if (typeof newEditor === 'function') {
                 newEditor();
             }
-        } else if (cmd === 'acaret.open_file') {
+        } else if (cmd === 'acaret.open_file' || cmd === 'file.open') {
             const path = await requestKinFileDialog({ mode: 'load', initialPath: 'Home:' });
             if (path && typeof loadFileFromPath === 'function') {
                 loadFileFromPath(path);
             }
-        } else if (cmd === 'acaret.save_file' || cmd === 'acaret.save_file_as') {
+        } else if (cmd === 'acaret.save_file' || cmd === 'acaret.save_file_as' ||
+                   cmd === 'file.save' || cmd === 'file.saveAs') {
             if (typeof currentEditor !== 'undefined' && currentEditor) {
                 let savePath;
+                const saveAs = cmd === 'acaret.save_file_as' || cmd === 'file.saveAs';
                 
-                // For regular save (not save-as), use existing path if it exists
-                if (cmd === 'acaret.save_file' && currentEditor.path && currentEditor.filename && 
-                    currentEditor.path !== '/' && currentEditor.filename !== 'untitled.txt') {
+                if (!saveAs && editorHasSavePath(currentEditor)) {
                     savePath = acaretToKinPath(currentEditor.path, currentEditor.filename);
                 }
                 
-                // If no valid path, or Save As, open dialog
-                if (!savePath || savePath === 'Home:' || savePath === 'Home:/' || cmd === 'acaret.save_file_as') {
+                if (!savePath || savePath === 'Home:' || savePath === 'Home:/' || saveAs) {
                     savePath = await requestKinFileDialog({ 
                         mode: 'save', 
                         initialPath: window.currentKinVolume || 'Home:',
-                        defaultFilename: currentEditor.filename || 'untitled.txt'
+                        defaultFilename: currentEditor.filename === 'New file' ? 'untitled.txt' : (currentEditor.filename || 'untitled.txt')
                     });
                 }
                 

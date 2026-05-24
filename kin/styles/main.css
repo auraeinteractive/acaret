@@ -281,6 +281,7 @@ hr
     padding: 0;
     line-height: 34px;
     color: white;
+    overflow: hidden;
 }
 
 #leftbar, #rightbar
@@ -925,9 +926,18 @@ body.right-panel-collapsed
 .TopTabs
 {
     display: inline-block;
-    overflow-x: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
     white-space: nowrap;
     max-width: calc(100% - 110px);
+    vertical-align: top;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.TopTabs::-webkit-scrollbar
+{
+    display: none;
 }
 
 .TopTabEllipsis
