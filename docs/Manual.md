@@ -1,27 +1,41 @@
 # Acaret user guide
 
-Acaret is Kin's source-code editor. It combines ACE multi-file editing with Kin-native file dialogs, project templates, a folder browser, Markdown preview, translations, tags, and source navigation.
+Acaret is Kin's KinUI source and project editor. It combines ACE multi-file editing with mounted KinDOS disks, project templates, previews, translations, tags, and source navigation.
 
-## Files and folders
+## Disks, folders, and paths
 
-Use **File → Open File…** or the Folders panel to open a file. `.klade` files launch in Klade by default; use **Open as JSON** in their context menu to edit the document source. New files and folders can be created from the Folders header, and deletion moves items to Kin's Trash.
+KinDOS uses named disks and assigns rather than a Unix root. Paths look like `Home:`, `Work:Projects/`, or `System:Commands/mountlist`; `/Home:` and `/` are not Kin paths.
 
-Tabs show a dot when a document has unsaved changes. Save and close operations use Kin dialogs and protect unsaved work.
+The Folders pane gets its roots from the current account's mountlist. Press **Disks** to see every mounted standard volume, custom disk, assign, shared volume, and application-provided drive. Expanding a disk or folder loads its children. **Up** moves toward the volume root, then returns to the disk list.
+
+Select a folder before creating a file or folder. Rename stays on the same disk because KinDOS does not support cross-volume rename. Trash uses the selected item's owning volume.
+
+## Editing
+
+Use **File → Open File…** or select a file in Folders. ACE tabs show a marker when modified. Save All writes source buffers, project settings, and locale files; cancelled or failed writes remain dirty.
+
+`.klade` files open as JSON source in Acaret. A KinUI/Klade project also offers **Open in Klade** for visual editing. Markdown and KinUI documents have explicit preview workflows.
 
 ## Projects
 
-Choose **File → New from Template…** to create one of three focused project types:
+Choose **New project** to create:
 
 - KinUI application with a Klade interface
 - KinUI application with a JSON interface
 - KinDOS QuickJS module
 
-Each project receives a schema-1 `project.acaret` descriptor. Opening a descriptor sets the project root and opens its entry file.
+Choose any appropriate mounted disk or assign and a parent folder. Each project receives a schema-2 `project.acaret` descriptor. Opening the descriptor focuses its root and opens its configured entry.
 
-## Klade and KinDOS
+Project settings edit the project name and entry plus the usual Kin repository manifest fields: package ID, display name, category, version, Heroicon, application icon, published/admin flags, single-instance policy, and localized display-name/category metadata. These fields are synchronized with `manifest.json`.
 
-Saved `.klade` documents can be opened in the Klade application from the editor toolbar. Saved `.js` files can be run with `jsexec` through **Run → Run in KinDOS**; stdout, stderr, and the exit status appear in the Output panel.
+## Preview and execution
 
-## Navigation tools
+- KinUI Preview mounts the saved `.klade` or `ui.json` through KinUI in a separate window.
+- Launch App starts the saved application directly from its KinDOS project folder. The project does not need to be installed in the repository.
+- QuickJS Run saves changes and executes the configured entry with `jsexec`, using the project root as its working directory. Output shows stdout, stderr, exit status, and truncation.
 
-Markdown files have a sandboxed Preview action. Tags recognizes `//tag: name` markers. Navigator lists common function, method, and selector declarations. Translations edits the project descriptor's languages, namespaces, keys, and values; save the project to persist changes.
+## Project tools
+
+- **Translations** edits real `locale/<locale>.json` files, including locale and key management.
+- **Tags** recognizes `// tag: name` markers and navigates to them.
+- **Navigator** lists supported declarations from the active source buffer and jumps to the selected symbol.

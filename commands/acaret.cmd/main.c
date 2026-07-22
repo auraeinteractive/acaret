@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "../../libraries/kin/kin.library.h"
+#include "kin.library.h"
 
 static const char* get_arg_value(int argc, char* argv[], const char* key)
 {
@@ -37,6 +37,7 @@ int main(int argc, char* argv[])
 {
     const char* username = get_arg_value(argc, argv, "username");
     const char* action = get_arg_value(argc, argv, "action");
+    const char* path = get_arg_value(argc, argv, "path");
     const char* manager_pid_arg = get_arg_value(argc, argv, "manager_pid");
     const char* manager_pid_env = getenv("KIN_MANAGER_PID");
     int manager_pid = 0;
@@ -61,13 +62,18 @@ int main(int argc, char* argv[])
     if (strcmp(action, "info") == 0) {
         printf("{\"response\":\"ok\",\"name\":\"acaret\",\"version\":\"1.0.0\"}\n");
     } else if (strcmp(action, "list_projects") == 0) {
+        if (!path || !*path || path[0] == '/' || !strchr(path, ':')) {
+            printf("{\"response\":\"fail\",\"message\":\"list_projects requires path=Volume:relative/path.\"}\n");
+            kin_cleanup();
+            return 1;
+        }
         wait_ctx_t ctx;
         memset(&ctx, 0, sizeof(ctx));
         char payload[512];
         if (username && *username)
-            snprintf(payload, sizeof(payload), "username=%s path=Home:Projects", username);
+            snprintf(payload, sizeof(payload), "username=%s path=%s", username, path);
         else
-            snprintf(payload, sizeof(payload), "path=Home:Projects");
+            snprintf(payload, sizeof(payload), "path=%s", path);
         unsigned long mid = kin_message_write_callback("dos_dir", payload, on_resp, &ctx);
         if (mid == 0) {
             kin_cleanup();

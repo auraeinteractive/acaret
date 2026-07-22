@@ -1,33 +1,61 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile, readdir } from 'node:fs/promises';
-import { join } from 'node:path';
+import { access, readFile } from 'node:fs/promises';
 
 const root = new URL('../', import.meta.url);
-async function filesBelow(relative) {
-    const base = new URL(relative, root);
-    const names = await readdir(base, { withFileTypes: true });
-    const result = [];
-    for (const item of names) {
-        const child = relative + item.name + (item.isDirectory() ? '/' : '');
-        if (item.isDirectory() && item.name !== 'libs') result.push(...await filesBelow(child));
-        else if (item.isFile() && /\.(html|js|mjs|css|json)$/.test(item.name)) result.push(child);
-    }
-    return result;
-}
 
-test('application surface contains no removed feature hooks', async () => {
-    const files = await filesBelow('kin/');
-    const text = (await Promise.all(files.map(file => readFile(new URL(file, root), 'utf8')))).join('\n');
-    for (const hook of ['page_chat', 'btn-chat', 'page_shop', 'btn-shop', 'page_ai_tools', 'page_flow_nodes', 'page_version_control', 'conversation.js']) {
-        assert.equal(text.includes(hook), false, 'found removed hook: ' + hook);
-    }
+test('Acaret uses the standard KinUI module bootstrap', async () => {
+    const manifest = JSON.parse(await readFile(new URL('kin/manifest.json', root), 'utf8'));
+    const main = await readFile(new URL('kin/main.js', root), 'utf8');
+    const app = await readFile(new URL('kin/app.mjs', root), 'utf8');
+    assert.equal(manifest.id, 'kin_acaret');
+    assert.equal(manifest.entry, 'main.js');
+    assert.match(main, /entry:\s*'app\.mjs'/);
+    assert.match(main, /module:\s*true/);
+    assert.match(app, /KinUI\.createAppAsync/);
+    assert.match(app, /KinUI\.createElementFromIR/);
+    assert.match(app, /registerKinUIForTypes\(\[ 'Input', 'Select', 'Switch' \]\)/);
+    assert.match(app, /launchVolumeApp\(state\.project\.rootPath, state\.project\.entry/);
+    await assert.rejects(access(new URL('kin/index.html', root)));
 });
 
-test('manifest and runtime contracts remain aligned', async () => {
-    const manifest = JSON.parse(await readFile(new URL('kin/manifest.json', root), 'utf8'));
-    assert.equal(manifest.id, 'kin_acaret'); assert.equal(manifest.entry, 'main.js'); assert.equal(manifest.heroIcon, 'code-bracket');
-    const signals = await readFile(new URL('kin/js/signals.js', root), 'utf8');
-    assert.match(signals, /\/api\/kindos\/shell-line/);
-    assert.match(signals, /launchRepositoryApp/);
+test('the complete interactive shell is a KinUI document', async () => {
+    const documentValue = JSON.parse(await readFile(new URL('kin/ui.json', root), 'utf8'));
+    assert.equal(documentValue.schema, 1);
+    assert.equal(documentValue.root.type, 'Application');
+    const types = [];
+    function visit(node) {
+        types.push(node.type);
+        for (const child of node.children || []) visit(child);
+        for (const panel of node.panels || []) for (const child of panel.children || []) visit(child);
+    }
+    visit(documentValue.root);
+    for (const required of [ 'Application', 'Row', 'Column', 'Button', 'Tabs', 'HierarchyTree', 'ScrollRegion', 'Text' ]) {
+        assert.ok(types.includes(required), 'missing KinUI component ' + required);
+    }
+    assert.ok(Object.keys(documentValue.menus).length >= 4);
+});
+
+test('application code does not recreate native interactive controls', async () => {
+    const app = await readFile(new URL('kin/app.mjs', root), 'utf8');
+    assert.doesNotMatch(app, /createElement\(\s*['"](?:button|input|select|textarea)['"]\s*\)/);
+    assert.doesNotMatch(app, /innerHTML\s*=/);
+});
+
+test('Kin integration is centralized in the module bridge', async () => {
+    const bridge = await readFile(new URL('kin/js/bridge.mjs', root), 'utf8');
+    assert.match(bridge, /listDirectory\('Mountlist:'\)/);
+    assert.match(bridge, /command\('touch'/);
+    assert.match(bridge, /openRepositoryWindow/);
+    assert.match(bridge, /volumeProgdir/);
+    assert.match(bridge, /\/api\/kindos\/shell-line/);
+    assert.match(bridge, /\/api\/commands\//);
+    assert.match(bridge, /launchRepositoryApp/);
+});
+
+test('source contains no POSIX-style Kin root literals', async () => {
+    const files = [ 'kin/app.mjs', 'kin/preview.mjs', 'kin/js/bridge.mjs', 'kin/js/project-model.mjs', 'kin/js/template-catalog.mjs' ];
+    const source = (await Promise.all(files.map(file => readFile(new URL(file, root), 'utf8')))).join('\n');
+    assert.doesNotMatch(source, /['"]\/(?:Home|Work|System):/);
+    assert.doesNotMatch(source, /['"]\/(?:tmp|home|var)\//);
 });

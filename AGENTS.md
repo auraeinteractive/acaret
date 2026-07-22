@@ -2,73 +2,58 @@
 
 ## Project Overview
 
-Acaret is **Kin's code editor** — a pure JavaScript Kin repository app running in Kin's WebKit iframe system. It uses ACE Editor for code editing and Kin APIs for file I/O, menus, dialogs, app launch, and KinDOS execution.
+Acaret is Kin's KinUI-based source and project editor. It runs as a pure JavaScript repository application, uses ACE for source buffers, and uses Kin APIs for workspace dialogs, mounted-volume discovery, file I/O, app launch, and KinDOS execution.
 
 ## Technology Stack
 
-- **Runtime**: Kin workspace WebKit iframe (no C backend)
-- **Editor**: ACE Editor (ajaxorg/ace-builds)
-- **Frontend**: Plain JavaScript with custom HTML/CSS layout
-- **Kin APIs**: `kin.classes.Window`, postMessage bridges, Kin HTTP APIs
-- **Tools**: Klade for `.klade` files and KinDOS QuickJS for saved `.js` files
+- Runtime: Kin workspace WebKit iframe
+- UI: declarative KinUI Web Components
+- Editor: ACE Editor
+- Filesystem: KinDOS mounted volumes and assigns (`Home:`, `Work:`, `System:`, etc.)
+- Tools: Klade for visual `.klade` editing and KinDOS QuickJS for scripts
 
 ## Architecture
 
-```
-kin_acaret/
-  manifest.json    # App descriptor (id: kin_acaret, entry: main.js)
-  main.js           # IIFE bootstrap for the editor window
-  index.html        # HTML UI template
+```text
+kin/
+  manifest.json          App descriptor
+  main.js                Classic bootstrap that opens the module window
+  app.mjs                KinUI workspace and controllers
+  preview.mjs            KinUI document preview window
+  ui.json                Declarative KinUI application shell
   js/
-    signals.js      # Kin bridge (menus, file dialogs, file I/O)
-    template-catalog.mjs # KinUI and QuickJS project generators
-    page-editor.js   # ACE Editor integration
-    page-folders.js  # Kin file browser
-    page-*.js        # Other panels
-  styles/
-    main.css        # App styling
-    feather/        # Icon SVGs
-  libs/ace/         # ACE editor
+    bridge.mjs           Kin file, directory, mountlist, move, Trash, launch, and shell APIs
+    kin-paths.mjs        KinDOS volume-path model
+    project-model.mjs    Schema-2 project validation and manifest synchronization
+    template-catalog.mjs KinUI and QuickJS project generators
+  styles/main.css        Layout and ACE/content-host styling only
+  libs/ace/              ACE editor distribution
 ```
 
-## Specs
+## Kin Integration
 
-See [specs/README.md](specs/README.md) for architecture and WBS documentation.
-
-## Key Files
-
-| File | Purpose |
-|------|---------|
-| `kin/main.js` | IIFE entry — loads the editor document and required scripts |
-| `kin/js/signals.js` | Kin API bridge: menus, dialogs, files, app launch, and KinDOS |
-| `kin/js/page-editor.js` | ACE Editor management (tabs, file ops) |
-| `kin/manifest.json` | App registration |
-
-## Kin Integration Points
-
-### Menus
-Registered via `postMessage({ kinAppRegisterMenus: true, instanceId, menus })` in `signals.js:registerKinMenus()`. Commands dispatched via `kinMenuCommand`.
-
-### File Dialogs
-Opened via `postMessage({ kinOpenFileDialog: true, mode: 'load'|'save', ... })`. Responses handled via `kinFileDialogResult`.
-
-### File I/O
-Uses Kin HTTP APIs: `POST /api/file/read`, `POST /api/file/write`, `POST /api/dir`.
-
-### Klade and QuickJS
-`.klade` files launch the `klade` package with `kin_open_path`. Saved `.js` files run as `jsexec` commands through `/api/kindos/shell-line`.
+- KinUI owns application menus and workspace dialog integration.
+- `bridge.mjs` is the only module that calls Kin file, directory, command, and shell HTTP APIs.
+- Available disks and assigns come from `POST /api/dir` with `Mountlist:`.
+- Kin paths always use `Volume:relative/path`; there is no `/` root and no `/Home:` form.
+- Rename uses `/api/commands/move` and must remain on one volume.
+- `.klade` source is editable in ACE and can explicitly launch Klade.
+- QuickJS project entries run through `/api/kindos/shell-line` with `jsexec`.
 
 ## Building
 
 ```bash
-./build-apps.sh              # Install to Kin build
-make                         # Build acaret.cmd
-./make-debian.sh             # Build .deb package
+npm test
+./build-apps.sh
+make
+./make-debian.sh
 ```
 
 ## Conventions
 
-1. All Kin interactions go through `signals.js` (the bridge module)
-2. Keep the custom HTML/CSS layout — don't convert to Kin UI declarative widgets
-3. New features should use Kin APIs (not C backend or direct HTTP to external services)
-4. Keep generated projects aligned with KinUI, Klade, and QuickJS runtime contracts
+1. Use KinUI components for all interactive application chrome.
+2. Keep ACE, preview frames, and output as content surfaces hosted by KinUI.
+3. Route Kin interactions through `bridge.mjs` or KinUI workspace helpers.
+4. Treat mountlist as authoritative; never hard-code a fixed set of KinDOS disks.
+5. Use `kin-paths.mjs`; never use POSIX or URL path semantics for Kin paths.
+6. Keep generated projects aligned with KinUI, Klade, and QuickJS runtime contracts.

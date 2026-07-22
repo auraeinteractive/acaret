@@ -1,0 +1,175 @@
+{
+  "schema": 1,
+  "menus": {
+    "File": [
+      { "name": "New File", "command": "file.new" },
+      { "name": "New Project…", "command": "project.new" },
+      { "name": "Open File…", "command": "file.open" },
+      { "name": "Open Project…", "command": "project.open" },
+      { "type": "separator" },
+      { "name": "Save", "command": "file.save" },
+      { "name": "Save As…", "command": "file.saveAs" },
+      { "name": "Save All", "command": "file.saveAll" },
+      { "type": "separator" },
+      { "name": "Close File", "command": "file.close" },
+      { "name": "Close All Files", "command": "file.closeAll" }
+    ],
+    "Edit": [
+      { "name": "Undo", "command": "edit.undo" },
+      { "name": "Redo", "command": "edit.redo" },
+      { "type": "separator" },
+      { "name": "Cut", "command": "edit.cut" },
+      { "name": "Copy", "command": "edit.copy" },
+      { "name": "Paste", "command": "edit.paste" },
+      { "name": "Find…", "command": "edit.find" }
+    ],
+    "Run": [
+      { "name": "Run Project", "command": "run.project" },
+      { "name": "Preview UI", "command": "run.preview" },
+      { "name": "Launch App", "command": "run.launch" }
+    ],
+    "Help": [ { "name": "About Acaret", "command": "help.about" } ]
+  },
+  "root": {
+    "type": "Application",
+    "density": "compact",
+    "children": [
+      {
+        "type": "Column",
+        "id": "app-shell",
+        "gap": "0",
+        "children": [
+          {
+            "type": "Row",
+            "id": "main-toolbar",
+            "gap": "6px",
+            "padding": "6px",
+            "children": [
+              { "type": "Button", "id": "action-new-project", "label": "New project" },
+              { "type": "Button", "id": "action-open-project", "label": "Open project" },
+              { "type": "Button", "id": "action-new-file", "label": "New file" },
+              { "type": "Button", "id": "action-save", "label": "Save" },
+              { "type": "Button", "id": "action-save-all", "label": "Save all" },
+              { "type": "Button", "id": "action-run", "label": "Run" },
+              { "type": "Button", "id": "action-preview", "label": "Preview" },
+              { "type": "Text", "id": "toolbar-project", "text": "No project open" }
+            ]
+          },
+          {
+            "type": "Row",
+            "id": "workspace",
+            "gap": "0",
+            "children": [
+              {
+                "type": "Column",
+                "id": "folders-pane",
+                "gap": "5px",
+                "padding": "6px",
+                "children": [
+                  { "type": "Text", "id": "folders-path", "text": "Mounted disks" },
+                  {
+                    "type": "Row",
+                    "id": "folders-navigation",
+                    "gap": "4px",
+                    "wrap": true,
+                    "children": [
+                      { "type": "Button", "id": "folders-disks", "label": "Disks" },
+                      { "type": "Button", "id": "folders-up", "label": "Up" },
+                      { "type": "Button", "id": "folders-refresh", "label": "Refresh" }
+                    ]
+                  },
+                  {
+                    "type": "Row",
+                    "id": "folders-actions",
+                    "gap": "4px",
+                    "wrap": true,
+                    "children": [
+                      { "type": "Button", "id": "folders-new-file", "label": "New file" },
+                      { "type": "Button", "id": "folders-new-folder", "label": "New folder" },
+                      { "type": "Button", "id": "folders-rename", "label": "Rename" },
+                      { "type": "Button", "id": "folders-trash", "label": "Trash" }
+                    ]
+                  },
+                  { "type": "HierarchyTree", "id": "folders-tree", "nodes": [] }
+                ]
+              },
+              {
+                "type": "Column",
+                "id": "editor-pane",
+                "gap": "0",
+                "children": [
+                  {
+                    "type": "Tabs",
+                    "id": "editor-tabs",
+                    "variant": "chrome",
+                    "panels": [
+                      {
+                        "id": "welcome-panel",
+                        "label": "Welcome",
+                        "pinned": true,
+                        "children": [
+                          { "type": "Column", "id": "welcome-content", "gap": "10px", "padding": "24px", "children": [
+                            { "type": "Text", "text": "Acaret" },
+                            { "type": "Text", "text": "Create or open a Kin project, or browse any mounted KinDOS disk." }
+                          ] }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "Column",
+                "id": "tools-pane",
+                "gap": "0",
+                "children": [
+                  {
+                    "type": "Tabs",
+                    "id": "tool-tabs",
+                    "panels": [
+                      { "id": "project-tool", "label": "Project", "children": [ { "type": "ScrollRegion", "id": "project-tool-content" } ] },
+                      { "id": "translations-tool", "label": "Translations", "children": [ { "type": "ScrollRegion", "id": "translations-tool-content" } ] },
+                      { "id": "tags-tool", "label": "Tags", "children": [ { "type": "ScrollRegion", "id": "tags-tool-content" } ] },
+                      { "id": "navigator-tool", "label": "Navigator", "children": [ { "type": "ScrollRegion", "id": "navigator-tool-content" } ] }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Column",
+            "id": "output-panel",
+            "gap": "4px",
+            "padding": "6px",
+            "hidden": true,
+            "children": [
+              { "type": "Row", "id": "output-header", "gap": "6px", "children": [
+                { "type": "Text", "id": "output-title", "text": "Output" },
+                { "type": "Text", "id": "output-state", "text": "" },
+                { "type": "Button", "id": "output-clear", "label": "Clear" },
+                { "type": "Button", "id": "output-close", "label": "Close" }
+              ] },
+              { "type": "ScrollRegion", "id": "output-scroll", "children": [
+                { "type": "Text", "id": "output-command", "text": "" },
+                { "type": "Text", "id": "output-stdout", "text": "" },
+                { "type": "Text", "id": "output-stderr", "text": "" }
+              ] }
+            ]
+          },
+          {
+            "type": "Row",
+            "id": "statusbar",
+            "gap": "12px",
+            "padding": "4px 8px",
+            "children": [
+              { "type": "Text", "id": "status-main", "text": "Ready" },
+              { "type": "Text", "id": "status-editor", "text": "" },
+              { "type": "Button", "id": "output-toggle", "label": "Output" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

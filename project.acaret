@@ -1,8 +1,20 @@
 {
-  "schema": 1,
+  "schema": 2,
   "name": "Acaret",
+  "displayName": "Acaret — Code Editor",
   "kind": "kinui-json",
   "entry": "kin/main.js",
-  "languages": { "english": { "global.about": "About" } },
-  "languageKeys": { "global": { "about": {} } }
+  "packageId": "kin_acaret",
+  "category": "Development",
+  "version": "1.1.0",
+  "heroIcon": "code-bracket",
+  "icon": "kin/icon.png",
+  "published": true,
+  "adminOnly": false,
+  "singleInstance": false,
+  "manifestLocales": {
+    "en-US": { "displayName": "Acaret — Code Editor", "category": "Development" },
+    "nb-NO": { "displayName": "Acaret — koderedigerer", "category": "Utvikling" }
+  },
+  "uiDocument": "kin/ui.json"
 }

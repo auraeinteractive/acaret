@@ -1,6 +1,8 @@
 CC = gcc
-CFLAGS = -Wall -g -I../../libraries/kin
-LDFLAGS = -L../../libraries -l:kin.library -Wl,-rpath,$$ORIGIN/../libraries -ldl -lrt -lpthread
+KIN_ROOT ?= ../../../kin
+KIN_LIB_DIR ?= $(KIN_ROOT)/libraries
+CFLAGS = -Wall -Wextra -g -I$(KIN_LIB_DIR)/kin
+LDFLAGS = -L$(KIN_LIB_DIR) -l:kin.library -Wl,-rpath,$$ORIGIN/../libraries -ldl -lrt -lpthread
 TARGET = acaret
 SOURCES = main.c
 OBJECTS = $(SOURCES:.c=.o)
@@ -12,7 +14,7 @@ $(TARGET): $(OBJECTS)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c
-	$(CC) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
 	rm -f $(OBJECTS) $(TARGET)

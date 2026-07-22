@@ -1,6 +1,6 @@
 # Acaret — Kin Code Editor
 
-Acaret is a pure-JavaScript Kin repository application built around ACE Editor and Kin's authenticated workspace APIs.
+Acaret is a pure-JavaScript Kin repository application built from KinUI components around ACE Editor and Kin's authenticated workspace APIs.
 
 ## Documentation
 
@@ -8,4 +8,4 @@ Acaret is a pure-JavaScript Kin repository application built around ACE Editor a
 - [Work breakdown](wbs/01-kin-code-editor.md)
 - [User guide](../docs/Manual.md)
 
-The custom HTML/CSS workspace is retained. File access, dialogs, app launches, menus, and KinDOS execution are centralized in `kin/js/signals.js`.
+The workspace is declared in `kin/ui.json`. KinDOS volume paths, mountlist discovery, file operations, app launches, and shell execution are centralized in the module controllers and bridge.
