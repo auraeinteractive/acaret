@@ -14,19 +14,6 @@ body > kin-ui-app,
     min-height: 0;
 }
 
-[data-kin-id="main-toolbar"] {
-    flex: 0 0 auto;
-    border-bottom: 1px solid var(--KinPenFrameHalfShadow);
-    background: var(--KinPenGadgetBackground);
-}
-
-[data-kin-id="toolbar-project"] {
-    flex: 1 1 auto;
-    min-width: 8rem;
-    align-self: center;
-    text-align: right;
-}
-
 [data-kin-id="workspace"] {
     flex: 1 1 auto;
     min-height: 0;
@@ -44,6 +31,26 @@ body > kin-ui-app,
 [data-kin-id="folders-tree"] { flex: 1 1 auto; min-height: 0; }
 [data-kin-id="editor-pane"] { flex: 1 1 auto; min-width: 280px; min-height: 0; }
 [data-kin-id="editor-tabs"] { flex: 1 1 auto; min-height: 0; }
+
+[data-kin-id="editor-statusbar"] {
+    flex: 0 0 auto;
+    align-items: center;
+    min-height: 1.4rem;
+    border-top: 1px solid var(--KinPenFrameHalfShadow);
+    background: var(--KinPenGadgetBackground);
+    font-size: 0.78rem;
+}
+
+[data-kin-id="editor-status-spacer"] { flex: 1 1 auto; }
+[data-kin-id="editor-save-state"] { font-weight: 600; }
+
+.button-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+}
+
+.button-content svg { flex: 0 0 auto; }
 
 [data-kin-id="tools-pane"] {
     flex: 0 0 clamp(280px, 26vw, 420px);

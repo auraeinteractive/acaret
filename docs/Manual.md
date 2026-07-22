@@ -6,9 +6,11 @@ Acaret is Kin's KinUI source and project editor. It combines ACE multi-file edit
 
 KinDOS uses named disks and assigns rather than a Unix root. Paths look like `Home:`, `Work:Projects/`, or `System:Commands/mountlist`; `/Home:` and `/` are not Kin paths.
 
-The Folders pane gets its roots from the current account's mountlist. Press **Disks** to see every mounted standard volume, custom disk, assign, shared volume, and application-provided drive. Expanding a disk or folder loads its children. **Up** moves toward the volume root, then returns to the disk list.
+With no project open, the Folders pane gets its roots from the current account's mountlist. After opening a project it instead shows only the project root and its project-relative subfolders and files. **All disks** temporarily opens every mounted standard volume, custom disk, assign, shared volume, and application-provided drive; **Back to project** restores the focused project tree. **Up** stops at the project root while project browsing is active.
 
 Select a folder before creating a file or folder. Rename stays on the same disk because KinDOS does not support cross-volume rename. Trash uses the selected item's owning volume.
+
+Buttons use Kin's standard Heroicons. The status strip directly below the code editor reports the current language mode, Saved/Changed state, cursor line and column, and INS/OVR input mode.
 
 ## Editing
 

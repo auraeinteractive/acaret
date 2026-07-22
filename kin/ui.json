@@ -41,22 +41,6 @@
         "children": [
           {
             "type": "Row",
-            "id": "main-toolbar",
-            "gap": "6px",
-            "padding": "6px",
-            "children": [
-              { "type": "Button", "id": "action-new-project", "label": "New project" },
-              { "type": "Button", "id": "action-open-project", "label": "Open project" },
-              { "type": "Button", "id": "action-new-file", "label": "New file" },
-              { "type": "Button", "id": "action-save", "label": "Save" },
-              { "type": "Button", "id": "action-save-all", "label": "Save all" },
-              { "type": "Button", "id": "action-run", "label": "Run" },
-              { "type": "Button", "id": "action-preview", "label": "Preview" },
-              { "type": "Text", "id": "toolbar-project", "text": "No project open" }
-            ]
-          },
-          {
-            "type": "Row",
             "id": "workspace",
             "gap": "0",
             "children": [
@@ -73,7 +57,8 @@
                     "gap": "4px",
                     "wrap": true,
                     "children": [
-                      { "type": "Button", "id": "folders-disks", "label": "Disks" },
+                      { "type": "Button", "id": "folders-disks", "label": "All disks" },
+                      { "type": "Button", "id": "folders-project", "label": "Back to project", "hidden": true },
                       { "type": "Button", "id": "folders-up", "label": "Up" },
                       { "type": "Button", "id": "folders-refresh", "label": "Refresh" }
                     ]
@@ -114,6 +99,19 @@
                           ] }
                         ]
                       }
+                    ]
+                  },
+                  {
+                    "type": "Row",
+                    "id": "editor-statusbar",
+                    "gap": "12px",
+                    "padding": "3px 8px",
+                    "children": [
+                      { "type": "Text", "id": "editor-language", "text": "No file" },
+                      { "type": "Text", "id": "editor-save-state", "text": "" },
+                      { "type": "Text", "id": "editor-status-spacer", "text": "" },
+                      { "type": "Text", "id": "editor-position", "text": "" },
+                      { "type": "Text", "id": "editor-input-mode", "text": "" }
                     ]
                   }
                 ]
@@ -164,7 +162,6 @@
             "padding": "4px 8px",
             "children": [
               { "type": "Text", "id": "status-main", "text": "Ready" },
-              { "type": "Text", "id": "status-editor", "text": "" },
               { "type": "Button", "id": "output-toggle", "label": "Output" }
             ]
           }

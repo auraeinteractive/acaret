@@ -34,6 +34,7 @@ const state = {
     ui: null,
     mounts: [],
     tree: [],
+    browserMode: 'disks',
     selectedNode: null,
     currentFolder: null,
     project: null,
@@ -85,8 +86,46 @@ function textNode(text, className = '') {
     return node;
 }
 
+const BUTTON_ICONS = [
+    [ /back to project/i, 'arrow-uturn-left' ], [ /all disks|disks/i, 'circle-stack' ],
+    [ /^up$/i, 'arrow-up' ], [ /refresh/i, 'arrow-path' ], [ /new project|create project/i, 'folder-plus' ],
+    [ /open project/i, 'folder-open' ], [ /new file|add file/i, 'document-plus' ],
+    [ /new folder|add folder/i, 'folder-plus' ], [ /^save all$/i, 'document-check' ], [ /^save/i, 'check' ],
+    [ /launch/i, 'rocket-launch' ], [ /preview/i, 'eye' ], [ /^run|quickjs/i, 'play' ],
+    [ /rename|edit/i, 'pencil-square' ], [ /trash|remove|delete/i, 'trash' ],
+    [ /clear/i, 'backspace' ], [ /close/i, 'x-mark' ], [ /output/i, 'command-line' ],
+    [ /cancel/i, 'x-mark' ], [ /klade/i, 'arrow-top-right-on-square' ], [ /add|new/i, 'plus' ]
+];
+
+function iconForLabel(label) {
+    return BUTTON_ICONS.find(([pattern]) => pattern.test(String(label || '')))?.[1] || 'cursor-arrow-rays';
+}
+
+function heroIconElement(name, size = 16) {
+    return typeof globalThis.kin?.heroIconElement === 'function'
+        ? globalThis.kin.heroIconElement(name, { size })
+        : null;
+}
+
+function decorateButton(node, icon, label, size = 16) {
+    if (!node) return;
+    const visibleLabel = String(label || node.getAttribute('label') || '').replace(/_/g, '');
+    node.setAttribute('label', '');
+    node.setAttribute('aria-label', visibleLabel);
+    node.setAttribute('title', visibleLabel);
+    const content = document.createElement('span');
+    content.className = 'button-content';
+    const glyph = heroIconElement(icon || iconForLabel(visibleLabel), size);
+    if (glyph) content.appendChild(glyph);
+    const caption = document.createElement('span');
+    caption.textContent = visibleLabel;
+    content.appendChild(caption);
+    node.replaceChildren(content);
+}
+
 function button(label, handler, options = {}) {
-    const node = control('Button', { label, disabled: !!options.disabled });
+    const node = control('Button', { disabled: !!options.disabled });
+    decorateButton(node, options.icon || iconForLabel(label), label, options.iconSize || 16);
     node.addEventListener('kin-press', () => void perform(handler));
     return node;
 }
@@ -207,10 +246,37 @@ function updateDocumentLabel(documentState) {
     editorTabs().kin_refresh();
 }
 
+function editorLanguage(editor) {
+    const id = String(editor?.session?.getMode()?.$id || 'ace/mode/plain_text');
+    const name = id.split('/').pop() || 'plain_text';
+    const labels = {
+        plain_text: 'Plain text', c_cpp: 'C/C++', golang: 'Go', sh: 'Shell',
+        javascript: 'JavaScript', typescript: 'TypeScript', json: 'JSON', html: 'HTML',
+        css: 'CSS', xml: 'XML', yaml: 'YAML', markdown: 'Markdown', makefile: 'Makefile'
+    };
+    return labels[name] || name.replace(/_/g, ' ').replace(/^./, character => character.toUpperCase());
+}
+
+function updateEditorStatus() {
+    const doc = state.activeDocument;
+    if (!doc) {
+        setText('editor-language', 'No file');
+        setText('editor-save-state', '');
+        setText('editor-position', '');
+        setText('editor-input-mode', '');
+        return;
+    }
+    const cursor = doc.editor.getCursorPosition();
+    setText('editor-language', editorLanguage(doc.editor));
+    setText('editor-save-state', doc.dirty ? 'Changed' : 'Saved');
+    setText('editor-position', 'Ln ' + (cursor.row + 1) + ', Col ' + (cursor.column + 1));
+    setText('editor-input-mode', doc.editor.getOverwrite() ? 'OVR' : 'INS');
+}
+
 function setActiveDocument(documentState) {
     state.activeDocument = documentState || selectedDocumentFromTabs();
     const doc = state.activeDocument;
-    setText('status-editor', doc ? (doc.path || doc.name) + (doc.dirty ? ' · modified' : ' · saved') : '');
+    updateEditorStatus();
     if (doc) {
         requestAnimationFrame(() => { doc.editor.resize(); doc.editor.focus(); });
     }
@@ -251,6 +317,12 @@ function createDocument(content = '', path = '') {
         updateDocumentLabel(documentState);
         if (state.activeDocument === documentState) setActiveDocument(documentState);
         scheduleEditorTools();
+    });
+    editor.selection.on('changeCursor', () => {
+        if (state.activeDocument === documentState) updateEditorStatus();
+    });
+    editor.on('changeOverwrite', () => {
+        if (state.activeDocument === documentState) updateEditorStatus();
     });
     updateDocumentLabel(documentState);
     selectDocument(documentState);
@@ -362,6 +434,24 @@ function setTree() {
     state.ui.getById('folders-tree').setData(state.tree);
 }
 
+function updateFolderChrome() {
+    const inProject = state.browserMode === 'project' && !!state.project;
+    state.ui.getById('folders-disks').toggleAttribute('hidden', !inProject);
+    state.ui.getById('folders-project').toggleAttribute('hidden', inProject || !state.project);
+    if (inProject) {
+        if (state.tree[0] && state.tree[0].title !== state.project.name) {
+            state.tree[0].title = state.project.name;
+            setTree();
+        }
+        let relative = '';
+        try { relative = relativeKinPath(state.currentFolder || state.project.rootPath, state.project.rootPath).replace(/\/$/, ''); }
+        catch (_error) { relative = ''; }
+        setText('folders-path', state.project.name + (relative ? ' · ' + relative + '/' : ''));
+    } else {
+        setText('folders-path', state.currentFolder || 'Mounted disks');
+    }
+}
+
 function mountNode(mount) {
     const name = volumeName(mount);
     return {
@@ -373,15 +463,17 @@ function mountNode(mount) {
 async function refreshMountlist() {
     const currentNames = new Set(state.mounts.map(item => volumeName(item).toLowerCase()));
     state.mounts = await bridge.listKinVolumes();
-    const old = new Map(state.tree.map(node => [node.id.toLowerCase(), node]));
-    state.tree = state.mounts.map(mount => old.get(volumeName(mount).toLowerCase()) || mountNode(mount));
-    setTree();
+    if (state.browserMode === 'disks') {
+        const old = new Map(state.tree.map(node => [node.id.toLowerCase(), node]));
+        state.tree = state.mounts.map(mount => old.get(volumeName(mount).toLowerCase()) || mountNode(mount));
+        setTree();
+    }
     if (state.currentFolder && !state.mounts.some(item => volumeName(item).toLowerCase() === kinVolume(state.currentFolder).toLowerCase())) {
         state.currentFolder = null;
         state.selectedNode = null;
         setStatus('The previously selected KinDOS volume is no longer mounted.');
     } else if (currentNames.size) setStatus('Mounted disks refreshed.');
-    setText('folders-path', state.currentFolder || 'Mounted disks');
+    updateFolderChrome();
 }
 
 function directoryEntries(parent, entries) {
@@ -411,13 +503,20 @@ async function loadNodeChildren(node, force = false) {
 
 async function revealPath(path) {
     const canonical = canonicalizeKinPath(path, { mounts: state.mounts });
-    const volume = kinVolume(canonical);
-    let node = treeFind(state.tree, volume);
-    if (!node) throw new Error('Kin volume “' + volume + '” is not mounted.');
+    const inProject = state.browserMode === 'project' && state.project && isWithinKinRoot(canonical, state.project.rootPath);
+    const root = inProject ? state.project.rootPath : kinVolume(canonical);
+    let node = treeFind(state.tree, root);
+    if (!node) {
+        if (state.browserMode === 'project') await showDisks();
+        node = treeFind(state.tree, kinVolume(canonical));
+    }
+    if (!node) throw new Error('Kin volume “' + kinVolume(canonical) + '” is not mounted.');
     node.expanded = true;
     await loadNodeChildren(node);
-    const relative = canonical.slice(volume.length).replace(/\/$/, '');
-    let current = volume;
+    const relative = inProject
+        ? relativeKinPath(canonical, state.project.rootPath).replace(/\/$/, '')
+        : canonical.slice(kinVolume(canonical).length).replace(/\/$/, '');
+    let current = root;
     for (const segment of relative ? relative.split('/') : []) {
         current = joinKinPath(current, segment);
         const child = treeFind(node.children || [], current);
@@ -427,7 +526,7 @@ async function revealPath(path) {
         node = child;
     }
     state.currentFolder = asKinDirectory(canonical);
-    setText('folders-path', state.currentFolder);
+    updateFolderChrome();
     setTree();
 }
 
@@ -534,14 +633,41 @@ async function trashSelected() {
 }
 
 async function showDisks() {
+    state.browserMode = 'disks';
     state.currentFolder = null;
     state.selectedNode = null;
-    setText('folders-path', 'Mounted disks');
     await refreshMountlist();
+}
+
+async function showProject() {
+    if (!state.project) return;
+    state.browserMode = 'project';
+    state.currentFolder = asKinDirectory(state.project.rootPath);
+    state.selectedNode = null;
+    const root = {
+        id: state.project.rootPath,
+        type: 'folder',
+        title: state.project.name,
+        meta: 'project',
+        icon: 'folder-open',
+        hasChildren: true,
+        expanded: true
+    };
+    await loadNodeChildren(root, true);
+    state.tree = [ root ];
+    setTree();
+    updateFolderChrome();
 }
 
 async function goUp() {
     if (!state.currentFolder) return;
+    if (state.browserMode === 'project' && state.project) {
+        const current = canonicalizeKinPath(state.currentFolder).replace(/\/$/, '');
+        if (current === state.project.rootPath) return;
+        const parentPath = parentKinPath(current);
+        if (!parentPath || !isWithinKinRoot(parentPath, state.project.rootPath)) return showProject();
+        return revealPath(parentPath);
+    }
     if (isVolumeRoot(state.currentFolder)) return showDisks();
     const parentPath = parentKinPath(state.currentFolder);
     if (!parentPath) return showDisks();
@@ -594,10 +720,9 @@ async function openProjectPath(path, options = {}) {
     state.projectText = projectText;
     state.manifestText = manifestResult.text;
     await loadLocales(project);
-    await revealPath(project.rootPath);
+    await showProject();
     renderProjectTool();
     renderTranslations();
-    setText('toolbar-project', project.name + ' · ' + project.rootPath);
     await openFile(projectEntryPath(project));
     setStatus('Opened project ' + project.name);
     return true;
@@ -611,7 +736,7 @@ async function openProjectDialog() {
 function markProjectDirty() {
     if (!state.project) return;
     state.project.dirty = true;
-    setText('toolbar-project', '● ' + state.project.name + ' · ' + state.project.rootPath);
+    updateFolderChrome();
 }
 
 async function saveProject() {
@@ -636,7 +761,7 @@ async function saveProject() {
     state.projectText = descriptorText;
     state.project.sourceSchema = 2;
     state.project.dirty = false;
-    setText('toolbar-project', state.project.name + ' · ' + state.project.rootPath);
+    updateFolderChrome();
     setStatus('Saved project settings.');
     renderProjectTool();
     return true;
@@ -1065,6 +1190,21 @@ function bindPress(id, handler) {
     state.ui.getById(id).addEventListener('kin-press', () => void perform(handler));
 }
 
+function decorateChromeButtons() {
+    const buttons = [
+        [ 'folders-disks', 'circle-stack' ], [ 'folders-project', 'arrow-uturn-left' ],
+        [ 'folders-up', 'arrow-up' ], [ 'folders-refresh', 'arrow-path' ],
+        [ 'folders-new-file', 'document-plus' ], [ 'folders-new-folder', 'folder-plus' ],
+        [ 'folders-rename', 'pencil-square' ], [ 'folders-trash', 'trash' ],
+        [ 'output-clear', 'backspace' ], [ 'output-close', 'x-mark' ],
+        [ 'output-toggle', 'command-line' ]
+    ];
+    for (const [id, icon] of buttons) {
+        const node = state.ui.getById(id);
+        decorateButton(node, icon, node?.getAttribute('label'));
+    }
+}
+
 function bindMenus() {
     const actions = {
         'file.new': () => createDocument(),
@@ -1102,14 +1242,8 @@ async function clipboardAction(action) {
 }
 
 function bindUi() {
-    bindPress('action-new-project', renderNewProjectTool);
-    bindPress('action-open-project', openProjectDialog);
-    bindPress('action-new-file', () => createDocument());
-    bindPress('action-save', () => saveDocument(state.activeDocument, false));
-    bindPress('action-save-all', saveAll);
-    bindPress('action-run', runProject);
-    bindPress('action-preview', previewCurrent);
     bindPress('folders-disks', showDisks);
+    bindPress('folders-project', showProject);
     bindPress('folders-up', goUp);
     bindPress('folders-refresh', refreshFolderSelection);
     bindPress('folders-new-file', createFileInTree);
@@ -1137,7 +1271,7 @@ function bindUi() {
         if (node.type === 'file') await openFile(node.id);
         else {
             state.currentFolder = asKinDirectory(node.id);
-            setText('folders-path', state.currentFolder);
+            updateFolderChrome();
         }
     }));
 
@@ -1157,6 +1291,7 @@ async function start() {
     await loadClassicScript('./libs/ace/src-noconflict/ace.js');
     await KinUI.registerKinUIForTypes([ 'Input', 'Select', 'Switch' ]);
     state.ui = await KinUI.createAppAsync({ root: document.body, url: new URL('./ui.json', import.meta.url) });
+    decorateChromeButtons();
     bindUi();
     renderProjectTool();
     renderTranslations();

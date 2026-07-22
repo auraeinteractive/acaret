@@ -15,6 +15,8 @@ test('Acaret uses the standard KinUI module bootstrap', async () => {
     assert.match(app, /KinUI\.createAppAsync/);
     assert.match(app, /KinUI\.createElementFromIR/);
     assert.match(app, /registerKinUIForTypes\(\[ 'Input', 'Select', 'Switch' \]\)/);
+    assert.match(app, /heroIconElement/);
+    assert.match(app, /decorateChromeButtons/);
     assert.match(app, /launchVolumeApp\(state\.project\.rootPath, state\.project\.entry/);
     await assert.rejects(access(new URL('kin/index.html', root)));
 });
@@ -34,6 +36,30 @@ test('the complete interactive shell is a KinUI document', async () => {
         assert.ok(types.includes(required), 'missing KinUI component ' + required);
     }
     assert.ok(Object.keys(documentValue.menus).length >= 4);
+    assert.equal(types.filter(type => type === 'Button').length > 0, true);
+    assert.doesNotMatch(JSON.stringify(documentValue), /main-toolbar|toolbar-project/);
+    for (const id of [ 'folders-disks', 'folders-project', 'editor-language', 'editor-save-state', 'editor-position', 'editor-input-mode' ]) {
+        assert.match(JSON.stringify(documentValue), new RegExp('"id":"?' + id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+    }
+});
+
+test('project browsing is focused and reversible', async () => {
+    const app = await readFile(new URL('kin/app.mjs', root), 'utf8');
+    assert.match(app, /browserMode:\s*'disks'/);
+    assert.match(app, /async function showProject\(\)/);
+    assert.match(app, /state\.tree = \[ root \]/);
+    assert.match(app, /relativeKinPath\(state\.currentFolder \|\| state\.project\.rootPath, state\.project\.rootPath\)/);
+    assert.match(app, /bindPress\('folders-project', showProject\)/);
+});
+
+test('editor status follows ACE state', async () => {
+    const app = await readFile(new URL('kin/app.mjs', root), 'utf8');
+    assert.match(app, /editorLanguage\(doc\.editor\)/);
+    assert.match(app, /doc\.dirty \? 'Changed' : 'Saved'/);
+    assert.match(app, /'Ln ' \+ \(cursor\.row \+ 1\) \+ ', Col ' \+ \(cursor\.column \+ 1\)/);
+    assert.match(app, /getOverwrite\(\) \? 'OVR' : 'INS'/);
+    assert.match(app, /changeCursor/);
+    assert.match(app, /changeOverwrite/);
 });
 
 test('application code does not recreate native interactive controls', async () => {

@@ -17,7 +17,7 @@ flowchart LR
 ## Components
 
 - `main.js` opens the standard Kin module window.
-- `ui.json` declares the toolbar, mounted-disk explorer, editor tabs, project tools, output, and status UI entirely with KinUI components.
+- `ui.json` declares the project-focused explorer, editor tabs and editor status strip, project tools, output, and application status UI entirely with KinUI components. Kin Heroicons are slotted into the KinUI buttons at startup.
 - `app.mjs` coordinates ACE buffers, project lifecycle, lazy folder trees, templates, locale files, tags, navigation, preview, and execution.
 - `bridge.mjs` owns authenticated Kin HTTP and app-launch operations.
 - `kin-paths.mjs` owns `Volume:relative/path` parsing and explicitly has no slash root.
@@ -25,7 +25,7 @@ flowchart LR
 
 ## Mounted disks and assigns
 
-Acaret reads `Mountlist:` through the directory API. Every returned standard volume, custom disk, assign, shared volume, or Dormant drive is eligible for browsing. `Trash:` is a special virtual destination and `Mountlist:` is discovery, not a project location.
+Acaret reads `Mountlist:` through the directory API. Every returned standard volume, custom disk, assign, shared volume, or Dormant drive is eligible for browsing. When a project is open, the default tree is rooted at that project and exposes only project-relative descendants; users can explicitly switch to all disks and back. `Trash:` is a special virtual destination and `Mountlist:` is discovery, not a project location.
 
 Volume names retain mountlist casing and compare case-insensitively. Paths sent to APIs are canonical KinDOS paths such as `Home:scripts/main.js` or `Work:Projects/demo/project.acaret`; POSIX forms such as `/Home:scripts` do not exist.
 
