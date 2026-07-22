@@ -6,7 +6,7 @@
   "entry": "kin/main.js",
   "packageId": "kin_acaret",
   "category": "Development",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "heroIcon": "code-bracket",
   "icon": "kin/icon.png",
   "published": true,

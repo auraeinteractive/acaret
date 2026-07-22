@@ -64,6 +64,12 @@ function setStatus(text) {
     setText('status-main', text || 'Ready');
 }
 
+function requiredControl(id) {
+    const node = state.ui?.getById(id);
+    if (!node) throw new Error('KinUI document is missing required component “' + id + '”.');
+    return node;
+}
+
 function control(type, props = {}, id = '') {
     return KinUI.createElementFromIR({ type, id: id || undefined, props, children: [] });
 }
@@ -1187,7 +1193,7 @@ async function openFileDialog() {
 }
 
 function bindPress(id, handler) {
-    state.ui.getById(id).addEventListener('kin-press', () => void perform(handler));
+    requiredControl(id).addEventListener('kin-press', () => void perform(handler));
 }
 
 function decorateChromeButtons() {
@@ -1225,7 +1231,7 @@ function bindMenus() {
         'run.project': runProject,
         'run.preview': previewCurrent,
         'run.launch': launchApp,
-        'help.about': () => kinWorkspaceAlert('Acaret 1.1.0\n\nKinUI code editor and KinDOS project workspace.', { title: 'About Acaret' })
+        'help.about': () => kinWorkspaceAlert('Acaret 1.1.1\n\nKinUI code editor and KinDOS project workspace.', { title: 'About Acaret' })
     };
     for (const [command, action] of Object.entries(actions)) state.ui.onMenuCommand(command, () => void perform(action));
 }
@@ -1257,7 +1263,7 @@ function bindUi() {
     bindPress('output-close', () => state.ui.getById('output-panel').setAttribute('hidden', ''));
     bindPress('output-clear', () => showOutput({ stdout: '', stderr: '', exit_code: null }));
 
-    const tree = state.ui.getById('folders-tree');
+    const tree = requiredControl('folders-tree');
     tree.addEventListener('kin-hierarchy-toggle', event => void perform(async () => {
         const node = treeFind(state.tree, event.detail.id);
         if (!node) return;
@@ -1290,7 +1296,9 @@ function bindUi() {
 async function start() {
     await loadClassicScript('./libs/ace/src-noconflict/ace.js');
     await KinUI.registerKinUIForTypes([ 'Input', 'Select', 'Switch' ]);
-    state.ui = await KinUI.createAppAsync({ root: document.body, url: new URL('./ui.json', import.meta.url) });
+    const uiUrl = new URL('./ui.json', import.meta.url);
+    uiUrl.searchParams.set('v', '1.1.1');
+    state.ui = await KinUI.createAppAsync({ root: document.body, url: uiUrl });
     decorateChromeButtons();
     bindUi();
     renderProjectTool();

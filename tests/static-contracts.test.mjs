@@ -17,6 +17,8 @@ test('Acaret uses the standard KinUI module bootstrap', async () => {
     assert.match(app, /registerKinUIForTypes\(\[ 'Input', 'Select', 'Switch' \]\)/);
     assert.match(app, /heroIconElement/);
     assert.match(app, /decorateChromeButtons/);
+    assert.match(app, /uiUrl\.searchParams\.set\('v', '1\.1\.1'\)/);
+    assert.match(app, /requiredControl\(id\)\.addEventListener/);
     assert.match(app, /launchVolumeApp\(state\.project\.rootPath, state\.project\.entry/);
     await assert.rejects(access(new URL('kin/index.html', root)));
 });
@@ -60,6 +62,25 @@ test('editor status follows ACE state', async () => {
     assert.match(app, /getOverwrite\(\) \? 'OVR' : 'INS'/);
     assert.match(app, /changeCursor/);
     assert.match(app, /changeOverwrite/);
+});
+
+test('every statically bound startup control exists in the KinUI document', async () => {
+    const app = await readFile(new URL('kin/app.mjs', root), 'utf8');
+    const documentValue = JSON.parse(await readFile(new URL('kin/ui.json', root), 'utf8'));
+    const ids = new Set();
+    function visit(node) {
+        if (node.id) ids.add(node.id);
+        for (const child of node.children || []) visit(child);
+        for (const panel of node.panels || []) {
+            if (panel.id) ids.add(panel.id);
+            for (const child of panel.children || []) visit(child);
+        }
+    }
+    visit(documentValue.root);
+    const boundIds = Array.from(app.matchAll(/bindPress\('([^']+)'/g), match => match[1]);
+    for (const id of [ ...boundIds, 'folders-tree', 'editor-tabs' ]) {
+        assert.ok(ids.has(id), 'startup binding references missing KinUI component ' + id);
+    }
 });
 
 test('application code does not recreate native interactive controls', async () => {
