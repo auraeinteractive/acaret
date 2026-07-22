@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Acaret is **Kin's code editor** — a pure JavaScript Kin repository app running in Kin's WebKit iframe system. It uses ACE Editor for code editing, Kin APIs for file I/O, menus, and dialogs, and Kin's messaging service for AI chat.
+Acaret is **Kin's code editor** — a pure JavaScript Kin repository app running in Kin's WebKit iframe system. It uses ACE Editor for code editing and Kin APIs for file I/O, menus, dialogs, app launch, and KinDOS execution.
 
 ## Technology Stack
 
@@ -10,18 +10,18 @@ Acaret is **Kin's code editor** — a pure JavaScript Kin repository app running
 - **Editor**: ACE Editor (ajaxorg/ace-builds)
 - **Frontend**: Plain JavaScript with custom HTML/CSS layout
 - **Kin APIs**: `kin.classes.Window`, postMessage bridges, Kin HTTP APIs
-- **AI**: Kin messaging service (via `ai.library`)
+- **Tools**: Klade for `.klade` files and KinDOS QuickJS for saved `.js` files
 
 ## Architecture
 
 ```
 kin_acaret/
   manifest.json    # App descriptor (id: kin_acaret, entry: main.js)
-  main.js           # IIFE entry → kin.classes.Window
+  main.js           # IIFE bootstrap for the editor window
   index.html        # HTML UI template
   js/
     signals.js      # Kin bridge (menus, file dialogs, file I/O)
-    conversation.js  # AI chat client
+    template-catalog.mjs # KinUI and QuickJS project generators
     page-editor.js   # ACE Editor integration
     page-folders.js  # Kin file browser
     page-*.js        # Other panels
@@ -39,8 +39,8 @@ See [specs/README.md](specs/README.md) for architecture and WBS documentation.
 
 | File | Purpose |
 |------|---------|
-| `kin/main.js` | IIFE entry — creates `kin.classes.Window` |
-| `kin/js/signals.js` | Kin API bridge: menus, file dialogs, Dormant Drive I/O |
+| `kin/main.js` | IIFE entry — loads the editor document and required scripts |
+| `kin/js/signals.js` | Kin API bridge: menus, dialogs, files, app launch, and KinDOS |
 | `kin/js/page-editor.js` | ACE Editor management (tabs, file ops) |
 | `kin/manifest.json` | App registration |
 
@@ -55,8 +55,8 @@ Opened via `postMessage({ kinOpenFileDialog: true, mode: 'load'|'save', ... })`.
 ### File I/O
 Uses Kin HTTP APIs: `POST /api/file/read`, `POST /api/file/write`, `POST /api/dir`.
 
-### AI Chat
-Currently uses direct Ollama HTTP calls (`conversation.js:sendMessageNow`). Target: route through Kin messaging service via `kin.api.sendPeerMessage()`.
+### Klade and QuickJS
+`.klade` files launch the `klade` package with `kin_open_path`. Saved `.js` files run as `jsexec` commands through `/api/kindos/shell-line`.
 
 ## Building
 
@@ -71,4 +71,4 @@ make                         # Build acaret.cmd
 1. All Kin interactions go through `signals.js` (the bridge module)
 2. Keep the custom HTML/CSS layout — don't convert to Kin UI declarative widgets
 3. New features should use Kin APIs (not C backend or direct HTTP to external services)
-4. AI features should eventually use Kin messaging service
+4. Keep generated projects aligned with KinUI, Klade, and QuickJS runtime contracts

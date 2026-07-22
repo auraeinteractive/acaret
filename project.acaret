@@ -1,1 +1,8 @@
-{"name":"Acaret","filename":"","path":""}
+{
+  "schema": 1,
+  "name": "Acaret",
+  "kind": "kinui-json",
+  "entry": "kin/main.js",
+  "languages": { "english": { "global.about": "About" } },
+  "languageKeys": { "global": { "about": {} } }
+}

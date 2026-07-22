@@ -88,8 +88,8 @@ Depends: kin (>= 2.0)
 Recommends: acaret
 Description: Kin Code Editor — Acaret for Kin OS
  Acaret is a full-featured source code editor for Kin OS.
- Features ACE Editor with multi-tab editing, syntax highlighting
- for 20+ languages, integrated AI chat, and project management.
+ Features ACE Editor with multi-tab editing, syntax highlighting,
+ KinUI project templates, Klade integration, and KinDOS execution.
  Installs to /opt/kin/modules/kin-acaret/.
 EOF
 

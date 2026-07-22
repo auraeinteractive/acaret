@@ -1,657 +1,283 @@
-// Editor
-let editorDocuments = {};
-let currentEditor = false;
+(function() {
+    'use strict';
 
-window.toolbar = window.toolbar ? window.toolbar : {};
-window.toolbar.editor = function() {
-    let topToolbar = document.getElementById( 'top_toolbar' );
-    if( !topToolbar.querySelector( '.TopTabs' ) )
-    {
-        topToolbar.innerHTML = '<div class="TopTabs"></div><div class="TopTabOption"><button class="taboption preview">Preview</button><button class="taboption add">New file</button></div>';
-        
-        let taboptions = topToolbar.getElementsByClassName( 'taboption' );
-        for( let a = 0; a < taboptions.length; a++ )
-        {
-            if( taboptions[a].classList.contains( 'add' ) )
-            {
-                taboptions[a].onclick = ( e ) => {
-                    newEditor();
-                };
-            }
-            if( taboptions[a].classList.contains( 'preview' ) )
-            {
-                taboptions[a].onclick = ( e ) => {
-                    togglePreview();
-                };
-            }
-        }
-        if( !currentEditor )
-        {
-            newEditor();
-        }
+    const documents = new Map();
+    let nextEditorId = 1;
+    let toolbarInitialized = false;
+    let previewVisible = false;
+    window.currentEditor = null;
+    window.editorDocuments = documents;
+    window.toolbar = window.toolbar || {};
+
+    function basename(path) {
+        const value = String(path || '').replace(/\/+$/, '');
+        return value.slice(Math.max(value.lastIndexOf('/'), value.lastIndexOf(':')) + 1) || 'New file';
     }
-    
-    let toptabs = topToolbar.querySelector('.TopTabs');
-    if( toptabs )
-    {
-        let isScrolling = false; // Prevent multiple animations at the same time
-        let currentDelta = 0; // Store the current delta for smooth updates
 
-        // Add a wheel event listener to handle the scroll logic
-        toptabs.addEventListener('wheel', (event) => {
-            event.preventDefault();
+    function dirname(path) {
+        const value = String(path || '');
+        const slash = value.lastIndexOf('/');
+        const colon = value.indexOf(':');
+        if (slash > colon) return value.slice(0, slash + 1);
+        return colon >= 0 ? value.slice(0, colon + 1) : '';
+    }
 
-            // Adjust the speed multiplier based on the Shift key
-            let speedMultiplier = 3;
-            currentDelta += event.deltaY * 0.5 * speedMultiplier;
+    function extension(filename) {
+        const value = String(filename || '');
+        const dot = value.lastIndexOf('.');
+        return dot >= 0 ? value.slice(dot + 1).toLowerCase() : '';
+    }
 
-            if (!isScrolling) {
-                isScrolling = true;
-
-                let startScroll = toptabs.scrollLeft;
-                let duration = 300; // Duration of the tween in milliseconds
-                let startTime = null;
-
-                // Easing function for a smooth transition (ease-out)
-                const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
-
-                const animateScroll = (timestamp) => {
-                    if (!startTime) startTime = timestamp;
-
-                    let elapsed = timestamp - startTime;
-                    let progress = Math.min(elapsed / duration, 1); // Cap progress at 1
-                    let easedProgress = easeOutCubic(progress);
-
-                    // Update scroll position dynamically based on currentDelta
-                    toptabs.scrollLeft = startScroll + currentDelta * easedProgress;
-
-                    if (progress < 1) {
-                        requestAnimationFrame(animateScroll);
-                    } else {
-                        // Reset for the next scroll interaction
-                        isScrolling = false;
-                        currentDelta = 0; // Reset delta after completing animation
-                    }
-                };
-
-                requestAnimationFrame(animateScroll);
-            }
-        });
-        // Function to check overflow and add ellipsis
-        const checkOverflowAndAddEllipsis = () => {
-            // Get the last child element under toptabs
-            const tabs = Array.from(toptabs.querySelectorAll('div'));
-            if (tabs.length === 0 && toptabs.parentNode ) 
-            {
-                let ee = toptabs.parentNode.querySelector( '.TopTabEllipsis' );
-                if( ee ) ee.parentNode.removeChild( ee );
-                return;
-            }
-
-            const lastTab = tabs[tabs.length - 1];
-            const toptabsRect = toptabs.getBoundingClientRect();
-            const lastTabRect = lastTab.getBoundingClientRect();
-
-            // Check if the last tab is overflowing
-            if( lastTabRect.right > toptabsRect.right ){
-                // Add ellipsis if it doesn't already exist
-                if (!toptabs.parentNode.querySelector('.TopTabEllipsis')) {
-                    const ellipsis = document.createElement('div');
-                    ellipsis.innerHTML = ''; // Vertical ellipsis
-                    let left = toptabs.offsetWidth - 10;
-                    ellipsis.className = 'TopTabEllipsis';
-                    toptabs.style.position = 'relative'; // Ensure the parent is relatively positioned
-                    toptabs.parentNode.appendChild(ellipsis);
-
-                    // Add click event to show the widget
-                    ellipsis.addEventListener('click', () => {
-                        showOverflowWidget(toptabs.querySelectorAll('div'));
-                    });
-                }
-            }
-            else if( toptabs.parentNode )
-            {
-                // Remove ellipsis if no overflow
-                const ee = toptabs.parentNode.querySelector( '.TopTabEllipsis' );
-                if( ee )
-                {
-                    ee.parentNode.removeChild( ee );
-                    console.log( 'REM' );
-                }
-            }
-            else
-            {
-                console.log( 'Uncaught test of toptabs ellipsis.' );
-            }
+    function modeForFilename(filename) {
+        if (filename === 'Makefile') return 'ace/mode/makefile';
+        const modes = {
+            ini: 'ini', conf: 'json', yml: 'yaml', yaml: 'yaml', js: 'javascript', mjs: 'javascript',
+            cjs: 'javascript', jsx: 'javascript', html: 'html', htm: 'html', css: 'css', json: 'json',
+            klade: 'json', acaret: 'json', xml: 'xml', php: 'php', py: 'python', rb: 'ruby', h: 'c_cpp',
+            c: 'c_cpp', cpp: 'c_cpp', cc: 'c_cpp', java: 'java', swift: 'swift', go: 'golang', rs: 'rust',
+            ts: 'typescript', vue: 'vue', md: 'markdown', markdown: 'markdown', bash: 'sh', sh: 'sh'
         };
-
-        // Function to show overflow widget
-        const showOverflowWidget = (tabs) => {
-            // Create a modal-like container
-            const blocker = document.createElement( 'div' );
-            blocker.className = 'blocker';
-            document.body.appendChild( blocker );
-            toptabs.blocker = blocker;
-            
-            const widget = document.createElement('div');
-            widget.className = 'overflow-widget';
-
-            // Add tabs to the widget
-            tabs.forEach((tab) => {
-                const item = document.createElement('div');
-                item.textContent = tab.textContent;
-                item.className = 'overflow-row-element';
-                item.addEventListener('click', () => {
-                    tab.parentNode.scrollLeft = tab.offsetLeft;
-                    tab.click(); // Trigger click on the original tab
-                    if( widget && widget.parentNode )
-                        blocker.removeChild( widget ); // Close the widget
-                    if( blocker.parentNode )
-                        document.body.removeChild( blocker );
-                    toptabs.blocker = null;
-                });
-                widget.appendChild(item);
-            });
-
-            // Add the widget to the body
-            blocker.appendChild( widget );
-
-            // Close the widget on outside click
-            const closeWidget = (e) => {
-                if (!widget.contains(e.target)) {
-                    blocker.removeChild(widget);
-                    document.body.removeChild( blocker );
-                    toptabs.blocker = null;
-                    document.removeEventListener('click', closeWidget);
-                }
-            };
-            setTimeout(() => document.addEventListener('click', closeWidget), 0); // Delay to avoid immediate removal
-        };
-
-        // Initial check and attach resize listener
-        checkOverflowAndAddEllipsis();
-        window.addEventListener('resize', checkOverflowAndAddEllipsis);
-    }
-    
-    // Recreate tabs that were removed
-    if( !toptabs.querySelector( '.TopTab' ) )
-    {
-        for( let a in editorDocuments )
-        {
-            toptabs.appendChild( editorDocuments[ a ].tab );
-        }
+        return 'ace/mode/' + (modes[extension(filename)] || 'plain_text');
     }
 
-
-    let allTabs = topToolbar.getElementsByClassName( 'TopTab' );
-    let pages = document.getElementById( 'page_editor' ).querySelectorAll( '[editor]' );
-    if( allTabs && pages )
-    {
-        let active = false;
-        for( let a = 0; a < allTabs.length; a++ )
-        {
-            if( !active && allTabs[ a ].classList.contains( 'active' ) )
-                active = allTabs[ a ];
-            allTabs[ a ].onclick = function()
-            {
-                togglePreview( false );
-                let ed = this.getAttribute( 'editor' );
-                this.classList.add( 'active' );
-                currentEditor = this.editor;
-                updateBottomBar();
-                window.toolbar.navigator();
-                for( let c = 0; c < allTabs.length; c++ )
-                    if( allTabs[ c ] != this ) allTabs[ c ].classList.remove( 'active' );
-                
-                for( let b = 0; b < pages.length; b++ )
-                {
-                    if( pages[ b ].getAttribute( 'editor' ) == ed )
-                    {
-                        pages[ b ].classList.add( 'active' );
-                    }
-                    else
-                    {
-                        pages[ b ].classList.remove( 'active' );
-                    }
-                }
-            }
-        }
-        if( !active )
-        {
-            allTabs[ 0 ].click();
-        }
-    }
-};
-
-function loadFile( str, path, filename )
-{
-    if( !document.getElementById( 'top_toolbar' ).querySelector( '.TopTabs' ) )
-    {
-        document.getElementById( 'tab_editor' ).click();
-    }
-    
-    if( path.substr( -1, 1 ) != '/' )
-        path += '/';
-        
-    // Don't open the same one!
-    for( let a in editorDocuments )
-    {
-        if( editorDocuments[ a ].path == path && editorDocuments[ a ].filename == filename )
-        {
-            editorDocuments[ a ].tab.click();
-            return;
-        }
-    }
-    
-    let editor = newEditor( filename, path );
-    
-    const binaryArray = Uint8Array.from( atob( str ), char => char.charCodeAt( 0 ) );
-    // Decode the Uint8Array as a UTF-8 string
-    const utf8Decoder = new TextDecoder("utf-8");
-    const utf8String = utf8Decoder.decode( binaryArray );
-    
-    editor.setValue( utf8String );
-    editor.getSession().getUndoManager().reset();
-    editor.document_saved = true;
-    editor.clearSelection();
-    
-    // These needs to be here
-    editor.path = path;
-    editor.filename = filename;
-    updateEditorTabLabel( editor );
-    
-    updateBottomBar();
-}
-
-function updateEditorTabLabel( editor )
-{
-    if( !editor || !editor.tab ) return;
-    let close = editor.tab.querySelector( '.close' );
-    if( !close ) return;
-    while( close.nextSibling )
-        editor.tab.removeChild( close.nextSibling );
-    editor.tab.appendChild( document.createTextNode( editor.filename || 'New file' ) );
-}
-window.updateEditorTabLabel = updateEditorTabLabel;
-
-function setCurrentEditor( data )
-{
-    currentEditor.path = data.path;
-    if( currentEditor.path.substr( -1, 1 ) != '/' )
-        currentEditor.path += '/';
-    currentEditor.filename = data.filename;
-    updateEditorTabLabel( currentEditor );
-    updateBottomBar();
-}
-
-function getSyntaxHighlightingMode( ext )
-{
-    let mode = 'ace/mode/plain_text';
-    
-    if( ext )
-    {
-        ext = ext.toLowerCase();
-        switch( ext )
-        {
-            case 'ini':
-                mode = 'ace/mode/ini';
-                break;
-            case 'conf':
-                mode = 'ace/mode/json';
-                break;
-            case 'yml':
-            case 'yaml':
-                mode = 'ace/mode/yaml';
-                break;
-            case 'javascript':
-            case 'js':
-                mode = 'ace/mode/javascript';
-                break;
-            case 'html':
-                mode = 'ace/mode/html';
-                break;
-            case 'css':
-                mode = 'ace/mode/css';
-                break;
-            case 'json':
-                mode = 'ace/mode/json';
-                break;
-            case 'xml':
-                mode = 'ace/mode/xml';
-                break;
-            case 'php':
-                mode = 'ace/mode/php';
-                break;
-            case 'py':
-                mode = 'ace/mode/python';
-                break;
-            case 'rb':
-                mode = 'ace/mode/ruby';
-                break;
-            case 'h':
-            case 'c':
-                mode = 'ace/mode/c_cpp';
-                break;
-            case 'cpp':
-                mode = 'ace/mode/c_cpp';
-                break;
-            case 'java':
-                mode = 'ace/mode/java';
-                break;
-            case 'swift':
-                mode = 'ace/mode/swift';
-                break;
-            case 'go':
-                mode = 'ace/mode/go';
-                break;
-            case 'rs':
-                mode = 'ace/mode/rust';
-                break;
-            case 'ts':
-                mode = 'ace/mode/typescript';
-                break;
-            case 'vue':
-                mode = 'ace/mode/vue';
-                break;
-            case 'md':
-                mode = 'ace/mode/markdown';
-                break;
-            case 'bash':
-            case 'sh':
-                mode = 'ace/mode/sh';
-                break;
-            case 'txt':
-            case 'new file':
-            case 'New file':
-            case 'unnamed file':
-            default:
-                mode = 'ace/mode/plain_text';
-                break;
-        }
-    }
-    if( mode == 'makefile' )
-    {
-        return 'ace/mode/makefile';
-    }
-    return mode;    
-}
-
-function updateBottomBar()
-{
-    let mode = 'ace/mode/plain_text';
-    try
-    {
-        let ext = currentEditor.filename.split('.').pop();
-        mode = getSyntaxHighlightingMode( ext );
-    }
-    catch( e ){ console.log( 'Some error' ); }
-    
-    if( currentEditor.filename == 'Makefile' )
-        mode = 'ace/mode/makefile';
-    
-    if( currentEditor.filename.substr( -3, 3 ).toLowerCase() == '.md' )
-    {
-        document.body.classList.add( 'filetype-md' );
-    }
-    else
-    {
-        document.body.classList.remove( 'filetype-md' );
-    }
-    
-    currentEditor.session.setMode( mode );
-    
-    // Set the bottom bar info
-    document.getElementById( 'bottombar' ).querySelector( '.bottom-info' ).innerHTML = '<div>Editing: ' + mode.split( '/' ).pop().split( '_' ).join( '/' ) + '</div><div>' + ( currentEditor.document_saved ? 'Saved.' : 'Not saved.' ) + '</div><div>' + ( currentProject.name ? ( 'Project: ' + currentProject.name ) : 'No project.' ) + '</div>';
-}
-
-let previewOn = false;
-
-function togglePreview( forceState = 0 )
-{
-    if( forceState === false )
-    {
-        previewOn = true;
-    }
-    else if( forceState === true )
-    {
-        previewOn = false;
-    }
-
-    if( !previewOn )
-    {
-        previewOn = true;
-        
-        document.body.classList.add( 'file-preview' );
-        
-        let str = currentEditor.getValue();
-        
-        if( document.body.classList.contains( 'filetype-md' ) )
-        {
-            str = new showdown.Converter().makeHtml( str );
-        }
-        
-        document.getElementById( 'page_preview' ).innerHTML = '<div>' + str + '</div>';
-        document.getElementById( 'page_preview' ).classList.add( 'showing' );
-    }
-    else
-    {
-        document.body.classList.remove( 'file-preview' );
-        previewOn = false;
-        document.getElementById( 'page_preview' ).classList.remove( 'showing' );
-        document.getElementById( 'page_preview' ).innerHTML = '';
-    }
-}
-
-function removeDocumentFromStack( edName )
-{
-    let out = {};
-    for( let a in editorDocuments )
-    {
-        if( a != edName )
-        {
-            out[ a ] = editorDocuments[ a ];
-        }
-    }
-    editorDocuments = out;
-}
-
-let edName = 1;
-function newEditor( filename = false, path = false )
-{
-    if( !document.getElementById( 'top_toolbar' ).querySelector( '.TopTabs' ) )
-    {
-        document.getElementById( 'tab_editor' ).click();
-    }
-    
-    if( path && path.substr( -1, 1 ) != '/' )
-        path += '/';
-    
-    // Don't open the same one!
-    for( let a in editorDocuments )
-    {
-        if( editorDocuments[ a ].path == path && editorDocuments[ a ].filename == filename )
-        {
-            editorDocuments[ a ].tab.click();
-            return;
-        }
-    }
-
-    edName++;
-    
-    let p = document.createElement( 'pre' );
-    p.setAttribute( 'editor', edName );
-    document.getElementById( 'page_editor' ).appendChild( p );
-    
-    let editor = ace.edit( p );
-    p.classList.add( 'active' );
-    editor.setTheme("ace/theme/twilight");
-    editor.session.setMode("ace/mode/javascript");
-    editor.setOptions({
-        fontFamily: "Ubuntu Mono, Monospace",
-        fontSize: "14px",
-        wrap: true
-    });
-    editor.resize();
-    
-    editorDocuments[ edName ] = editor;
-    editor.editorId = edName;
-    editor.filename = filename ? filename : 'New file';
-    editor.path = path ? path : '';
-    if( editor.path.substr( -1, 1 ) != '/' )
-        editor.path += '/';
-    
-    let tab = document.createElement( 'div' );
-    tab.innerHTML = '<span class="close"></span>' + editor.filename;
-    tab.querySelector( '.close' ).onclick = () => {
-        togglePreview( false );
-        
-        let p = tab.parentNode;
-        let activate = false;
-        // Try to activate next/prev?
-        for( let a = 0; a < p.childNodes.length; a++ )
-        {
-            if( p.childNodes[a] == tab )
-            {
-                if( a + 1 < p.childNodes.length )
-                {
-                    activate = p.childNodes[ a + 1 ];
-                }
-                else if( a > 0 )
-                {
-                    activate = p.childNodes[ a - 1 ];
-                }
-            }
-        }
-        
-        p.removeChild( tab );
-        removeDocumentFromStack( editor.editorId );
-        editor.destroy();
-        // Remove page
-        editor.container.parentNode.removeChild( editor.container );
-        if( activate ) 
-        {
-            setTimeout( () => { activate.click(); }, 1 );
-        }
-        toolbar.editor();
+    window.setEditorPath = function(editor, kinPath) {
+        editor.kinPath = String(kinPath || '');
+        editor.filename = editor.kinPath ? basename(editor.kinPath) : 'New file';
+        editor.path = editor.kinPath ? dirname(editor.kinPath) : '';
+        editor.session.setMode(modeForFilename(editor.filename));
     };
-    tab.className = 'TopTab';
-    tab.setAttribute( 'editor', edName );
-    tab.editor = editor;
-    editor.tab = tab;
-    document.getElementById( 'top_toolbar' ).querySelector( '.TopTabs' ).appendChild( tab );
-    
-    // Reinit
-    toolbar.editor();
-    
-    editor.focus();
-    tab.click();
-    editor.resize();
-    
-    editor.on( 'change', function( e ){
-        editor.document_saved = false;
+
+    function ensureToolbar() {
+        const host = document.getElementById('top_toolbar');
+        if (toolbarInitialized && host.querySelector('.TopTabs')) return;
+        toolbarInitialized = true;
+        host.replaceChildren();
+        const tabs = document.createElement('div');
+        tabs.className = 'TopTabs';
+        const options = document.createElement('div');
+        options.className = 'TopTabOption';
+        const preview = document.createElement('button');
+        preview.type = 'button'; preview.className = 'taboption preview'; preview.textContent = 'Preview';
+        preview.addEventListener('click', function() { togglePreview(); });
+        const klade = document.createElement('button');
+        klade.type = 'button'; klade.className = 'taboption klade'; klade.textContent = 'Open in Klade';
+        klade.addEventListener('click', async function() {
+            if (!window.currentEditor || !window.currentEditor.kinPath) return;
+            if (!window.currentEditor.document_saved && !await window.saveCurrentFile(false)) return;
+            window.openInKlade(window.currentEditor.kinPath);
+        });
+        const run = document.createElement('button');
+        run.type = 'button'; run.className = 'taboption run'; run.textContent = 'Run in KinDOS';
+        run.addEventListener('click', window.runCurrentInKinDOS);
+        const add = document.createElement('button');
+        add.type = 'button'; add.className = 'taboption add'; add.textContent = 'New file';
+        add.addEventListener('click', function() { window.newEditor(); });
+        options.append(preview, klade, run, add);
+        host.append(tabs, options);
+        tabs.addEventListener('wheel', function(event) {
+            if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) tabs.scrollLeft += event.deltaY;
+            else tabs.scrollLeft += event.deltaX;
+            event.preventDefault();
+        }, { passive: false });
+    }
+
+    function activate(editor) {
+        if (!editor || !documents.has(editor.editorId)) return;
+        hidePreview();
+        window.currentEditor = editor;
+        documents.forEach(function(candidate) {
+            candidate.tab.classList.toggle('active', candidate === editor);
+            candidate.container.classList.toggle('active', candidate === editor);
+        });
         updateBottomBar();
-    } );
-    
-    updateBottomBar();
-    
-    // Return reference to editor
-    return editor;
-}
+        if (window.toolbar.navigator) window.toolbar.navigator();
+        if (document.getElementById('page_tags').classList.contains('active') && window.toolbar.tags) window.toolbar.tags();
+        editor.resize(); editor.focus();
+    }
 
-function closeFileAll()
-{
-    let unsaved = false;
-    for( let a in editorDocuments )
-    {
-        if( !editorDocuments[ a ].document_saved )
-        {
-            unsaved = true;
-            break;
-        }
-    }
-    let conf = true;
-    if( unsaved )
-    {
-        conf = false;
-        if( confirm( 'You have unsaved document(s). Do you still want to close all documents?' ) )
-        {
-            conf = true;
-        }
-    }
-    if( conf )
-    {
-        for( let a in editorDocuments )
-        {
-            closeFile( editorDocuments[a] );
-        }
-    }
-}
+    window.updateEditorTabLabel = function(editor) {
+        if (!editor || !editor.tab) return;
+        const label = editor.tab.querySelector('.label');
+        label.textContent = editor.filename || 'New file';
+        editor.tab.classList.toggle('dirty', !editor.document_saved);
+        editor.tab.title = (editor.kinPath || editor.filename) + (editor.document_saved ? '' : ' — modified');
+    };
 
-function closeFile( ed = false )
-{
-    if( !ed || !ed.tab ) return;
-    let p = ed.tab.parentNode;
-    let activate = false;
-    
-    let tab = ed.tab;
-    togglePreview( false );
-    
-    // Try to activate next/prev?
-    if( p )
-    {
-        for( let a = 0; a < p.childNodes.length; a++ )
-        {
-            if( p.childNodes[a] == tab )
-            {
-                if( a + 1 < p.childNodes.length )
-                {
-                    activate = p.childNodes[ a + 1 ];
-                }
-                else if( a > 0 )
-                {
-                    activate = p.childNodes[ a - 1 ];
-                }
+    window.updateBottomBar = function() {
+        const info = document.querySelector('#bottombar .bottom-info');
+        if (!window.currentEditor) { info.replaceChildren(); return; }
+        const mode = modeForFilename(window.currentEditor.filename).split('/').pop().replace('_', '/');
+        info.replaceChildren();
+        [ 'Editing: ' + mode, window.currentEditor.document_saved ? 'Saved.' : 'Not saved.',
+          window.currentProject && window.currentProject.name ? 'Project: ' + window.currentProject.name : 'No project.'
+        ].forEach(function(value) { const item = document.createElement('div'); item.textContent = value; info.appendChild(item); });
+        document.body.classList.toggle('filetype-md', /\.(md|markdown)$/i.test(window.currentEditor.filename));
+        document.body.classList.toggle('filetype-klade', /\.klade$/i.test(window.currentEditor.filename));
+        document.body.classList.toggle('filetype-js', /\.js$/i.test(window.currentEditor.filename));
+    };
+
+    window.toolbar.editor = function() {
+        ensureToolbar();
+        const tabs = document.querySelector('#top_toolbar .TopTabs');
+        documents.forEach(function(editor) { if (editor.tab.parentNode !== tabs) tabs.appendChild(editor.tab); });
+        if (!documents.size) window.newEditor();
+        else if (!window.currentEditor || !documents.has(window.currentEditor.editorId)) activate(documents.values().next().value);
+    };
+
+    window.newEditor = function(filename, path) {
+        ensureToolbar();
+        const kinPath = path && filename ? String(path).replace(/\/?$/, '/') + filename : (path && !filename ? String(path) : '');
+        if (kinPath) {
+            for (const editor of documents.values()) {
+                if (editor.kinPath === kinPath) { activate(editor); return editor; }
             }
         }
-        
-        p.removeChild( tab );
-    }
-    removeDocumentFromStack( ed.editorId );
-    ed.destroy();
-    
-    // Remove page
-    if( ed.parentNode )
-    {
-        ed.container.parentNode.removeChild( editor.container );
-        if( activate ) 
-        {
-            setTimeout( () => { activate.click(); }, 1 );
+        const container = document.createElement('pre');
+        const id = nextEditorId++;
+        container.setAttribute('editor', String(id));
+        document.getElementById('page_editor').appendChild(container);
+        const editor = ace.edit(container);
+        editor.editorId = id; editor.container = container; editor.document_saved = false;
+        window.setEditorPath(editor, kinPath);
+        if (!kinPath && filename) editor.filename = filename;
+        editor.setTheme('ace/theme/twilight');
+        editor.setOptions({ fontFamily: 'ui-monospace, SFMono-Regular, Consolas, monospace', fontSize: '14px', wrap: true });
+        editor.session.setMode(modeForFilename(editor.filename));
+        const tab = document.createElement('div');
+        tab.className = 'TopTab'; tab.setAttribute('editor', String(id)); tab.editor = editor; editor.tab = tab;
+        const close = document.createElement('button');
+        close.type = 'button'; close.className = 'close'; close.setAttribute('aria-label', 'Close file');
+        const label = document.createElement('span'); label.className = 'label';
+        tab.append(close, label);
+        tab.addEventListener('click', function() { activate(editor); });
+        close.addEventListener('click', function(event) { event.stopPropagation(); void window.closeFile(editor); });
+        document.querySelector('#top_toolbar .TopTabs').appendChild(tab);
+        documents.set(id, editor);
+        editor.on('change', function() {
+            editor.document_saved = false;
+            window.updateEditorTabLabel(editor);
+            if (editor === window.currentEditor) updateBottomBar();
+        });
+        window.updateEditorTabLabel(editor);
+        activate(editor);
+        return editor;
+    };
+
+    window.loadTextFile = function(content, kinPath) {
+        for (const editor of documents.values()) {
+            if (editor.kinPath === kinPath) { activate(editor); return editor; }
         }
-    }
-    toolbar.editor();
-}
+        const editor = Array.from(documents.values()).find(function(candidate) {
+            return !candidate.kinPath && !candidate.getValue() && documents.size === 1;
+        }) || window.newEditor();
+        activate(editor);
+        window.setEditorPath(editor, kinPath);
+        editor.setValue(String(content || ''), -1);
+        editor.session.getUndoManager().reset();
+        editor.document_saved = true;
+        editor.clearSelection();
+        window.updateEditorTabLabel(editor); updateBottomBar();
+        return editor;
+    };
 
-function resizeAllEditors()
-{
-    for( let a in editorDocuments )
-    {
-        let ed = editorDocuments[ a ];
-        if( ed && typeof ed.resize === 'function' )
-            ed.resize();
+    async function mayClose(editor) {
+        if (!editor || editor.document_saved) return true;
+        return window.kinConfirm('Close “' + editor.filename + '” without saving?', {
+            title: 'Unsaved changes', confirmLabel: 'Discard'
+        });
     }
-}
-window.resizeAllEditors = resizeAllEditors;
-window.addEventListener( 'resize', resizeAllEditors );
 
-function resizeAllEditors()
-{
-    for( let a in editorDocuments )
-    {
-        let ed = editorDocuments[ a ];
-        if( ed && typeof ed.resize === 'function' )
-            ed.resize();
+    window.closeFile = async function(editor, skipPrompt) {
+        if (!editor || !documents.has(editor.editorId)) return false;
+        if (!skipPrompt && !await mayClose(editor)) return false;
+        const ordered = Array.from(documents.values());
+        const index = ordered.indexOf(editor);
+        const replacement = ordered[index + 1] || ordered[index - 1] || null;
+        documents.delete(editor.editorId);
+        editor.tab.remove(); editor.destroy(); editor.container.remove();
+        if (window.currentEditor === editor) window.currentEditor = null;
+        if (replacement) activate(replacement); else window.newEditor();
+        return true;
+    };
+
+    window.closeFileAll = async function() {
+        const dirty = Array.from(documents.values()).filter(function(editor) { return !editor.document_saved; });
+        if (dirty.length && !await window.kinConfirm('Close ' + dirty.length + ' unsaved document(s)?', {
+            title: 'Unsaved changes', confirmLabel: 'Discard all'
+        })) return false;
+        const items = Array.from(documents.values());
+        for (const editor of items) await window.closeFile(editor, true);
+        return true;
+    };
+
+    function hidePreview() {
+        previewVisible = false; document.body.classList.remove('file-preview');
+        const host = document.getElementById('page_preview'); host.classList.remove('showing'); host.replaceChildren();
     }
-}
-window.resizeAllEditors = resizeAllEditors;
-window.addEventListener( 'resize', resizeAllEditors );
 
+    function togglePreview() {
+        if (previewVisible) { hidePreview(); return; }
+        if (!window.currentEditor || !/\.(md|markdown)$/i.test(window.currentEditor.filename)) return;
+        const iframe = document.createElement('iframe');
+        iframe.setAttribute('sandbox', ''); iframe.title = 'Markdown preview';
+        const html = new showdown.Converter({ tables: true, strikethrough: true }).makeHtml(window.currentEditor.getValue());
+        iframe.srcdoc = '<!doctype html><meta charset="utf-8"><style>body{font:16px system-ui;line-height:1.55;padding:24px;color:#222}pre{white-space:pre-wrap;background:#eee;padding:12px}img{max-width:100%}</style>' + html;
+        const host = document.getElementById('page_preview'); host.replaceChildren(iframe); host.classList.add('showing');
+        document.body.classList.add('file-preview'); previewVisible = true;
+    }
+
+    window.openInKlade = function(path) {
+        if (path) window.launchKinApp('klade', { kin_open_path: path });
+    };
+
+    function quoteShell(value) { return '"' + String(value).replace(/([\\"])/g, '\\$1') + '"'; }
+    window.quoteKinShellArg = quoteShell;
+
+    function showOutput(result, command) {
+        const panel = document.getElementById('output_panel'); panel.classList.add('showing');
+        document.body.classList.add('output-showing');
+        panel.querySelector('.output-command').textContent = '$ ' + command;
+        panel.querySelector('.output-stdout').textContent = result.stdout || '';
+        panel.querySelector('.output-stderr').textContent = result.stderr || '';
+        panel.querySelector('.output-status').textContent = 'Exit ' + result.exit_code + (result.truncated ? ' · output truncated' : '');
+    }
+
+    window.runCurrentInKinDOS = async function() {
+        const editor = window.currentEditor;
+        if (!editor || !/\.js$/i.test(editor.filename)) {
+            await window.kinAlert('Run in KinDOS requires a JavaScript (.js) file.', { title: 'Run' }); return;
+        }
+        if ((!editor.kinPath || !editor.document_saved) && !await window.saveCurrentFile(!editor.kinPath)) return;
+        const command = 'jsexec ' + quoteShell(editor.kinPath);
+        const panel = document.getElementById('output_panel'); panel.classList.add('showing'); document.body.classList.add('output-showing');
+        panel.querySelector('.output-command').textContent = '$ ' + command;
+        panel.querySelector('.output-status').textContent = 'Running…';
+        panel.querySelector('.output-stdout').textContent = ''; panel.querySelector('.output-stderr').textContent = '';
+        try { showOutput(await window.kinRunShellLine(command, dirname(editor.kinPath)), command); }
+        catch (error) { showOutput({ stdout: '', stderr: error.message, exit_code: 'error' }, command); }
+    };
+
+    window.editorClipboardAction = async function(action) {
+        const editor = window.currentEditor; if (!editor) return;
+        if (!navigator.clipboard) { editor.execCommand(action); return; }
+        if (action === 'paste') { editor.insert(await navigator.clipboard.readText()); return; }
+        const text = editor.getSelectedText(); if (!text) return;
+        await navigator.clipboard.writeText(text);
+        if (action === 'cut') editor.session.remove(editor.getSelectionRange());
+    };
+
+    window.resizeAllEditors = function() { documents.forEach(function(editor) { editor.resize(); }); };
+    window.addEventListener('resize', window.resizeAllEditors);
+
+    document.addEventListener('click', function(event) {
+        if (event.target.id === 'output_toggle') {
+            const showing = document.getElementById('output_panel').classList.toggle('showing');
+            document.body.classList.toggle('output-showing', showing); window.resizeAllEditors();
+        }
+        else if (event.target.classList.contains('output-close')) { document.getElementById('output_panel').classList.remove('showing'); document.body.classList.remove('output-showing'); }
+        else if (event.target.classList.contains('output-clear')) {
+            document.querySelectorAll('#output_panel pre').forEach(function(pre) { pre.textContent = ''; });
+            document.querySelector('#output_panel .output-status').textContent = '';
+        }
+    });
+})();

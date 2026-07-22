@@ -2,56 +2,27 @@
 <html>
     <head>
         <title>Acaret</title>
-        <link rel="icon" href="app.png" type="image/png" />
-        <link rel="preconnect" href="https://fonts.googleapis.com"/>
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-        <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400..900&display=swap" rel="stylesheet"/>
+        <link rel="icon" href="icon.png" type="image/png" />
         <link rel="stylesheet" href="styles/main.css"/>
-        <link rel="stylesheet" href="styles/page-flow-nodes.css"/>
         <link rel="stylesheet" href="../kin_ui/theme/kin-ui.css"/>
-        <script type="text/javascript" src="libs/ace/src-noconflict/ace.js" charset="utf-8"></script>
-        <script type="text/javascript" src="libs/ace/src-noconflict/mode-javascript.js" charset="utf-8"></script>
-        <script type="text/javascript" src="libs/ace/src-noconflict/theme-twilight.js" charset="utf-8"></script>
-        <script type="text/javascript" src="js/showdown.min.js"></script>
-        <script type="text/javascript" src="js/signals.js"></script>
-        <script type="text/javascript" src="js/conversation_logic.js"></script>
-        <script type="text/javascript" src="js/conversation.js"></script>
-        <script type="text/javascript" src="js/gui-logic.js"></script>
-        <script type="text/javascript" src="js/page-editor.js"></script>
-        <script type="text/javascript" src="js/page-shop.js"></script>
-        <script type="text/javascript" src="js/page-flow-nodes.js"></script>
-        <script type="text/javascript" src="js/page-ai-tools.js"></script>
-        <script type="text/javascript" src="js/page-version-control.js"></script>
-        <script type="text/javascript" src="js/page-project.js"></script>
-        <script type="text/javascript" src="js/page-chat.js"></script>
-        <script type="text/javascript" src="js/page-folders.js"></script>
-        <script type="text/javascript" src="js/page-translations.js"></script>
-        <script type="text/javascript" src="js/page-tags.js"></script>
-        <script type="text/javascript" src="js/page-navigator.js"></script>
     </head>
     <body>
         <div id="overlay"></div>
         <div id="leftbar">
             <button class="button btn-editor active" id="tab_editor"><span>Editor</span></button>
-            <button class="button btn-shop" id="tab_shop"><span>Shop</span></button>
-            <button class="button btn-flow-nodes" id="tab_flow-nodes"><span>Flow nodes</span></button>
-            <button class="button btn-ai-tools" id="tab_ai-tools"><span>AI tools</span></button>
-            <button class="button btn-version-control" id="tab_version-control"><span>Version control</span></button>
             <button class="button btn-project" id="tab_project"><span>Project</span></button>
         </div>
         <div id="topbar">
             <div id="top_toolbar"></div>
-            <div id="top_chat_title">
+            <div id="right_panel_header">
                 <div></div><div></div>
             </div>
         </div>
         <div id="bottombar">
             <div class="bottom-info"></div>
-            <button class="button btn-debug" id="tab_debug">Debug</button>
-            <button class="button btn-document" id="tab_document">Document settings</button>
+            <button class="button btn-output" id="output_toggle" type="button">Output</button>
         </div>
         <div id="rightbar">
-            <button class="button btn-chat" id="tab_chat"><span>Chat</span></button>
             <button class="button btn-folders active" id="tab_folders"><span>Folders</span></button>
             <button class="button btn-translations" id="tab_translations"><span>Translations</span></button>
             <button class="button btn-tags" id="tab_tags"><span>Tags</span></button>
@@ -59,19 +30,6 @@
         </div>
         <div id="right-panel-resizer" title="Drag to resize"></div>
         <div id="rightpages">
-            <div class="page" id="page_chat">
-                <div id="chat">
-                    <div class="messages">
-                    </div>
-                    <div class="chat">
-                        <div><span class="chat-aperture"></span></div>
-                        <div class="prompt">
-                            <textarea class="prompt" onkeyup="checkChatEvents( event, true )" onkeydown="checkChatEvents( event )"></textarea>
-                        </div>
-                        <div><span class="chat-send" onclick="sendPrompt()"></span></div>
-                    </div>
-                </div>
-            </div>
             <div class="page active" id="page_folders">
             </div>
             <div class="page" id="page_translations">
@@ -82,10 +40,9 @@
             </div>
         </div>
         
-        <div id="debug">
-            <div class="page" id="page_debug"><div class="close-page"></div><div class="page-content"></div></div>
-            <div class="page" id="page_document"><div class="close-page"></div><div class="page-content">...</div></div>
-            <div class="page" id="page_codehelp"><pre id="page_codehelp_editor"></pre><div class="close"></div></div>
+        <div id="output_panel" aria-live="polite">
+            <div class="output-header"><strong>KinDOS Output</strong><span class="output-status"></span><button type="button" class="output-clear">Clear</button><button type="button" class="output-close" aria-label="Close output">×</button></div>
+            <pre class="output-command"></pre><pre class="output-stdout"></pre><pre class="output-stderr"></pre>
         </div>
         
         <div id="page_preview"></div>
@@ -93,134 +50,12 @@
         <div id="pages">
             <div class="page active" id="page_editor" toolbar="editor">
             </div>
-            <div class="page" id="page_shop" toolbar="shop">
-                <p>
-                    Hello world shop
-                </p>
-            </div>
-            <div class="page" id="page_flow-nodes" toolbar="flow-nodes">
-                <div class="div-canvas"></div>
-            </div>
-            <div class="page" id="page_ai-tools" toolbar="ai-tools">
-                ai tools
-            </div>
-            <div class="page" id="page_version-control" toolbar="version-control">
-                version control
-            </div>
             <div class="page" id="page_project" toolbar="project">
-                <div class="hints"></div>
-                <div class="BarSetup">
-                    <div class="TabBar">
-                        <div class="barTab active" id="btab_main">Main</div>
-                    </div>
-                    <div class="TabPages">
-                        <div class="barPage active" id="bpage_main">
-                            <table>
-                                <tr>
-                                    <td>
-                                        <label>Project title</label>
-                                    </td>
-                                    <td>
-                                        <div class="form-element"><input id="p-name" type="text" value="" size="45"/></div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td colspan="2">
-                                        <hr/>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <label>Git repository uri</label>
-                                    </td>
-                                    <td>
-                                        <div class="form-element"><input id="p-git-url" type="text" value="" size="45"/></div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <label>Git username</label>
-                                    </td>
-                                    <td>
-                                        <div class="form-element"><input id="p-git-username" type="text" value="" size="45"/></div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <label>Git password</label>
-                                    </td>
-                                    <td>
-                                        <div class="form-element"><input id="p-git-password" type="text" value="" size="45"/></div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <label>Git private key</label>
-                                    </td>
-                                    <td>
-                                        <div class="form-element"><textarea id="p-git-key" cols="45" rows="4" value="" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"></textarea></div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td colspan="2">
-                                        <hr/>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                       &nbsp;
-                                    </td>
-                                    <td>
-                                        <button type="button">
-                                            Test Git settings
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td colspan="2">
-                                        <hr/>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <label>Chat system</label>
-                                    </td>
-                                    <td>
-                                        <div class="form-element">
-                                            <select id="chat-system">
-                                                <option value="ollama" selected="selected">Ollama</option>
-                                            </select>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <label>Chat server</label>
-                                    </td>
-                                    <td>
-                                        <div class="form-element">
-                                            <input type="text" size="45" id="chat-server" value="" placeholder="https://localhost:8089"/>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
+                <div class="project-overview">
+                    <div class="project-actions"><button type="button" id="project_new">New from template…</button><button type="button" id="project_open">Open project…</button><button type="button" id="project_save">Save project</button></div>
+                    <dl><dt>Name</dt><dd><input id="p-name" type="text" value=""/></dd><dt>Type</dt><dd id="p-kind">No project</dd><dt>Root</dt><dd id="p-root">—</dd><dt>Entry</dt><dd id="p-entry">—</dd></dl>
                 </div>
             </div>
         </div>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            requestAnimationFrame(function() {
-                requestAnimationFrame(function() {
-                    window.convos = new Conversation({ messageContainer: document.querySelector('.messages') });
-                    initializeGUI();
-                    if (typeof resizeAllEditors === 'function') {
-                        resizeAllEditors();
-                    }
-                });
-            });
-        });
-    </script>
     </body>
 </html>

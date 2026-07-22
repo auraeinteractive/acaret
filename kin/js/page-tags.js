@@ -2,12 +2,12 @@
 
 window.toolbar = window.toolbar ? window.toolbar : {};
 window.toolbar.tags = function() {
-    let tct = document.getElementById( 'top_chat_title' );
+    let tct = document.getElementById( 'right_panel_header' );
     let tcd = tct.getElementsByTagName( 'div' )[0];
     let tci = tct.getElementsByTagName( 'div' )[1];
-    tcd.innerHTML = 'Tags: ' + currentEditor.filename;
+    tcd.textContent = 'Tags: ' + ( currentEditor ? currentEditor.filename : 'No file' );
     tcd.className = 'tags';
-    tci.innerHTML = ''; //<em class="chat-reset" title="Reset chat"></em><em class="chat-save" title="Save chat"></em><em class="chat-more" title="Options"></em>';
+    tci.replaceChildren();
     
     let cont = document.getElementById( 'page_tags' );
     cont.innerHTML = '';
@@ -27,8 +27,6 @@ window.toolbar.tags = function() {
         
         let tags = val.split( '//tag' );
         
-        console.log( tags );
-        
         for( let a = 0; a < tags.length; a++ )
         {
             let tag = tags[a].trim();
@@ -37,14 +35,12 @@ window.toolbar.tags = function() {
             tag.pop();
             tag = tag[0].split( ':' );
             
-            console.log( 'Found a tag: ', tag );
-            
             if( !tag[1].trim() ) continue;
             tag = tag[1].split( '(' );
             tag = tag[0].trim();
             let t = document.createElement( 'div' );
             t.className = 'tag';
-            t.innerHTML = tag;
+            t.textContent = tag;
             tagDiv.appendChild( t );
             
             t.onclick = () => {
@@ -73,4 +69,3 @@ window.toolbar.tags = function() {
         }
     }
 }
-

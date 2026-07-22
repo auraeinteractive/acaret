@@ -1,245 +1,117 @@
-let currentFolder = 'Home:';
+(function() {
+    'use strict';
+    window.currentFolder = 'Home:';
+    window.toolbar = window.toolbar || {};
 
-// Refresh folder structure using Kin API
-function refreshFolderStructure(folder) {
-    // Convert Kin path to URL format
-    let kinPath = folder;
-    if (kinPath.startsWith('Home:')) {
-        kinPath = kinPath.substring(5);
+    function joinPath(folder, name) {
+        const base = String(folder || 'Home:');
+        return base + (base.endsWith(':') || base.endsWith('/') ? '' : '/') + name;
     }
-    
-    // Use Kin HTTP API for directory listing
-    fetch('/api/dir', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'path=' + encodeURIComponent('Home:' + kinPath)
-    }).then(function(r) { return r.json(); })
-      .then(function(result) {
-          if (result.response === 'success' && result.data) {
-              receiveFolders(folder, result.data);
-          } else {
-              console.log('Failed to load folder:', result.message || 'Unknown error');
-          }
-      }).catch(function(err) {
-          console.error('Folder load error:', err);
-      });
-}
 
+    async function reportFailure(action) {
+        try { await action(); }
+        catch (error) { await window.kinAlert(error.message || String(error), { title: 'Folder operation failed' }); }
+    }
 
+    function parentPath(path) {
+        let value = String(path || 'Home:').replace(/\/+$/, '');
+        const colon = value.indexOf(':');
+        const slash = value.lastIndexOf('/');
+        if (slash <= colon) return value.slice(0, colon + 1);
+        return value.slice(0, slash + 1);
+    }
 
-window.toolbar = window.toolbar ? window.toolbar : {};
-window.toolbar.folders = function() {
-    if( document.getElementById( 'page_folders' ).classList.contains( 'active' ) )
-    {
-        let tct = document.getElementById( 'top_chat_title' );
-        let tcd = tct.getElementsByTagName( 'div' )[0];
-        let tci = tct.getElementsByTagName( 'div' )[1];
-        tcd.innerHTML = '<span>' + currentFolder + '</span>';
-        tcd.className = 'folders';
-        tci.innerHTML = '<em class="folders-refresh" title="Refresh"></em><em class="file-new" title="New file"></em><em class="folders-new" title="New folder"></em><em class="folders-back" title="Up"></em>';
-        
-        tci.querySelector( '.folders-back' ).onclick = function()
-        {
-            let cf = currentFolder; if ( cf.substr( -1, 1 ) == '/' ) cf = cf.substr( 0, cf.length - 1 );
-            let par = cf.split( '/' );
-            par.pop(); par = par.join( '/' ) + '/';
-            currentFolder = par;
-            refreshFolderStructure( currentFolder );
-            tcd.innerHTML = currentFolder;
-        }
-        tci.querySelector( '.folders-refresh' ).onclick = function()
-        {
-            refreshFolderStructure( currentFolder );
-        }
-        tci.querySelector( '.file-new' ).onclick = function()
-        {
-            let data = {
-                path: currentFolder,
-                file: 'empty file.txt'
-            }
-            sendSignal( 'file-new', data, function( response )
-            {
-                console.log( 'Response from file-new: ' + response );
-            } );
-        }
-        tci.querySelector( '.folders-new' ).onclick = function()
-        {
-            let data = {
-                path: currentFolder,
-                file: 'folder'
-            }
-            sendSignal( 'folder-new', data, function( response )
-            {
-                console.log( 'Response from folders-new: ' + response );
-            } );
-        }
-    }
-}
-
-// Receive from server
-let targetFolderElements = {};
-
-function setActiveItem( itm )
-{
-    let container = document.getElementById( 'page_folders' );
-    let items = container.querySelectorAll( '.folder, .file' );
-    for( let a = 0; a < items.length; a++ )
-    {
-        if( items[ a ] != itm )
-        {
-            items[ a ].classList.remove( 'active' );
-        }
-    }
-    itm.classList.add( 'active' );
-}
-
-function receiveFolders( path, data, depth = 0 )
-{
-    if( !data || !Array.isArray( data ) )
-    {
-        console.log( 'Invalid folder data:', data );
-        return;
-    }
-    
-    let container = document.getElementById( 'page_folders' );
-    
-    console.log( 'Trying: ' + path );
-    if( targetFolderElements[ path ] )
-    {
-        container = targetFolderElements[ path ];
-        if( container.className != 'folder-children' )
-        {
-            let c = document.createElement( 'div' );
-            c.className = 'folder-children';
-            container.folderChildren = c;
-            container.appendChild( c );
-            targetFolderElements[ path ] = c;
-            container = c;
-        }
-    }
-    else
-    {
-        if( depth == 0 )
-        {
-            document.getElementById( 'page_folders' ).innerHTML = '';
-            console.log( 'No target: ' + path );
-        }
-    }
-    
-    let folders = [];
-    
-    for( let a = 0; a < data.length; a++ )
-    {
-        if( !data[a] ) continue;
-        let itemType = data[a].type || data[a].fileType || '';
-        let itemName = data[a].name || data[a].filename || '';
-        if( itemType.trim() == 'dir' || itemType.trim() == 'folder' )
-        {
-            if( itemName.substr( 0, 1 ) == '.' ) continue;
-            folders.push( itemName.toLowerCase() + '/' + itemName );
-        }
-    }
-    folders = folders.sort();
-    for( let a = 0; a < folders.length; a++ )
-    {
-        let d = document.createElement( 'div' );
-        d.className = 'folder';
-        d.contextMenu = [ { type: 'item', name: 'Refresh', icon: 'refresh', action: function(){ console.log( 'Refreshing..' ); } } ];
-        let realfldName = folders[a].split( '/' )[1];
-        d.innerHTML = '<span>' + realfldName + '/</span>';
-        targetFolderElements[ path + realfldName + '/' ] = d;
-        d.onclick = ( e ) => { 
-            if( d.classList.contains( 'active' ) )
-            {
-                d.classList.remove( 'active' );
-            }
-            else
-            {
-                setActiveItem( d );
-            }
-            if( d.folderChildren )
-            {
-                if( d.folderChildren.classList.contains( 'hidden' ) )
-                {
-                    d.folderChildren.classList.remove( 'hidden' );
-                }
-                else
-                {
-                    d.folderChildren.classList.add( 'hidden' );
-                }
-            } 
-            else 
-            { 
-                refreshFolderStructure( path + realfldName + '/' ); 
-            }
-            e.stopPropagation();
-            e.preventDefault();
-        }
-        container.appendChild( d );
-    }
-    
-    let files = [];
-    for( let a = 0; a < data.length; a++ )
-    {
-        if( !data[a] ) continue;
-        let itemType = data[a].type || data[a].fileType || '';
-        let itemName = data[a].name || data[a].filename || '';
-        if( itemType.trim() == 'file' )
-        {
-            if( itemName.substr( 0, 1 ) == '.' ) continue;
-            files.push( itemName );
-        }
-    }
-    files = files.sort();
-    for( let a = 0; a < files.length; a++ )
-    {
-        let d = document.createElement( 'div' );
-        d.className = 'file';
-        d.innerHTML = '<span>' + files[a] + '</span>';
-        d.contextMenu = [ { type: 'file', name: 'Delete', icon: 'trash', action: function(){ 
-            
-            console.log( 'Deleting ' + files[a] ); 
-            
-        } } ];
-        d.onclick = ( e ) => { 
-            if( d.classList.contains( 'active' ) )
-            {
-                d.classList.remove( 'active' );
-            }
-            else
-            {
-                setActiveItem( d );
-            }
-            loadFileFromPath( path + files[a] ); 
-            e.stopPropagation();
-            e.preventDefault();
-        }
-        container.appendChild( d );
-    }
-    
-    window.toolbar.folders();
-}
-
-
-// Folders are refreshed from initializeGUI() at startup.
-
-window.addEventListener('message', function(event)
-{
-    if (event.data && event.data.type === "folderStructure") {
-        console.log("Received folder structure:", event.data.files);
-        // Update your UI or handle the data as needed
-        const filesContainer = document.body;
-        filesContainer.innerHTML = '';
-        event.data.files.forEach(file => {
-            const fileElement = document.createElement('div');
-            fileElement.textContent = `Name: ${file.name}, Size: ${file.size} bytes, Date: ${file.date}`;
-            filesContainer.appendChild(fileElement);
+    function setHeader() {
+        const header = document.getElementById('right_panel_header');
+        const title = header.children[0], actions = header.children[1];
+        title.className = 'folders'; title.replaceChildren();
+        const label = document.createElement('span'); label.textContent = window.currentFolder; title.appendChild(label);
+        actions.replaceChildren();
+        [
+            ['folders-refresh', 'Refresh', function() { window.refreshFolderStructure(window.currentFolder); }],
+            ['file-new', 'New file', createFile], ['folders-new', 'New folder', createFolder],
+            ['folders-back', 'Up', function() { window.refreshFolderStructure(parentPath(window.currentFolder)); }]
+        ].forEach(function(def) {
+            const button = document.createElement('button'); button.type = 'button'; button.className = def[0]; button.title = def[1];
+            button.addEventListener('click', function() { void reportFailure(def[2]); }); actions.appendChild(button);
         });
     }
-} );
 
+    async function createFile() {
+        const name = await window.kinPrompt('File name', { title: 'New file', defaultValue: 'untitled.txt' });
+        if (!name || /[\\/:]/.test(name) || name === '.' || name === '..') return;
+        const path = joinPath(window.currentFolder, name.trim());
+        await window.kinWriteFile(path, '');
+        await window.refreshFolderStructure(window.currentFolder);
+        await window.loadFileFromPath(path);
+    }
 
+    async function createFolder() {
+        const name = await window.kinPrompt('Folder name', { title: 'New folder', defaultValue: 'folder' });
+        if (!name || /[\\/:]/.test(name) || name === '.' || name === '..') return;
+        await window.kinMakedir(joinPath(window.currentFolder, name.trim()));
+        await window.refreshFolderStructure(window.currentFolder);
+    }
 
+    async function removePath(path, kind) {
+        const ok = await window.kinConfirm('Move ' + kind + ' “' + path.split('/').pop() + '” to Trash?', {
+            title: 'Move to Trash', confirmLabel: 'Move to Trash'
+        });
+        if (!ok) return;
+        await window.kinDeleteToTrash(path);
+        await window.refreshFolderStructure(window.currentFolder);
+    }
 
+    function rowFor(item) {
+        const name = String(item.filename || item.name || '');
+        const kind = String(item.type || item.fileType || '').trim().toLowerCase();
+        const folder = kind === 'dir' || kind === 'directory' || kind === 'folder';
+        const path = joinPath(window.currentFolder, name) + (folder ? '/' : '');
+        const row = document.createElement('div'); row.className = folder ? 'folder' : 'file';
+        const label = document.createElement('span'); label.textContent = name + (folder ? '/' : ''); row.appendChild(label);
+        row.addEventListener('click', function(event) {
+            event.preventDefault();
+            document.querySelectorAll('#page_folders .active').forEach(function(el) { el.classList.remove('active'); });
+            row.classList.add('active');
+            if (folder) void reportFailure(function() { return window.refreshFolderStructure(path); });
+            else if (/\.klade$/i.test(name)) window.openInKlade(path);
+            else void reportFailure(function() { return window.loadFileFromPath(path); });
+        });
+        row.contextMenu = folder ? [
+            { name: 'Open', action: function() { return window.refreshFolderStructure(path); } },
+            { name: 'Move to Trash', action: function() { return removePath(path, 'folder'); } }
+        ] : [
+            { name: /\.klade$/i.test(name) ? 'Open in Klade' : 'Open', action: function() { return /\.klade$/i.test(name) ? window.openInKlade(path) : window.loadFileFromPath(path); } },
+            { name: 'Open as JSON', action: function() { return window.loadFileFromPath(path, { forceText: true }); } },
+            { name: 'Move to Trash', action: function() { return removePath(path, 'file'); } }
+        ];
+        return row;
+    }
 
+    window.refreshFolderStructure = async function(folder) {
+        const page = document.getElementById('page_folders');
+        window.currentFolder = String(folder || 'Home:');
+        if (!window.currentFolder.endsWith(':') && !window.currentFolder.endsWith('/')) window.currentFolder += '/';
+        setHeader(); page.replaceChildren();
+        const status = document.createElement('div'); status.className = 'folder-status'; status.textContent = 'Loading…'; page.appendChild(status);
+        try {
+            const data = await window.kinListDirectory(window.currentFolder);
+            page.replaceChildren();
+            const visible = data.filter(function(item) {
+                const name = String(item && (item.filename || item.name) || '');
+                const kind = String(item && (item.type || item.fileType) || '').toLowerCase();
+                return name && !name.startsWith('.') && (kind === 'file' || kind === 'dir' || kind === 'directory' || kind === 'folder');
+            }).sort(function(a, b) {
+                const ak = /dir|folder/i.test(a.type || a.fileType) ? 0 : 1;
+                const bk = /dir|folder/i.test(b.type || b.fileType) ? 0 : 1;
+                return ak - bk || String(a.filename || a.name).localeCompare(String(b.filename || b.name));
+            });
+            if (!visible.length) { status.textContent = 'This folder is empty.'; page.appendChild(status); }
+            else visible.forEach(function(item) { page.appendChild(rowFor(item)); });
+        } catch (error) {
+            status.textContent = error.message || 'Could not load folder.'; status.classList.add('error'); page.replaceChildren(status);
+        }
+    };
+
+    window.toolbar.folders = function() { setHeader(); };
+})();

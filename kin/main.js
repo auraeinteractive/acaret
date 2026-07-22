@@ -47,16 +47,9 @@
             'libs/ace/src-noconflict/theme-twilight.js',
             'js/showdown.min.js',
             'js/signals.js',
-            'js/conversation_logic.js',
-            'js/conversation.js',
             'js/gui-logic.js',
             'js/page-editor.js',
-            'js/page-shop.js',
-            'js/page-flow-nodes.js',
-            'js/page-ai-tools.js',
-            'js/page-version-control.js',
             'js/page-project.js',
-            'js/page-chat.js',
             'js/page-folders.js',
             'js/page-translations.js',
             'js/page-tags.js',
@@ -68,7 +61,6 @@
         }
 
         function startApp() {
-            window.convos = new Conversation({ messageContainer: document.querySelector('.messages') });
             initializeGUI();
 
             if (typeof resizeAllEditors === 'function') {
@@ -77,7 +69,8 @@
 
             var openPath = qp('kin_open_path') || qp('path');
             if (openPath && typeof loadFileFromPath === 'function') {
-                loadFileFromPath(openPath);
+                if (/\.klade$/i.test(openPath) && typeof openInKlade === 'function') openInKlade(openPath);
+                else loadFileFromPath(openPath);
             }
 
             try {
@@ -91,14 +84,14 @@
     }
 
     function loadScript(src) {
-        return new Promise(function(resolve) {
+        return new Promise(function(resolve, reject) {
             var s = document.createElement('script');
             s.src = src;
             s.charset = 'utf-8';
             s.onload = resolve;
             s.onerror = function() {
                 console.error('Failed to load:', src);
-                resolve();
+                reject(new Error('Failed to load required script: ' + src));
             };
             document.head.appendChild(s);
         });

@@ -4,12 +4,12 @@ window.toolbar = window.toolbar ? window.toolbar : {};
 window.toolbar.navigator = function() {
     if( document.getElementById( 'page_navigator' ).classList.contains( 'active' ) )
     {
-        let tct = document.getElementById( 'top_chat_title' );
+        let tct = document.getElementById( 'right_panel_header' );
         let tcd = tct.getElementsByTagName( 'div' )[0];
         let tci = tct.getElementsByTagName( 'div' )[1];
-        tcd.innerHTML = 'Navigator: ' + currentEditor.filename;
+        tcd.textContent = 'Navigator: ' + ( currentEditor ? currentEditor.filename : 'No file' );
         tcd.className = 'navigator';
-        tci.innerHTML = ''; //<em class="chat-reset" title="Reset chat"></em><em class="chat-save" title="Save chat"></em><em class="chat-more" title="Options"></em>';
+        tci.replaceChildren();
     }
     
     refreshNavigation();
@@ -109,7 +109,7 @@ function refreshNavigation() {
         if( sout.substr( -1, 1 ) == '(' )
             sout = sout.substr( 0, sout.length - 1 );
             
-        t.innerHTML = sout; // Display the function name
+        t.textContent = sout; // Display the function name
         navDiv.appendChild(t); // Add the item to the navigation container
 
         // Add an event listener for clicking on the navigation item
@@ -133,7 +133,6 @@ function refreshNavigation() {
         };
     }
 }
-
 
 
 

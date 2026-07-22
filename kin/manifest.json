@@ -1,9 +1,14 @@
 {
   "id": "kin_acaret",
   "displayName": "Acaret — Code Editor",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "entry": "main.js",
+  "heroIcon": "code-bracket",
   "category": "Development",
   "published": true,
-  "icon": "icon.png"
+  "icon": "icon.png",
+  "locales": {
+    "en-US": { "displayName": "Acaret — Code Editor", "category": "Development" },
+    "nb-NO": { "displayName": "Acaret — koderedigerer", "category": "Utvikling" }
+  }
 }

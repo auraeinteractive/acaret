@@ -1,3 +1,11 @@
+kin-acaret (1.1.0-1) stable; urgency=medium
+
+  * Focus Acaret on editing, projects, folders, translations, tags, and navigation.
+  * Add KinUI project templates, Klade handoff, and KinDOS QuickJS execution.
+  * Harden file paths, dirty tabs, dialogs, folder operations, and Markdown preview.
+
+ -- Kin <packages@os-kin.com>  Tue, 21 Jul 2026 12:00:00 +0000
+
 kin-acaret (1.0.1-1) stable; urgency=medium
 
   * Fix Kin bootstrap: load UI directly in main.js (no second Window).
