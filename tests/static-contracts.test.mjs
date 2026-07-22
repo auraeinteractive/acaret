@@ -6,18 +6,21 @@ const root = new URL('../', import.meta.url);
 
 test('Acaret uses the standard KinUI module bootstrap', async () => {
     const manifest = JSON.parse(await readFile(new URL('kin/manifest.json', root), 'utf8'));
-    const main = await readFile(new URL('kin/main.js', root), 'utf8');
+    const main = await readFile(new URL('kin/main-1.1.2.js', root), 'utf8');
+    const bootstrap = await readFile(new URL('kin/app-1.1.2.mjs', root), 'utf8');
     const app = await readFile(new URL('kin/app.mjs', root), 'utf8');
     assert.equal(manifest.id, 'kin_acaret');
-    assert.equal(manifest.entry, 'main.js');
-    assert.match(main, /entry:\s*'app\.mjs'/);
+    assert.equal(manifest.entry, 'main-1.1.2.js');
+    assert.match(main, /entry:\s*'app-1\.1\.2\.mjs'/);
+    assert.match(bootstrap, /import '\.\/app\.mjs\?v=1\.1\.2'/);
     assert.match(main, /module:\s*true/);
     assert.match(app, /KinUI\.createAppAsync/);
     assert.match(app, /KinUI\.createElementFromIR/);
     assert.match(app, /registerKinUIForTypes\(\[ 'Input', 'Select', 'Switch' \]\)/);
     assert.match(app, /heroIconElement/);
     assert.match(app, /decorateChromeButtons/);
-    assert.match(app, /uiUrl\.searchParams\.set\('v', '1\.1\.1'\)/);
+    assert.match(app, /uiUrl\.searchParams\.set\('v', '1\.1\.2'\)/);
+    assert.match(app, /createAppAsync\(\{ root: document\.body, url: uiUrl, i18n: false \}\)/);
     assert.match(app, /requiredControl\(id\)\.addEventListener/);
     assert.match(app, /launchVolumeApp\(state\.project\.rootPath, state\.project\.entry/);
     await assert.rejects(access(new URL('kin/index.html', root)));

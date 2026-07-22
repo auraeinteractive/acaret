@@ -1231,7 +1231,7 @@ function bindMenus() {
         'run.project': runProject,
         'run.preview': previewCurrent,
         'run.launch': launchApp,
-        'help.about': () => kinWorkspaceAlert('Acaret 1.1.1\n\nKinUI code editor and KinDOS project workspace.', { title: 'About Acaret' })
+        'help.about': () => kinWorkspaceAlert('Acaret 1.1.2\n\nKinUI code editor and KinDOS project workspace.', { title: 'About Acaret' })
     };
     for (const [command, action] of Object.entries(actions)) state.ui.onMenuCommand(command, () => void perform(action));
 }
@@ -1297,8 +1297,8 @@ async function start() {
     await loadClassicScript('./libs/ace/src-noconflict/ace.js');
     await KinUI.registerKinUIForTypes([ 'Input', 'Select', 'Switch' ]);
     const uiUrl = new URL('./ui.json', import.meta.url);
-    uiUrl.searchParams.set('v', '1.1.1');
-    state.ui = await KinUI.createAppAsync({ root: document.body, url: uiUrl });
+    uiUrl.searchParams.set('v', '1.1.2');
+    state.ui = await KinUI.createAppAsync({ root: document.body, url: uiUrl, i18n: false });
     decorateChromeButtons();
     bindUi();
     renderProjectTool();

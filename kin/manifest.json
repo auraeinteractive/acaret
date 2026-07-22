@@ -1,8 +1,8 @@
 {
   "id": "kin_acaret",
   "displayName": "Acaret — Code Editor",
-  "version": "1.1.1",
-  "entry": "main.js",
+  "version": "1.1.2",
+  "entry": "main-1.1.2.js",
   "heroIcon": "code-bracket",
   "category": "Development",
   "published": true,
