@@ -9,13 +9,11 @@ import * as bridge from './js/bridge.mjs';
 import {
     asKinDirectory,
     canonicalizeKinPath,
-    isVolumeRoot,
     isWithinKinRoot,
     joinKinPath,
     kinBasename,
     kinDirname,
     kinVolume,
-    parentKinPath,
     relativeKinPath,
     validLeafName,
     volumeName
@@ -48,7 +46,13 @@ const state = {
     locales: new Map(),
     deletedLocales: new Map(),
     localeSelection: '',
-    toolTimer: 0
+    toolTimer: 0,
+    outputHeight: 210,
+    paneWidths: { folders: 0, tools: 0 },
+    foldersCollapsed: false,
+    foldersExpandedWidth: 260,
+    toolsCollapsed: false,
+    toolsExpandedWidth: 340
 };
 
 function qp(name) {
@@ -238,6 +242,36 @@ function modeForPath(path) {
 }
 
 function editorTabs() { return state.ui.getById('editor-tabs'); }
+
+function installEditorTabLayoutFix() {
+    const tabs = requiredControl('editor-tabs');
+    if (!tabs.shadowRoot || tabs.shadowRoot.querySelector('[data-acaret-tab-layout]')) return;
+    const style = document.createElement('style');
+    style.setAttribute('data-acaret-tab-layout', '');
+    style.textContent = `
+        .tab-wrap.has-close { min-width: 6rem; max-width: 14rem; }
+        .tab-wrap.has-close .tab {
+            width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+            padding-right: 2.35rem !important;
+        }
+        .tab-wrap.has-close .tab-content {
+            display: flex;
+            width: 100%;
+            min-width: 0;
+            overflow: hidden;
+        }
+        .tab-wrap.has-close .tab-label {
+            flex: 1 1 auto;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    `;
+    tabs.shadowRoot.appendChild(style);
+}
 
 function selectedDocumentFromTabs() {
     const panels = Array.from(editorTabs().querySelectorAll('kin-tab-panel:not([data-kin-suppress-tab])'));
@@ -442,8 +476,14 @@ function setTree() {
 
 function updateFolderChrome() {
     const inProject = state.browserMode === 'project' && !!state.project;
-    state.ui.getById('folders-disks').toggleAttribute('hidden', !inProject);
-    state.ui.getById('folders-project').toggleAttribute('hidden', inProject || !state.project);
+    const disksButton = requiredControl('folders-disks');
+    const projectButton = requiredControl('folders-project');
+    const showDisksButton = inProject;
+    const showProjectButton = !inProject && !!state.project;
+    disksButton.toggleAttribute('hidden', !showDisksButton);
+    projectButton.toggleAttribute('hidden', !showProjectButton);
+    disksButton.style.display = showDisksButton ? '' : 'none';
+    projectButton.style.display = showProjectButton ? '' : 'none';
     if (inProject) {
         if (state.tree[0] && state.tree[0].title !== state.project.name) {
             state.tree[0].title = state.project.name;
@@ -663,21 +703,6 @@ async function showProject() {
     state.tree = [ root ];
     setTree();
     updateFolderChrome();
-}
-
-async function goUp() {
-    if (!state.currentFolder) return;
-    if (state.browserMode === 'project' && state.project) {
-        const current = canonicalizeKinPath(state.currentFolder).replace(/\/$/, '');
-        if (current === state.project.rootPath) return;
-        const parentPath = parentKinPath(current);
-        if (!parentPath || !isWithinKinRoot(parentPath, state.project.rootPath)) return showProject();
-        return revealPath(parentPath);
-    }
-    if (isVolumeRoot(state.currentFolder)) return showDisks();
-    const parentPath = parentKinPath(state.currentFolder);
-    if (!parentPath) return showDisks();
-    await revealPath(parentPath);
 }
 
 async function readOptionalJson(path) {
@@ -1122,12 +1147,192 @@ function scheduleEditorTools() {
 }
 
 function showOutput(result, command = '') {
-    const panel = state.ui.getById('output-panel');
-    panel.removeAttribute('hidden');
+    setOutputExpanded(true);
     setText('output-command', command ? '$ ' + command : '');
     setText('output-stdout', result?.stdout || '');
     setText('output-stderr', result?.stderr || '');
     setText('output-state', result?.exit_code == null ? '' : 'Exit ' + result.exit_code + (result.truncated ? ' · truncated' : ''));
+}
+
+function setOutputExpanded(expanded) {
+    const panel = requiredControl('output-panel');
+    const handle = requiredControl('output-resize-handle');
+    panel.toggleAttribute('hidden', !expanded);
+    handle.toggleAttribute('hidden', !expanded);
+    panel.style.display = expanded ? '' : 'none';
+    handle.style.display = expanded ? '' : 'none';
+    if (expanded) setOutputHeight(state.outputHeight);
+    requestAnimationFrame(() => state.documents.forEach(doc => doc.editor.resize()));
+}
+
+function setOutputHeight(height) {
+    const panel = requiredControl('output-panel');
+    const available = Math.max(120, document.body.clientHeight - 180);
+    state.outputHeight = Math.max(96, Math.min(available, Math.round(Number(height) || 210)));
+    panel.style.flexBasis = state.outputHeight + 'px';
+    panel.style.height = state.outputHeight + 'px';
+}
+
+function bindOutputResizer() {
+    const handle = requiredControl('output-resize-handle');
+    let lastY = 0;
+    const move = event => {
+        const delta = event.clientY - lastY;
+        lastY = event.clientY;
+        setOutputHeight(state.outputHeight - delta);
+        state.documents.forEach(doc => doc.editor.resize());
+    };
+    const stop = () => {
+        handle.classList.remove('is-dragging');
+        document.removeEventListener('pointermove', move);
+        document.removeEventListener('pointerup', stop);
+        document.removeEventListener('pointercancel', stop);
+    };
+    handle.addEventListener('pointerdown', event => {
+        if (event.button !== 0) return;
+        lastY = event.clientY;
+        handle.classList.add('is-dragging');
+        document.addEventListener('pointermove', move);
+        document.addEventListener('pointerup', stop);
+        document.addEventListener('pointercancel', stop);
+        event.preventDefault();
+    });
+}
+
+function paneWidthPreference(name) {
+    try { return Number(localStorage.getItem('acaret.pane.' + name + '.width')) || 0; }
+    catch (_error) { return 0; }
+}
+
+function savePaneWidthPreference(name, width) {
+    try { localStorage.setItem('acaret.pane.' + name + '.width', String(Math.round(width))); }
+    catch (_error) { /* preferences are optional */ }
+}
+
+function saveFoldersCollapsedPreference(collapsed) {
+    try { localStorage.setItem('acaret.pane.folders.collapsed', collapsed ? 'true' : 'false'); }
+    catch (_error) { /* preferences are optional */ }
+}
+
+function foldersCollapsedPreference() {
+    try {
+        const value = localStorage.getItem('acaret.pane.folders.collapsed');
+        return value == null ? true : value === 'true';
+    } catch (_error) { return true; }
+}
+
+function setFoldersCollapsed(collapsed) {
+    const pane = requiredControl('folders-pane');
+    const next = !!collapsed;
+    if (next && !state.foldersCollapsed) {
+        const current = pane.getBoundingClientRect().width;
+        if (current >= 180) state.foldersExpandedWidth = current;
+    }
+    state.foldersCollapsed = next;
+    pane.toggleAttribute('data-collapsed', next);
+    if (next) {
+        state.paneWidths.folders = 0;
+        pane.style.display = 'none';
+        pane.style.flexBasis = '0';
+        pane.style.width = '0';
+    } else {
+        const width = Math.max(180, state.foldersExpandedWidth || paneWidthPreference('folders') || 260);
+        state.paneWidths.folders = width;
+        pane.style.display = '';
+        pane.style.flexBasis = width + 'px';
+        pane.style.width = width + 'px';
+    }
+    saveFoldersCollapsedPreference(next);
+    state.documents.forEach(doc => doc.editor.resize());
+}
+
+function toolsCollapsedPreference() {
+    try {
+        const value = localStorage.getItem('acaret.pane.tools.collapsed');
+        return value == null ? true : value === 'true';
+    } catch (_error) { return true; }
+}
+
+function setToolsCollapsed(collapsed) {
+    const pane = requiredControl('tools-pane');
+    const resize = requiredControl('editor-tools-resize');
+    const next = !!collapsed;
+    if (next && !state.toolsCollapsed) {
+        const current = pane.getBoundingClientRect().width;
+        if (current >= 220) state.toolsExpandedWidth = current;
+    }
+    state.toolsCollapsed = next;
+    pane.toggleAttribute('data-collapsed', next);
+    resize.toggleAttribute('data-collapsed', next);
+    pane.style.display = next ? 'none' : '';
+    resize.style.display = next ? 'none' : '';
+    if (!next) {
+        const width = Math.max(220, state.toolsExpandedWidth || paneWidthPreference('tools') || 340);
+        state.paneWidths.tools = width;
+        pane.style.flexBasis = width + 'px';
+        pane.style.width = width + 'px';
+    }
+    try { localStorage.setItem('acaret.pane.tools.collapsed', next ? 'true' : 'false'); }
+    catch (_error) { /* preferences are optional */ }
+    state.documents.forEach(doc => doc.editor.resize());
+}
+
+function setPaneWidth(name, width) {
+    const pane = requiredControl(name === 'folders' ? 'folders-pane' : 'tools-pane');
+    const workspace = requiredControl('workspace');
+    const other = requiredControl(name === 'folders' ? 'tools-pane' : 'folders-pane');
+    if (name === 'folders' && width < 110) {
+        setFoldersCollapsed(true);
+        return;
+    }
+    if (name === 'folders' && state.foldersCollapsed) {
+        state.foldersCollapsed = false;
+        pane.removeAttribute('data-collapsed');
+        pane.style.display = '';
+        saveFoldersCollapsedPreference(false);
+    }
+    const minimum = name === 'folders' ? 180 : 220;
+    const maximum = Math.max(minimum, workspace.clientWidth - other.getBoundingClientRect().width - 320 - 16);
+    const next = Math.max(minimum, Math.min(maximum, Math.round(width)));
+    state.paneWidths[name] = next;
+    if (name === 'folders') state.foldersExpandedWidth = next;
+    if (name === 'tools') state.toolsExpandedWidth = next;
+    pane.style.flexBasis = next + 'px';
+    pane.style.width = next + 'px';
+    state.documents.forEach(doc => doc.editor.resize());
+}
+
+function bindColumnResizers() {
+    const foldersPane = requiredControl('folders-pane');
+    const toolsPane = requiredControl('tools-pane');
+    const foldersResize = requiredControl('folders-editor-resize');
+    const toolsResize = requiredControl('editor-tools-resize');
+    const storedFolders = paneWidthPreference('folders');
+    const storedTools = paneWidthPreference('tools');
+    let foldersDragWidth = 0;
+    if (storedFolders) setPaneWidth('folders', storedFolders);
+    if (storedTools) setPaneWidth('tools', storedTools);
+    if (foldersCollapsedPreference()) setFoldersCollapsed(true);
+    if (toolsCollapsedPreference()) setToolsCollapsed(true);
+
+    foldersResize.addEventListener('kin-column-resize', event => {
+        const current = foldersDragWidth || state.paneWidths.folders || foldersPane.getBoundingClientRect().width;
+        foldersDragWidth = current + Number(event.detail?.deltaX || 0);
+        setPaneWidth('folders', foldersDragWidth);
+    });
+    toolsResize.addEventListener('kin-column-resize', event => {
+        const current = state.paneWidths.tools || toolsPane.getBoundingClientRect().width;
+        setPaneWidth('tools', current - Number(event.detail?.deltaX || 0));
+    });
+    foldersResize.addEventListener('kin-column-resize-end', () => {
+        if (!state.foldersCollapsed) {
+            savePaneWidthPreference('folders', state.paneWidths.folders || foldersPane.getBoundingClientRect().width);
+        }
+        foldersDragWidth = 0;
+    });
+    toolsResize.addEventListener('kin-column-resize-end', () => {
+        savePaneWidthPreference('tools', state.paneWidths.tools || toolsPane.getBoundingClientRect().width);
+    });
 }
 
 function quoteShell(value) {
@@ -1199,7 +1404,7 @@ function bindPress(id, handler) {
 function decorateChromeButtons() {
     const buttons = [
         [ 'folders-disks', 'circle-stack' ], [ 'folders-project', 'arrow-uturn-left' ],
-        [ 'folders-up', 'arrow-up' ], [ 'folders-refresh', 'arrow-path' ],
+        [ 'folders-refresh', 'arrow-path' ],
         [ 'folders-new-file', 'document-plus' ], [ 'folders-new-folder', 'folder-plus' ],
         [ 'folders-rename', 'pencil-square' ], [ 'folders-trash', 'trash' ],
         [ 'output-clear', 'backspace' ], [ 'output-close', 'x-mark' ],
@@ -1228,10 +1433,12 @@ function bindMenus() {
         'edit.cut': () => clipboardAction('cut'),
         'edit.copy': () => clipboardAction('copy'),
         'edit.paste': () => clipboardAction('paste'),
+        'view.toggleFolders': () => setFoldersCollapsed(!state.foldersCollapsed),
+        'view.toggleTools': () => setToolsCollapsed(!state.toolsCollapsed),
         'run.project': runProject,
         'run.preview': previewCurrent,
         'run.launch': launchApp,
-        'help.about': () => kinWorkspaceAlert('Acaret 1.1.2\n\nKinUI code editor and KinDOS project workspace.', { title: 'About Acaret' })
+        'help.about': () => kinWorkspaceAlert('Acaret 1.1.9\n\nKinUI code editor and KinDOS project workspace.', { title: 'About Acaret' })
     };
     for (const [command, action] of Object.entries(actions)) state.ui.onMenuCommand(command, () => void perform(action));
 }
@@ -1250,7 +1457,6 @@ async function clipboardAction(action) {
 function bindUi() {
     bindPress('folders-disks', showDisks);
     bindPress('folders-project', showProject);
-    bindPress('folders-up', goUp);
     bindPress('folders-refresh', refreshFolderSelection);
     bindPress('folders-new-file', createFileInTree);
     bindPress('folders-new-folder', createFolderInTree);
@@ -1258,9 +1464,9 @@ function bindUi() {
     bindPress('folders-trash', trashSelected);
     bindPress('output-toggle', () => {
         const panel = state.ui.getById('output-panel');
-        panel.toggleAttribute('hidden');
+        setOutputExpanded(panel.hasAttribute('hidden'));
     });
-    bindPress('output-close', () => state.ui.getById('output-panel').setAttribute('hidden', ''));
+    bindPress('output-close', () => setOutputExpanded(false));
     bindPress('output-clear', () => showOutput({ stdout: '', stderr: '', exit_code: null }));
 
     const tree = requiredControl('folders-tree');
@@ -1290,6 +1496,8 @@ function bindUi() {
         event.preventDefault();
         void perform(() => closeDocument(doc));
     });
+    bindOutputResizer();
+    bindColumnResizers();
     bindMenus();
 }
 
@@ -1297,10 +1505,12 @@ async function start() {
     await loadClassicScript('./libs/ace/src-noconflict/ace.js');
     await KinUI.registerKinUIForTypes([ 'Input', 'Select', 'Switch' ]);
     const uiUrl = new URL('./ui.json', import.meta.url);
-    uiUrl.searchParams.set('v', '1.1.2');
+    uiUrl.searchParams.set('v', '1.1.9');
     state.ui = await KinUI.createAppAsync({ root: document.body, url: uiUrl, i18n: false });
+    installEditorTabLayoutFix();
     decorateChromeButtons();
     bindUi();
+    setOutputExpanded(false);
     renderProjectTool();
     renderTranslations();
     scheduleEditorTools();

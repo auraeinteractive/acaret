@@ -23,6 +23,10 @@
       { "name": "Paste", "command": "edit.paste" },
       { "name": "Find…", "command": "edit.find" }
     ],
+    "View": [
+      { "name": "Toggle folder panel", "command": "view.toggleFolders" },
+      { "name": "Toggle right panel", "command": "view.toggleTools" }
+    ],
     "Run": [
       { "name": "Run Project", "command": "run.project" },
       { "name": "Preview UI", "command": "run.preview" },
@@ -59,7 +63,6 @@
                     "children": [
                       { "type": "Button", "id": "folders-disks", "label": "All disks" },
                       { "type": "Button", "id": "folders-project", "label": "Back to project", "hidden": true },
-                      { "type": "Button", "id": "folders-up", "label": "Up" },
                       { "type": "Button", "id": "folders-refresh", "label": "Refresh" }
                     ]
                   },
@@ -78,6 +81,7 @@
                   { "type": "HierarchyTree", "id": "folders-tree", "nodes": [] }
                 ]
               },
+              { "type": "ColumnResize", "id": "folders-editor-resize" },
               {
                 "type": "Column",
                 "id": "editor-pane",
@@ -116,6 +120,7 @@
                   }
                 ]
               },
+              { "type": "ColumnResize", "id": "editor-tools-resize" },
               {
                 "type": "Column",
                 "id": "tools-pane",
@@ -125,15 +130,21 @@
                     "type": "Tabs",
                     "id": "tool-tabs",
                     "panels": [
+                      { "id": "navigator-tool", "label": "Navigator", "children": [ { "type": "ScrollRegion", "id": "navigator-tool-content" } ] },
                       { "id": "project-tool", "label": "Project", "children": [ { "type": "ScrollRegion", "id": "project-tool-content" } ] },
                       { "id": "translations-tool", "label": "Translations", "children": [ { "type": "ScrollRegion", "id": "translations-tool-content" } ] },
-                      { "id": "tags-tool", "label": "Tags", "children": [ { "type": "ScrollRegion", "id": "tags-tool-content" } ] },
-                      { "id": "navigator-tool", "label": "Navigator", "children": [ { "type": "ScrollRegion", "id": "navigator-tool-content" } ] }
+                      { "id": "tags-tool", "label": "Tags", "children": [ { "type": "ScrollRegion", "id": "tags-tool-content" } ] }
                     ]
                   }
                 ]
               }
             ]
+          },
+          {
+            "type": "Row",
+            "id": "output-resize-handle",
+            "hidden": true,
+            "children": []
           },
           {
             "type": "Column",

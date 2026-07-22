@@ -29,8 +29,19 @@ body > kin-ui-app,
 }
 
 [data-kin-id="folders-tree"] { flex: 1 1 auto; min-height: 0; }
+
+[data-kin-id="folders-pane"][data-collapsed],
+[data-kin-id="tools-pane"][data-collapsed],
+[data-kin-id="editor-tools-resize"][data-collapsed] {
+    display: none !important;
+}
 [data-kin-id="editor-pane"] { flex: 1 1 auto; min-width: 280px; min-height: 0; }
 [data-kin-id="editor-tabs"] { flex: 1 1 auto; min-height: 0; }
+
+[data-kin-id="folders-disks"][hidden],
+[data-kin-id="folders-project"][hidden] {
+    display: none !important;
+}
 
 [data-kin-id="editor-statusbar"] {
     flex: 0 0 auto;
@@ -69,8 +80,43 @@ body > kin-ui-app,
 [data-kin-id="output-panel"] {
     flex: 0 0 210px;
     height: 210px;
-    border-top: 1px solid var(--KinPenFrameHalfShadow);
     background: var(--KinPenGadgetBackground);
+}
+
+[data-kin-id="output-panel"][hidden],
+[data-kin-id="output-resize-handle"][hidden] {
+    display: none !important;
+}
+
+[data-kin-id="output-resize-handle"] {
+    flex: 0 0 7px;
+    height: 7px;
+    min-height: 7px;
+    position: relative;
+    cursor: row-resize;
+    touch-action: none;
+    user-select: none;
+    background: var(--KinPenGadgetBackground);
+    border-top: 1px solid var(--KinPenFrameHalfShadow);
+    border-bottom: 1px solid var(--KinPenFrameHalfShadow);
+    box-sizing: border-box;
+}
+
+[data-kin-id="output-resize-handle"]::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 2px;
+    width: 42px;
+    height: 2px;
+    transform: translateX(-50%);
+    border-radius: 2px;
+    background: var(--KinPenFrameHalfShadow);
+}
+
+[data-kin-id="output-resize-handle"]:hover::after,
+[data-kin-id="output-resize-handle"].is-dragging::after {
+    background: var(--KinPenInputFocusMark, var(--KinPenMark));
 }
 
 [data-kin-id="output-title"] { font-weight: 700; }
@@ -129,5 +175,6 @@ body > kin-ui-app,
 
 @media (max-width: 900px) {
     [data-kin-id="folders-pane"] { flex-basis: 220px; width: 220px; }
-    [data-kin-id="tools-pane"] { display: none; }
+    [data-kin-id="tools-pane"],
+    [data-kin-id="editor-tools-resize"] { display: none; }
 }

@@ -6,11 +6,17 @@ Acaret is Kin's KinUI source and project editor. It combines ACE multi-file edit
 
 KinDOS uses named disks and assigns rather than a Unix root. Paths look like `Home:`, `Work:Projects/`, or `System:Commands/mountlist`; `/Home:` and `/` are not Kin paths.
 
-With no project open, the Folders pane gets its roots from the current account's mountlist. After opening a project it instead shows only the project root and its project-relative subfolders and files. **All disks** temporarily opens every mounted standard volume, custom disk, assign, shared volume, and application-provided drive; **Back to project** restores the focused project tree. **Up** stops at the project root while project browsing is active.
+With no project open, the Folders pane gets its roots from the current account's mountlist. After opening a project it instead shows only the project root and its project-relative subfolders and files. **All disks** temporarily opens every mounted standard volume, custom disk, assign, shared volume, and application-provided drive; **Back to project** restores the focused project tree. Expand or collapse tree nodes to navigate the hierarchy.
 
 Select a folder before creating a file or folder. Rename stays on the same disk because KinDOS does not support cross-volume rename. Trash uses the selected item's owning volume.
 
 Buttons use Kin's standard Heroicons. The status strip directly below the code editor reports the current language mode, Saved/Changed state, cursor line and column, and INS/OVR input mode.
+
+Drag the KinUI separators between Folders, the editor, and Tools to choose comfortable pane widths. Acaret remembers the Folders and Tools widths for the current browser profile.
+
+Folders and Tools start collapsed for a new browser profile. Use **View → Toggle folder panel** to restore or collapse Folders, and **View → Toggle right panel** for Tools. A collapsed Folders pane consumes no width; its KinUI separator remains available so dragging right restores the remembered width. Acaret remembers later visibility choices. Navigator is the default Tools tab.
+
+Output is collapsed by default and opens from the **Output** button. When open, drag the horizontal separator above it to change the drawer height; **Close** returns it to the compact button.
 
 ## Editing
 
